@@ -1,0 +1,35 @@
+﻿<!DOCTYPE html>
+
+<md-card class="radar-chart-card">
+    <div layout="column">
+
+        <div layout="column">
+            <h1 class="chart-title">{{title | uppercase}}</h1>
+        </div>
+
+
+        <div ng-show="!loading && dataAvailable" style="height:406px; margin-top:10px">
+  
+
+            <canvas id="radar" class="chart chart-radar"  chart-data="data"
+                    chart-labels="labels"  
+                    chart-series="series"
+                    chart-options="options"
+                    chart-colors="colors" ngCloak></canvas>
+        
+        </div>
+
+        <div ng-show="!loading && !dataAvailable" class="no-data-chart">
+
+            <h1>No Data Available</h1>
+        </div>
+
+    </div>
+    <div layout="row" flex ng-if="loading" style="margin: auto;">
+        <md-progress-circular class="md-hue-5" md-mode="indeterminate" md-diameter="60px" flex></md-progress-circular>
+    </div>
+</md-card>
+
+<!--
+
+    -->

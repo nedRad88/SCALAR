@@ -1,0 +1,59 @@
+﻿<!DOCTYPE html>
+<md-dialog aria-label="Mango (Fruit)" ng-cloak flex="50">
+    <form ng-submit="modeEdit?edit(topic):add(topic)" >
+        <md-toolbar>
+            <div class="md-toolbar-tools">
+                <h2>{{modeEdit?"Edit":"Add"}} Topic</h2>
+                <span flex></span>
+                <md-button class="md-icon-button" ng-click="cancel()">
+                    <md-icon md-font-set="material-icons">close</md-icon>
+                </md-button>
+            </div>
+        </md-toolbar>
+        <md-dialog-content>
+            <div class="md-dialog-content dialog-form">
+                <md-input-container class="md-block">
+                    <label>Label</label>
+                    <md-icon class="md-48" md-font-set="fa fa-tags"></md-icon>
+                    <input ng-model="topic.id" ng-required="true" ng-disabled="modeEdit">
+                </md-input-container>
+                <md-input-container class="md-block">
+                    <label>Label</label>
+                    <md-icon class="md-48"  md-font-set="material-icons">group_work</md-icon>
+                    <md-select ng-model="topic.group">
+                        <md-option ng-value="group" ng-repeat="group in groups ">{{group}}</md-option>
+                    </md-select>
+                </md-input-container>
+                <label>Tags</label>
+                <md-chips ng-model="topic.tags" md-require-match="true" ng-required="true">
+                    <md-autocomplete
+                        md-selected-item="selectedItem"
+                        md-search-text="searchText"
+                        md-items="item in querySearch(searchText)"
+                        md-item-text="item">
+                        <span md-highlight-text ="searchText">{{item}}</span>
+                    </md-autocomplete>
+                    <md-chip-template>
+                        {{$chip}}
+                    </md-chip-template>
+                </md-chips>
+            </div>
+            <div class="md-warn" style="text-align: center;">
+                <div flex></div>
+                <div>
+                    {{message.message}}
+                </div>
+                <div flex></div>
+            </div>
+        </md-dialog-content>
+        <md-dialog-actions layout="row">
+            <span flex></span>
+            <md-button ng-click="cancel()">
+                Cancel
+            </md-button>
+            <md-button type="submit" style="margin-right:20px;" ng-disabled="topic.tags.length<=0">
+                {{modeEdit?"Apply":"Add"}}
+            </md-button>
+        </md-dialog-actions>
+    </form>
+</md-dialog>

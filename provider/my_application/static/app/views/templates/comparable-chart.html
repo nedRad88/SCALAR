@@ -1,0 +1,137 @@
+﻿<!DOCTYPE html>
+<md-card class="comparable-chart-card">
+    <div layout="row">
+       <!-- <md-icon class="chart-header-icon"><i class="fa fa-smile-o" aria-hidden="true"></i></md-icon>-->
+        <div layout="column">
+            <md-select class="chart-title" ng-show="title.length > 1" ng-model="IndexOfSerie" aria-label="date" ng-change="loadData()"
+                       ng-init="IndexOfSerie=0">
+                <md-option ng-repeat="t in title" value="{{$index}}">
+                    {{t}}
+                </md-option>
+            </md-select>
+            <h1 class="chart-title" ng-if="title.length == 1">{{title[0] | uppercase}}</h1>
+            
+            <!-- <span class="chart-date">{{beginDate | date:'yyyy/MM/dd'}} - {{endDate | date:'yyyy/MM/dd'}}</span>-->
+        </div>
+        
+
+        <div layout="column" flex class="flex" style="text-align:right">
+            <div>
+                
+                <div layout="row" style="width : 24px;">
+                    <md-icon style="font-size: 24px;" md-font-set="material-icons">filter_list</md-icon>
+                    <md-select ng-model="selected_field" aria-label="competiton Field" ng-change="selectField()">
+                        
+                            <md-option ng-repeat="field in fields" value="{{field}}">
+                                {{field.name}}
+                            </md-option>
+                        
+                        
+                    </md-select>
+                </div>
+                <div layout="row" style="width : 24px;">
+                    <md-icon style="font-size: 24px;" md-font-set="material-icons">filter_list</md-icon>
+                    
+                    <md-select ng-model="selected_measure" aria-label="Time"
+                            ng-change="selectMeasure(selected_measure)">
+                            
+                            <md-option ng-repeat="measure in measures" value="{{measure}}">
+                                {{measure}}
+                            </md-option>
+                        
+                    </md-select>
+                </div>
+                
+                <md-menu class="md-menu" style="padding: 0px">
+                    <md-button class="charts-menu-button" type="button" ng-click="$mdOpenMenu($event)" aria-label="Unit">
+                        {{selectedUnit}}
+                    </md-button>
+                    <md-menu-content width="2" style="padding: 8px;">
+                        <md-menu-item ng-repeat="unit in units">
+                            <md-button ng-click="selectUnit(unit)">
+                                {{unit | uppercase}}
+                            </md-button>
+                        </md-menu-item>
+                    </md-menu-content>
+                </md-menu>
+                
+                <md-menu class="md-menu" style="padding: 0px">
+                    <md-button class="md-icon-button charts-menu-button" type="button" ng-click="$mdOpenMenu($event)" aria-label="Filter">
+                        <i class="fa fa-filter" aria-hidden="true"></i>
+                        <div class="md-ripple-container"></div>
+                    </md-button>
+                    <md-menu-content width="2" style="padding: 8px;">
+                        <md-menu-item ng-repeat="serie in copy.series">
+                            <md-checkbox ng-checked="exists(serie, selected)" ng-click="toggle(serie, selected)">
+                                <span>{{ serie }}</span>
+                            </md-checkbox>
+                        </md-menu-item>
+                    </md-menu-content>
+                </md-menu>
+
+                <md-button class="md-icon-button charts-menu-button" ng-click="switchChartType()"  aria-label="Average">
+                    <i ng-if="type=='bar'" class="fa fa-bar-chart" aria-hidden="true"></i>
+                    <i ng-if="type=='line'" class="fa fa-area-chart" aria-hidden="true"></i>
+                </md-button>
+
+
+            </div>
+            
+            
+            
+            
+            <div layout="row">
+                <div flex  class="flex"></div>
+                <md-input-container  style="margin-top: -4px; margin-right:10px; font-size:12px"  ng-if="!isCustomDate">
+                    <md-select ng-model="selectedDate" aria-label="date"
+                               ng-init="selectedDate = times[0]"
+                               ng-change="loadData(selectedDate)">
+                        <md-option ng-repeat="time in times" value="{{time}}">
+                            {{time}}
+                        </md-option>
+                    </md-select>
+                </md-input-container>
+            </div>
+        </div>
+    </div>
+
+
+    <div layout="row" ng-show="edit">
+        <div flex class="flex"></div>
+        <md-button class="md-cornered btn1" ng-click="changeRange('custom')" aria-label="custom">Custom</md-button>
+        <md-button style="font-size: 12px" ng-click="changeRange('year')" aria-label="year">Year</md-button>
+        <md-button style="font-size: 12px" ng-click="changeRange('month')" aria-label="month">Month</md-button>
+        <md-button style="font-size: 12px" ng-click="changeRange('week')" aria-label="week">Week</md-button>
+        <md-button style="font-size: 12px" ng-click="changeRange('day')" aria-label="day">Day</md-button>
+    </div>
+
+
+    <div layout="row" ng-show="edit">
+        <span class="md-caption" style="margin-top: 12px">From</span>
+        <md-datepicker ng-change="loadData()" ng-disabled="!isCustomDate" ng-model="beginDate" md-placeholder="Enter date"></md-datepicker>
+        <span class="md-caption" style="margin-top: 12px">To</span>
+        <md-datepicker ng-change="loadData()" ng-disabled="!isCustomDate" ng-model="endDate" md-placeholder="Enter date"></md-datepicker>
+        <div flex class="flex"></div>
+
+
+
+
+
+
+        <md-input-container class="md-block" style="margin-top: -1px">
+
+        </md-input-container>
+
+    </div>
+
+    <div ng-show="!loading" style="height:406px" >
+        <canvas id="base" class="chart chart-base" chart-type="type" chart-data="data"
+                chart-labels="labels"  chart-series="series"
+                chart-colors="colors" chart-options="options" ngCloak></canvas>
+
+
+    </div>
+    <div layout="row" layout-sm="column" layout-align="space-around" style="padding:100px" flex ng-if="loading">
+        <md-progress-circular class="md-hue-5" md-mode="indeterminate" md-diameter="100px"></md-progress-circular>
+    </div>
+</md-card>

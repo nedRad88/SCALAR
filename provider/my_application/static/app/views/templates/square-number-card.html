@@ -1,0 +1,38 @@
+﻿<!DOCTYPE html>
+<div>
+    <md-card class="md-flex progress-data-card" flex>
+        <div layout="column"  flex>
+            <h1>{{title | uppercase}}</h1>
+            <div ng-show="!loading">
+                <div ng-repeat="op in data" style="display: inline-block" ng-style="{'width' :op.count+'%', 'height':'20px', 'background': colors[operators.indexOf(op.label.toLowerCase())]}">
+                    <!--
+                    <div flex>
+                        <span class="progress-data-operator-name">{{op.label | uppercase}}</span>
+                        <div layout="row">
+                            <md-progress-linear md-mode="determinate" class="progress-data" value="{{op.count}}"></md-progress-linear>
+                            <span>{{op.count|number :2}}%</span>
+                        </div>
+                    </div>-->
+
+                </div>
+                <chart-legend>
+                    <ul class="doughnut-legend">
+                        <li ng-repeat="op in data"><span ng-style="{'display':'inline-block', 'background': colors[operators.indexOf(op.label.toLowerCase())], width:'30px', position:'relative'}">{{op.count |number : 0}}%</span>{{op.label}}</li>
+                    </ul> 
+                </chart-legend>
+
+            </div>
+            <div layout="row" flex ng-if="loading" style="margin: auto;">
+                <md-progress-circular class="md-hue-5" md-mode="indeterminate" md-diameter="60px" flex></md-progress-circular>
+            </div>
+        </div>
+
+
+
+    </md-card>
+
+    
+</div>
+<!--
+
+    -->

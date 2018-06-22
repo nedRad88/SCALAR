@@ -1,0 +1,103 @@
+version: '3'
+
+services:
+  kafka:
+    image: spotify/kafka
+    networks:
+      new_network:
+        ipv4_address: 172.22.0.2
+    ports:
+      - "9092:9092"
+      - "2181:2181"
+    environment:
+      KAFKA_ADVERTISED_HOST_NAME: "172.22.0.2"
+      TZ: "Europe/Paris"
+    container_name: kafka
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+
+  mongo_db:
+    image: mongo
+    networks:
+      new_network:
+        ipv4_address: 172.22.0.3
+    environment:
+      TZ: "Europe/Paris"
+    volumes:
+      - /home/nedeljko/data/mongo_dir:/data/db
+      - /etc/localtime:/etc/localtime:ro
+    container_name: mongo_db
+
+  sql_db:
+    image: mysql:5.7.21
+    networks:
+      new_network:
+        ipv4_address: 172.22.0.4
+    ports:
+      - "3306:3306"
+    environment:
+       MYSQL_ROOT_PASSWORD: supersecret
+       MYSQL_DATABASE: sample
+       MYSQL_USER: mysql
+       MYSQL_PASSWORD: mysql
+       TZ: "Europe/Paris"
+    volumes:
+      - /home/nedeljko/data/sql_dir:/var/lib/mysql
+      - /etc/localtime:/etc/localtime:ro
+    container_name: sql_db
+    command: [mysqld, --default-authentication-plugin=mysql_native_password]
+
+  provider:
+    build: provider
+    ports:
+      - "5000:5000"
+      - "5005:5005"
+      - "50051:50051"
+    networks:
+      new_network:
+        ipv4_address: 172.22.0.5
+    environment:
+      TZ: "Europe/Paris"
+    volumes:
+      - /home/nedeljko/uploaded_data:/local/data
+      - /etc/localtime:/etc/localtime:ro
+    container_name: provider
+    depends_on:
+      - sql_db
+
+  mongo-express:
+    image: mongo-express
+    networks:
+      new_network:
+        ipv4_address: 172.22.0.6
+    links:
+      - mongo_db:mongo
+    environment:
+      TZ: "Europe/Paris"
+    ports:
+      - "8081:8081"
+    container_name: mongo-express
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+    depends_on:
+      - mongo_db
+
+  myadmin:
+    image: nedeljkoradulovic88/phpmyadminbase:v1
+    networks:
+      new_network:
+        ipv4_address: 172.22.0.7
+    links:
+      - sql_db:db
+    ports:
+      - "8083:80"
+    container_name: myadmin
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+    depends_on:
+      - sql_db
+
+networks:
+  new_network:
+    external:
+      name: new_network

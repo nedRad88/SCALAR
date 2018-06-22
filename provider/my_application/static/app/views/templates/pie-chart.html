@@ -1,0 +1,44 @@
+﻿<!DOCTYPE html>
+
+<md-card class="data-chart-card">
+    <div layout="column">
+
+        <div layout="column">
+            <h1 class="chart-title">{{title | uppercase}}</h1>
+        </div>
+
+
+        <div ng-show="!loading && dataAvailable" style="height:178px; margin-top:10px">
+  
+                <canvas id="doughnut" class="chart chart-doughnut"
+                        chart-data="data" chart-labels="labels"
+                        chart-options="options"
+                        chart-colors="colors" ngCloak></canvas>
+
+            <div class="doughnut-number">
+
+                <h1>{{total | number : (modulo>0)?1:0}}<span ng-if="kilo">k</span></h1>
+                <div ng-class="(evolution > 0)?'up':'down'">
+                    <md-icon ng-if="evolution > 0" class="up" md-font-set="material-icons">arrow_drop_up</md-icon>
+                    <md-icon ng-if="evolution < 0" class="down" md-font-set="material-icons">arrow_drop_down</md-icon>
+                    <span ng-if="evolution != undefined">{{evolution | number : 2}}<span ng-if="kiloEvo">k</span>%</span>
+                </div>
+
+            </div>
+            
+        </div>
+
+        <div ng-show="!loading && !dataAvailable" class="no-data-chart">
+
+            <h1>No Data Available</h1>
+        </div>
+
+    </div>
+    <div layout="row" flex ng-if="loading" style="margin: auto;">
+        <md-progress-circular class="md-hue-5" md-mode="indeterminate" md-diameter="60px" flex></md-progress-circular>
+    </div>
+</md-card>
+
+<!--
+
+    -->

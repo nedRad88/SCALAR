@@ -1,0 +1,111 @@
+﻿<!DOCTYPE html>
+
+<div layout="row" layout-align="center center" class="nav-bar-subheader md-whiteframe-1dp">
+    <md-button ng-if="canShowPost" ng-click="showPosts(params)">
+        <md-icon style="font-size: 24px;" md-font-set="material-icons">comment</md-icon>
+    </md-button>
+    <div flex></div>
+    
+    <div layout-gt-xs="row"  >
+
+        <md-input-container class="md-block">
+            <md-icon class="md-secondary" md-font-set="fa fa-calendar-o"></md-icon>
+            <md-select ng-model="selected_date" aria-label="Time"
+                       ng-change="selectDate(selected_date)">
+                <md-optgroup ng-repeat="date in dates" label="{{date.label}}">
+                    <md-option ng-repeat="element in date.elements" value="{{element}}">
+                        {{element}}
+                    </md-option>
+                </md-optgroup>
+                
+            </md-select>
+        </md-input-container>
+        <md-datepicker ng-change="dateChanged()"  ng-disabled="selected_date!='Custom'" ng-model="beginDate" md-placeholder="Enter date"></md-datepicker>
+        <span style="margin: auto;">-</span>
+        <md-datepicker ng-change="dateChanged()" md-min-date="minDate" ng-disabled="selected_date!='Custom'" ng-model="endDate" md-placeholder="Enter date"></md-datepicker>
+
+    </div>
+
+
+    <md-icon md-font-set="fa fa-tags"></md-icon>
+
+        <md-autocomplete md-selected-item="selectedTopic"
+                         md-search-text-change="searchTextChange(searchText)"
+                         md-search-text="searchText"
+                         md-selected-item-change="selectedItemChange(item)"
+                         md-items="item in querySearch(searchText)"
+                         md-item-text="selectedTopicValue(item)"
+                         md-min-length="0"
+                         md-menu-class="topic-autocompelete"
+                         md-input-id="topic-field"
+                         md-autoselect="true">
+            <md-item-template class="menu-toggle-list" ng-click="$event.stopPropagation();" style="padding: 0px;">
+                
+                <md-icon ng-show="item.topics && item.topics.length !=0" class="md-secondary autocomplete-group-icon" aria-label="{{item.group}}" ng-click="item.collapsed=!item.collapsed; $event.stopPropagation();" md-font-set="material-icons">{{item.collapsed ? "&#xE316;" : "&#xE313;"}}</md-icon>
+                <span class="md-primary autocomplete-group" md-highlight-text="searchText" md-highlight-flags="^i" >{{item.group}}</span>
+
+                <md-list  class="menu-toggle-list autocomplete-topics-list" ng-if="item.collapsed||searchText" ng-cloak style="padding: 0px !important; margin: 0px;">
+                    <md-list-item ng-repeat="topic in item.topics | filter:searchText" ng-click="item.selected = topic; item.subtopic=true;" style="font-size: small; height: 24px;">
+                        <p>{{topic.id}}</p>
+                    </md-list-item>
+                </md-list>
+            </md-item-template>
+            <div></div>
+            <md-not-found>
+                No states matching "{{searchText}}" were found.
+            </md-not-found>
+        </md-autocomplete>
+ 
+
+</div>
+
+
+<md-content class="page-container"  ng-cloak>
+   <md-progress-linear md-mode="indeterminate" ng-if="!topic" flex ></md-progress-linear>
+   <md-content  ngCloak ng-if="topic && period" layout-gt-sm="row">
+         
+            <div stats-table ng-repeat="page in [charts[0],charts[1]]" style="width:48%"
+                    ng-if="page.mode == 'table'"
+                 title= page.title
+                 endpoint="{{page.endpoint}}"
+                 type="{{page.type}}"
+                 mode="{{page.mode}}"
+                 series="page.series"
+                 config="page.config"
+                 period="period"
+                 params="page.params"
+                 topic="topic"
+                 is-custom-date="page.isCustomDate"
+                 ngCloak flex></div>
+
+      
+    </md-content>
+
+
+
+    <md-content ngCloak ng-if="topic && period" layout-gt-sm="row">
+
+        <div stats-table ng-repeat="page in [charts[2],charts[3]]" style="width:48%"
+             ng-if="page.mode == 'table'"
+             title=page.title
+             endpoint="{{page.endpoint}}"
+             type="{{page.type}}"
+             mode="{{page.mode}}"
+             series="page.series"
+             config="page.config"
+             period="period"
+             params="page.params"
+             topic="topic"
+             is-custom-date="page.isCustomDate"
+             ngCloak flex></div>
+
+
+    </md-content>
+</md-content>
+
+
+
+
+
+
+

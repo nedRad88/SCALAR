@@ -1,0 +1,68 @@
+﻿<!DOCTYPE html>
+<md-card ng-if="allowed">
+    <md-content class="admin-page-container">
+        <md-table-container>
+
+            <div layout-gt-sm="row" class="md-table-toolbar md-default">
+                <div flex="5" class="flex"></div>
+                <md-input-container class="md-block" flex-gt-sm>
+                    <md-icon class="material-icons">search</md-icon>
+                    <input type="text" ng-model="searchQuery" ng-change="search(searchQuery)" placeholder="search">
+                </md-input-container>
+                <md-input-container class="md-block">
+                    <button class="md-icon-button md-button md-ink-ripple" type="button" ng-click="addUser()" aria-label="filter_list">
+                        <md-icon class="md-48" md-font-set="material-icons">add_circle</md-icon>
+                        <div class="md-ripple-container"></div>
+                    </button>
+                </md-input-container>
+
+                <md-input-container class="md-block">
+                    <button class="md-icon-button md-button md-ink-ripple" type="button" ng-click="deleteUsers()" ng-disabled="selected.length==0" aria-label="local_dining">
+                        <md-icon class="md-48" md-font-set="material-icons">remove_circle</md-icon>
+                        <div class="md-ripple-container"></div>
+                    </button>
+                </md-input-container>
+                <div flex="5" class="flex"></div>
+            </div>
+            <md-divider class="md-primary"></md-divider>
+            <md-progress-linear ng-if="loading" md-mode="indeterminate"></md-progress-linear>
+
+            <table md-table md-row-select multiple ng-model="selected">
+                <thead md-head>
+                    <tr md-row>
+                        <th md-column><span>First Name </span></th>
+                        <th md-column><span>Last Name </span></th>
+                        <th md-column>Mail </th>
+                        
+                        <th md-column>Roles</th>
+                        <th md-column style="width: 50px"></th>
+                        <th md-column style="width: 50px"></th>
+                    </tr>
+                </thead>
+                <tbody md-body>
+                    <tr md-row md-select="user" md-select-id="id" md-auto-select="false" ng-repeat="user in users">
+                        <td md-cell>{{user.firstName}}</td>
+                        <td md-cell>{{user.lastName}}</td>
+                        <td md-cell>{{user.email}}</td>
+                        
+                        <td md-cell><span ng-repeat="role in user.roles">{{role}} </span></td>
+                        <td md-cell>
+                            <div flex class="flex"></div>
+                            <md-button ng-click="resetPassowrd(user)">
+                                <md-icon class="md-48" md-font-set="material-icons">autorenew</md-icon>
+                            </md-button>
+                        </td>
+                        <td md-cell>
+                            <div flex class="flex"></div>
+                            <md-button ng-click="editUser(user)">
+                                <md-icon class="md-48" md-font-set="material-icons">edit</md-icon>
+                            </md-button>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </md-table-container>
+
+        <md-table-pagination md-limit="query.limit" md-limit-options="[10, 20, 30]" md-page="query.page" md-total="{{count()}}" md-on-paginate="getUsers" md-page-select></md-table-pagination>
+    </md-content>
+</md-card>

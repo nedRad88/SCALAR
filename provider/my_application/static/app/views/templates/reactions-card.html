@@ -1,0 +1,16 @@
+﻿<!DOCTYPE html>
+<div>
+    <md-card class="md-flex" flex >
+        <div layout="row" ng-show="!loading" flex>
+            <div layout="row" class="reactions-card" >
+                <div layout="column" ng-repeat="reaction in reactions">
+                    <img ng-src={{reaction.icon}} />
+                    <span> {{reaction.count}}</span>
+                </div>
+            </div>
+        </div>
+    </md-card>
+</div>
+<!--
+
+    -->

@@ -1,0 +1,60 @@
+﻿<!DOCTYPE html>
+<md-dialog aria-label="Mango (Fruit)" ng-cloak >
+
+   <form  ng-submit="addDatastream(datastream)" enctype=multipart/form-data >
+        <md-toolbar>
+            <div class="md-toolbar-tools">
+                <h2>Add Datastream</h2>
+                <span flex></span>
+                <md-button class="md-icon-button" ng-click="cancel()">
+                    <md-icon md-font-set="material-icons">close</md-icon>
+                </md-button>
+                
+            </div>
+        </md-toolbar>
+        
+         <md-dialog-content>
+            <div class="md-dialog-content dialog-form">
+                      
+                        <md-input-container class="md-block">
+                            <label>Name</label>
+                            <md-icon class="md-48" md-font-set="material-icons">view_stream</md-icon>
+                            <input ng-model="datastream.name" ng-required="true">
+                        </md-input-container>
+                                
+                        <md-input-container class="md-block">
+                            <label>Description</label>
+                                <md-icon class="md-48" md-font-set="material-icons">text_fields</md-icon>
+                            <textarea ng-model="datastream.description" md-maxlength="255" rows="5" md-select-on-focus ></textarea>
+                        </md-input-container>
+                        
+                        <div class="md-warn" style="text-align: center;">
+                            <div flex></div>
+                            <div>
+                                {{message.modelState[""][0]}}
+                            </div>
+                            <div flex></div>
+                        </div>
+                        
+                            <md-input-container class="md-block">
+                            <md-icon class="md-48" md-font-set="material-icons">attach_file</md-icon>
+                            <input ng-model="file" id="input-file-id"  type="file"  file-upload />
+                            
+                        </md-input-container>                  
+                
+            </div>
+        </md-dialog-content>
+
+        <md-dialog-actions layout="row">
+            <span flex></span>
+            <md-button ng-click="cancel()">
+                Cancel
+            </md-button>
+            <md-button type="submit" style="margin-right:20px;">
+                Add
+            </md-button>
+        </md-dialog-actions>
+
+    </form>
+                    
+</md-dialog>

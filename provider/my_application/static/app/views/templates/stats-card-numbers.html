@@ -1,0 +1,34 @@
+﻿<!DOCTYPE html>
+<div>
+    <md-card class="md-flex stats-card"   flex>
+        <div layout="row" ng-show="!loading">
+            <div layout="column" class="stats-container stats-card-number">
+                
+                
+                <h2>{{title | uppercase}}</h2>
+                <h1 ng-if="data.avg != undefined"> {{data.avg | number : 2}}%</h1>
+                <h1 ng-if="data.avg == undefined"> {{data.count}}</h1>
+                <span ng-if="data.avg != undefined"> {{data.count}} comments</span>
+            </div>
+            <div class="stats-state" ng-class="(data.evolution>5)?((!invertColor)?'stats-state-green':'stats-state-red'):(data.evolution>-5)?'stats-state-orange':((!invertColor)?'stats-state-red':'stats-state-green')"  flex>
+               
+                <div>
+                    <md-icon ng-if="data.evolution > 0" style="color:white" md-font-set="material-icons">trending_up</md-icon>
+                    <md-icon ng-if="data.evolution < 0" style="color:white"  md-font-set="material-icons">trending_down</md-icon>
+                    <span ng-if="!isNaN(data.evolution)">{{data.evolution | number : 2}}<span ng-if="kilo">k</span>%</span>
+                </div>
+
+            </div>
+        </div>
+
+        <div layout="row" flex ng-if="loading" style="margin: auto;">
+            <md-progress-circular class="md-hue-5" md-mode="indeterminate" md-diameter="60px" flex></md-progress-circular>
+        </div>
+
+    </md-card>
+
+    
+</div>
+<!--
+
+    -->

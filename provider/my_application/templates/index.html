@@ -1,0 +1,94 @@
+
+{% extends "base.html" %}
+
+
+{% block content %}
+
+
+<form action ="competition" method = POST enctype="multipart/form-data">
+    <fieldset>
+    <legend>Competition Form</legend>
+    {{ form.hidden_tag() }}
+    
+    <div style = font-size:20px; font-weight:bold; margin-left:150px;>
+        {{ form.name.label }}<br>
+        {{ form.name }}
+        <br>
+        
+        {{ form.datastream_id.label }}<br>
+        
+        <select name="datastream_id" class="selectpicker form-control">
+              {% for d in data %}
+                <option value="{{ d.datastream_id }}">{{ d.name }}</option>
+              {% endfor %}
+        </select>
+        
+        
+        {{ form.initial_training_time.label }}<br>
+        {{ form.initial_training_time }}
+        <br>
+        
+        {{ form.initial_batch_size.label }}<br>
+        {{ form.initial_batch_size }}
+        <br>
+        
+        
+        {{ form.batch_size.label }}<br>
+        {{ form.batch_size }}
+        <br>
+        
+         
+        {{ form.time_interval.label }}<br>
+        {{ form.time_interval }}
+        <br>
+        
+        {{ form.target_class.label }}<br>
+        {{ form.target_class }}
+        <br>
+        
+        {{ form.start_date.label }}<br>
+        {{ form.start_date }}
+        <br>
+        
+        {{ form.predictions_time_interval.label }}<br>
+        {{ form.predictions_time_interval }}
+        <br>
+        
+         <input type = "file" name = "file" accept=".proto"/>
+        
+        
+        
+        
+     
+        
+ 
+ 
+        
+        
+        
+    </div>
+    
+    <div style="overflow:hidden;">
+        <div class="form-group">
+            <div class="row">
+                <div class="col-md-8">
+                    <div id="datetimepicker12"></div>
+                </div>
+            </div>
+        </div>
+        <script type="text/javascript">
+            $(function () {
+                $('#datetimepicker12').datetimepicker({
+                    inline: true,
+                    sideBySide: true
+                });
+            });
+        </script>
+    </div>
+    
+    </fieldset>
+    <input type="submit" value="Submit">
+    
+</form>
+
+{% endblock %}

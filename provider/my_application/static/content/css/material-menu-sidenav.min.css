@@ -1,0 +1,41 @@
+md-menu-sidenav-title {
+    padding: 0 12px 0 20px;
+    cursor: pointer
+}
+
+md-menu-sidenav-item h1 {
+    font-size: 15px;
+    color: #616161
+}
+
+md-menu-sidenav-item .icon {
+    margin-right: 12px;
+    color: #616161
+}
+
+md-menu-sidenav-item a {
+    text-decoration: none
+}
+
+md-menu-sidenav-subitem {
+    cursor: pointer;
+    font-size: 14px;
+    color: #414141;
+    padding: 10px 1px 10px 1px
+}
+
+md-menu-sidenav-content {
+    background: #fff;
+    max-height: 999px;
+    overflow: hidden;
+    position: relative;
+    z-index: 1;
+    -webkit-transition: .6s cubic-bezier(0.785, 0.135, 0.150, 0.860);
+    -webkit-transition-property: max-height;
+    -moz-transition: .6s cubic-bezier(0.785, 0.135, 0.150, 0.860);
+    -moz-transition-property: max-height;
+    transition: .6s cubic-bezier(0.785, 0.135, 0.150, 0.860);
+    transition-delay: inherit;
+    transition-timing-function: inherit;
+    transition-property: max-height
+}

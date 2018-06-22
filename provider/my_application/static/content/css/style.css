@@ -1,0 +1,504 @@
+﻿body > md-content {
+ overflow: auto;
+}
+
+.main-container {
+    #margin: 8px;
+}
+    
+    
+md-toolbar {
+    position: fixed;
+    z-index: 78;
+    top: 0;
+    left: 0;
+    min-height: 50px !important;
+    height: 50px;
+}
+       
+.charts-menu-button {
+    margin: 0px !important;
+}
+
+.chart-title {
+    margin-bottom: 0;
+        margin-top: 0;
+    font-size: large;
+    }
+
+.chart-date {
+    font-size: small;
+    }
+
+.chart-header-icon {
+    margin-top: 18px;
+    margin-right: 8px;
+    }
+
+.stats-card {
+    vertical-align: middle;
+        min-height: 100px;
+    }
+
+    .stats-card md-progress-circular {
+        margin-top: auto !important;
+        margin-bottom: auto !important;
+    }
+
+    .stats-card img {
+        height: 96px;
+        width: 88px;
+        text-align: center;
+        margin: 16px;
+    }
+
+    .stats-card h2 {
+        font-size: medium;
+        margin: 0px;
+    }
+
+    .stats-card h1 {
+        font-size: xx-large;
+        margin: 0px;
+    }
+
+    .stats-card span {
+        font-size: small;
+        margin: 0px;
+    }
+
+    .stats-card .stats-container {
+        margin-top: auto;
+        margin-bottom: auto;
+    }
+
+    .stats-card .stats-state  {
+
+        display: flex;
+        color: white;
+    }
+
+    .stats-state-red {
+        background-color: #e00000;
+    }
+     .stats-state-green {
+        background-color: #388E3C;
+    }
+
+      .stats-state-orange {
+        background-color: orange;
+    }
+
+
+        .stats-card .stats-state div {
+            margin-top: auto;
+            margin-bottom: auto;
+            margin-left: auto;
+        margin-right: auto;
+            text-align: center;
+            padding: 2px;
+    }
+
+
+        .stats-card .stats-state i {
+            font-size: larger;
+    }
+
+
+
+    .stats-card-number {
+        height: 100px;
+        width: 267px;
+        text-align: center;
+        padding-top: 12px;
+    }
+
+    .reactions-card {
+        display: flex;
+        margin: auto;
+    }
+    
+    .reactions-card > div {
+        height: 100px;
+        text-align: center;
+        font-size: large;
+        padding: 8px;
+        margin-right: 8px;
+        margin-left: 8px;
+    }
+
+    .reactions-card img {
+        height: 60px !important;
+        width: 60px !important;
+        margin-bottom: 4px;
+    }
+
+
+    .doughnut-canvas {
+        width: 284px !important;
+        height: 142px !important;
+        display: block;
+        margin-left: auto;
+        margin-right: auto;
+    }
+
+    .doughnut-chart {
+        margin-bottom: 0px;
+    }
+
+    .doughnut-number {
+    position: absolute;
+    width: 25%;
+        height: 25%;
+        z-index: 10;
+        left: 37.5%;
+        top: 42.5%;
+        text-align: center;
+    }
+
+    .doughnut-number h1 {
+        margin: 0;
+        font-size: xx-large;
+        text-align: center;
+    }
+
+    .doughnut-number .up {
+        color: green;
+    }
+
+        .doughnut-number .down {
+        color: red;
+    }
+    
+    
+    .doughnut-number span {
+        text-align: center;
+        font-size: small;
+    }
+
+    .doughnut-number md-icon {
+        margin-right: -10px;
+    }
+
+    .progress-data-card {
+        padding: 16px;
+        font-size: larger;
+        min-height: 241px;
+    }
+
+    .progress-data-card md-progress-circular {
+        margin-top: auto !important;
+        margin-bottom: auto !important;
+    }
+
+
+    .progress-data-card span {
+        font-size: small;
+    }
+
+     .progress-data-card h1 {
+        font-size: large;
+         margin: 0;
+    }
+
+    .progress-data-card .progress-data-operator-name {
+        font-size: large;
+    }
+
+    .progress-data-card .progress-data-container {
+        margin-bottom: 15px;
+    }
+
+    .progress-data {
+        height: 15px;
+        margin-right: 16px;
+    }
+
+
+
+    .progress-data div {
+        height: 15px !important;
+    }
+
+   
+    .subsection {
+        margin-left: 8px;
+        margin-top: 40px;
+        margin-bottom: 0;
+        color: #e00000;
+    }
+
+
+
+    md-toolbar + section {
+        margin-top: 85px;
+    }
+
+    .no-data-chart {
+    height: 172px !important;
+        text-align: center;
+        display: flex;
+    }
+
+    .no-data-chart h1 {
+        margin: auto;
+        color: grey;
+        opacity: 0.6;
+    }
+
+    .login img {
+        width: 260px;
+        height: 260px !important;
+        margin-left: 45px;
+        margin-right: 45px;
+    }
+
+    .login .md-warn {
+        text-align: center;
+    }
+
+    .dialog-form {
+        margin-top: 50px !important;
+          }
+
+
+.nav-bar-subheader {
+        position: fixed;
+        width: 100%;
+        z-index: 50;
+        padding-right: 8px;
+        top: 50px;
+        padding-top: 0px;
+        background-color: #ffffff;
+        left: 0;
+        height: 41px;
+    }
+
+    .nav-bar-subheader md-input-container {
+        font-size: medium;
+        margin-top: 2px;
+        min-width: 120px;
+        margin-bottom: 5px;
+    }
+
+    .nav-bar-subheader > div {
+        margin-right: 5%;
+    }
+
+    .nav-bar-subheader .md-datepicker-button {
+        width: 0;
+        height: 0;
+        margin: 0;
+    }
+
+    .nav-bar-subheader md-select .md-select-value {
+        border: none;
+    }
+
+    .nav-bar-subheader md-icon {
+            margin-top: 6px;
+        text-align: right;
+            font-size: medium;
+    }
+
+     .nav-bar-subheader .md-datepicker-input {
+         font-size: medium;
+     }
+
+     .nav-bar-subheader md-datepicker {
+         margin-top: 3px;
+         font-size: medium;
+     }
+
+     .nav-bar-subheader .md-datepicker-input-container {
+         padding: 0;
+     }
+
+    .nav-bar-subheader .md-datepicker-button md-icon {
+        width: 0;
+        height: 0;
+        margin: 0;
+    }
+
+    .nav-bar-subheader > md-autocomplete {
+        margin-top: -7px;
+        background-color: white;
+    }
+
+    .nav-bar-subheader > md-autocomplete input {
+        font-size: medium;
+        }
+       
+        .nav-bar-subheader > md-autocomplete md-autocomplete-wrap {
+         box-shadow: none !important;
+      }
+
+        .nav-bar-subheader > md-autocomplete input {
+            margin-top: 5px;
+      }
+
+    .nav-bar-subheader > md-icon {
+        font-size: large;
+        margin-top: 11px;
+        margin-right: 10px;
+    }
+
+    .page-container {
+        overflow: hidden;
+        margin-top: 60px;
+    margin-top: 8px;
+        #overflow: scroll;
+        #height: 500px;
+    #min-height: 100%;
+    }
+
+     .admin-page-container {
+        #overflow: hidden;
+        #margin-top: 60px;
+        margin-top:8px;
+        overflow: hidden;
+        #height: 600px;
+    }
+
+
+    .data-chart-card {
+        padding: 13px;
+        min-height: 241px;
+    }
+
+    .radar-chart-card md-progress-circular {
+        margin-top: auto !important;
+        margin-bottom: auto !important;
+    }
+
+    .radar-chart-card {
+        padding: 13px;
+        min-height: 494px;
+    }
+
+    .data-chart-card md-progress-circular {
+        margin-top: auto !important;
+        margin-bottom: auto !important;
+    }
+
+    .comparable-chart-card {
+        padding: 16px;
+        min-height: 494px;
+    }
+
+    .comparable-chart-card md-progress-circular {
+        margin-top: auto !important;
+        margin-bottom: auto !important;
+    }
+
+    .comparable-chart-card canvas {
+        margin-top: 10px;
+    }
+
+    .not-found {
+        margin: auto;
+        margin-top: 100px;
+        text-align: center;
+        font-size: 40px;
+        color: grey;
+    }
+
+    .not-found h1 {
+        font-size: 120px;
+        margin-bottom: 0px;
+    }
+
+
+
+    /*   Autocomplete*/
+    .userUi .md-autocomplete-suggestions li {
+        height: unset;
+    }
+
+    .userUi > md-virtual-repeat-container {
+    height: 300px !important;
+    }
+
+    .topic-autocompelete md-list-item {
+        padding: 4px;
+        min-height: unset !important;
+    }
+  
+    .userUi > md-virtual-repeat-container .md-list-item-inner {
+        min-height: unset !important;
+    }
+
+    .userUi .md-autocomplete-suggestions li {
+        padding: 0px;
+    }
+
+.userUi .autocomplete-group {
+        padding-left: 24px;
+    }
+
+.userUi .autocomplete-group-icon {
+        margin-left: 8px;
+    }
+
+       md-checkbox.md-checked .md-icon {
+        background-color: #e00000;
+    }
+
+.posts-dialog{
+    height: 90%;
+    overflow:hidden;
+}
+
+
+.posts-dialog #container {
+    padding: 50px 5% 4px 5%;
+    overflow:auto;
+}
+
+.selected_button {
+    color: #e00000;
+}
+
+.tag {
+    background-color: rgba(0,0,0,0.54);
+    margin-right: 4px;
+    color: white;
+    font-size: small;
+    padding: 1px 6px 1px 6px;
+    border-radius: 1px;
+}
+
+.comment-menu {
+    position: absolute;
+    right: -30px;
+    top: -30px;
+}
+
+
+.report-comment {
+    margin-top: 18px;
+    margin-bottom:9px;
+    padding-left: 8px;
+    border-left: 12px;
+    border-style: solid;
+    border-width: 0px;
+    border-left-width: 4px;
+    border-color: #e00000;
+}
+
+
+.chartWrapper {
+    position: relative;
+}
+
+.chartWrapper > canvas {
+    position: absolute;
+    left: 0;
+    top: 0;
+    pointer-events:none;
+}
+
+.chartAreaWrapper {
+    width: 600px;
+    overflow-x: scroll;
+}

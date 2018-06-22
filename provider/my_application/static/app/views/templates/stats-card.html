@@ -1,0 +1,32 @@
+﻿<!DOCTYPE html>
+<div>
+    <md-card class="md-flex stats-card" flex>
+        <div layout="row" ng-show="!loading">
+            <img src="/content/images/{{image}}" />
+            <div layout="column" class="stats-container">
+                <h2>{{title}}</h2>
+                <h1> {{data.avg | number : 1}}%</h1>
+                <span ng-if="data.count">{{data.count}} comments</span>
+            </div>
+            <div  ng-class="data.evolution>5?'stats-state-green':'stats-state-red'" flex>
+                <div >
+                    <span><i class="fa fa-line-chart" aria-hidden="true"></i></span>
+                    <br></br>
+                    <span>{{data.evolution | number : 2}}<span ng-if="kilo">k</span>%</span>
+
+                </div>
+
+            </div>
+        </div>
+
+        <div layout="row" flex ng-if="loading">
+            <md-progress-circular class="md-hue-5" md-mode="indeterminate" md-diameter="80px" flex></md-progress-circular>
+        </div>
+
+    </md-card>
+
+    
+</div>
+<!--
+
+    -->

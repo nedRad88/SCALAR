@@ -1,0 +1,49 @@
+﻿<!DOCTYPE html>
+<div>
+    <md-card class="md-flex progress-data-card" flex>
+        <div layout="column"  flex>
+            <h1 style="margin-bottom: 15px;">{{title | uppercase}}</h1>
+            <div ng-show="!loading">
+                <div ng-repeat="tag in data" style="margin-bottom: 8px;">
+                    <div layout ="row">
+                        <span style="font-weight: bold">{{tag.tag}}</span>
+                        <div flex></div>
+                        <span>{{tag.total >= 1000 ?( tag.total / 1000 |  number : 1) : tag.total }}</span><span ng-if="tag.total >= 1000">k</span>
+                    </div>
+
+                    <div layout="row" style="height: 10px">
+                        <div style="display: inline-block" ng-style="{'width' :tag.neutralCount * 100 / tag.total+'%', 'background': colors['neutral']}">
+                            <md-tooltip md-direction="right">
+                                Neutral : {{tag.neutralCount * 100/ tag.total | number :2}} %
+                            </md-tooltip>
+                        </div>
+
+                        <div style="display: inline-block" ng-style="{'width' :tag.positiveCount * 100/ tag.total+'%', 'background': colors['positive']}">
+                            <md-tooltip md-direction="left">
+                                Positive : {{tag.positiveCount * 100/ tag.total | number :2}} %
+                            </md-tooltip>
+                        </div>
+                        <div style="display: inline-block" ng-style="{'width' :tag.negativeCount * 100 / tag.total+'%', 'background': colors['negative']}">
+                            <md-tooltip md-direction="bottom">
+                                Negative : {{tag.negativeCount * 100/ tag.total | number :2}} %
+                            </md-tooltip>
+                        </div>
+
+
+                    </div>
+                </div>
+            </div>
+            <div layout="row" flex ng-if="loading" style="margin: auto;">
+                <md-progress-circular class="md-hue-5" md-mode="indeterminate" md-diameter="60px" flex></md-progress-circular>
+            </div>
+        </div>
+
+
+
+    </md-card>
+
+    
+</div>
+<!--
+
+    -->
