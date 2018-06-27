@@ -348,19 +348,7 @@ def competitions():
         evaluation_measures = {'competition_id': competition.competition_id, 'measures': competition_config}
         _MONGO_REPO.insert_document('evaluation_measures', 'evaluation_measures', evaluation_measures)
 
-        test_user = {}
-        test_user['user_id'] = 3
-        test_user['competition_code'] = code
-        test_user['email'] = "TEST"
-
-        if competition is not None and test_user is not None:
-            # insert subscriptions
-            subscription = Subscription(None, competition.competition_id, test_user['user_id'])
-            _SUBSCRIPTION_REPO.insert_one(subscription)
-
-            test_user['user_secret_key'] = get_subscription_token(competition.competition_id, user_id=test_user['user_id'])
-
-        _SCHEDULER.schedule_competition(competition, competition_config, test_user)
+        _SCHEDULER.schedule_competition(competition, competition_config)
         # print("***********Competition scheduled!**********")
 
         return json.dumps({'success': True}), 200, {'ContentType': 'application/json'}

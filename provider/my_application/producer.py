@@ -50,16 +50,16 @@ _DATASTREAM_REPO = DatastreamRepository(_SQL_HOST, _SQL_DBNAME)
 _gRPC_SERVER = StreamServer()
 
 
-def _create_competition(competition, competition_config, test_user):
+def _create_competition(competition, competition_config):
     threading.Thread(target=_create_competition_thread, args=(competition, competition_config)).start()
     threading.Thread(target=_create_consumer, args=(competition,)).start()
     threading.Thread(target=_create_mongo_sink_consumer,
                      args=(competition.name.lower().replace(" ", "") + 'predictions',)).start()
     time.sleep(2)
     threading.Thread(target=_create_baseline, args=(competition, competition_config)).start()
-    train_schema, prediction_schema = _create_json_schema(competition, competition_config)
+    train_schema, prediction_schema, targets = _create_json_schema(competition, competition_config)
     spark_evaluator = SparkEvaluator(spark, SERVER_HOST, competition,
-                                     train_schema, prediction_schema)
+                                     train_schema, prediction_schema, targets, competition_config)
     spark_evaluator.main()
 
 
@@ -98,12 +98,20 @@ def _create_json_schema(competition, competition_config):
         .add("competition_id", IntegerType(), False)\
         .add("user_id", IntegerType(), False)
 
+    targets = []
+
     for key, value in target_dict.items():
         # test_schema.add(key, _infer_type(value))
-        train_schema.add(str(key), StringType(), False)
-        prediction_schema.add(str(key).replace(" ", ""), StringType(), False)
+        if competition_config[str(key).replace(" ", "")] == "MAPE":
+            train_schema.add(str(key), FloatType(), False)
+            prediction_schema.add(str(key).replace(" ", ""), FloatType(), False)
+        else:
+            train_schema.add(str(key), StringType(), False)
+            prediction_schema.add(str(key).replace(" ", ""), StringType(), False)
 
-    return train_schema, prediction_schema  # , test_schema, init_schema
+        targets.append(str(key))
+
+    return train_schema, prediction_schema, targets  # , test_schema, init_schema
 
 
 def _create_evaluation_engine(competition_id, config, evaluation_time_interval):
@@ -362,7 +370,7 @@ class Scheduler:
         self.scheduler = BackgroundScheduler(jobstores=jobstores)
         # print("Version: ", sys.version)
 
-    def schedule_competition(self, competition, competition_config, test_user):
+    def schedule_competition(self, competition, competition_config):
         competition_job_id = str(competition.name)
         start_date = competition.start_date
         end_date = competition.end_date
@@ -375,7 +383,7 @@ class Scheduler:
 
         publish_job = self.scheduler.add_job(_create_competition, trigger='cron', year=year, month=month, day=day, hour=hour,
                                              minute=minute, second=second, start_date=start_date, end_date=end_date,
-                                             args=[competition, competition_config, test_user], id=competition.name)
+                                             args=[competition, competition_config], id=competition.name)
 
         job_id_to_remove = publish_job.id
 

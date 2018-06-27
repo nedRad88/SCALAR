@@ -3,6 +3,7 @@ from repository import MongoRepository
 import json
 from bson import json_util
 import datetime
+import operator
 
 
 class BaselineToMongo:
@@ -15,12 +16,8 @@ class BaselineToMongo:
         self.consumer.subscribe(topic)
         self.client = SimpleClient(kafka_server)
         self.mongo_repository = MongoRepository('172.22.0.3')
+        self.config = competition_config
         self.targets = competition_config.keys()
-        self.num_records = {}
-        self.sum_values = {}
-        # for key in competition_config.keys():
-        #    field = str(key).replace(" ", "")
-        #    self.targets.append(field)
         self.competition_id = competition.competition_id
         self.producer = KafkaProducer(bootstrap_servers=kafka_server)
         self.output_topic = competition.name.lower().replace(" ", "") + 'spark_predictions'
@@ -29,29 +26,69 @@ class BaselineToMongo:
 
         db = self.mongo_repository.client['data']
         predictions = db['predictions_v2']
-        for target in self.targets:
-            self.num_records[target] = 0
-            self.sum_values[target] = 0
+        regression_targets = []
+        classification_targets = []
+
+        for key, value in self.config.items():
+            for item in value:
+                if item == 'MAPE':
+                    regression_targets.append(key)
+                elif item == 'F1':
+                    classification_targets.append(key)
+        target_dict = {}
+        num_records = {}
+        sum_values = {}
+
+        for target in classification_targets:
+            target_dict[target] = {}
+        for target in regression_targets:
+            num_records[target] = 0
+            sum_values[target] = 0
 
         for msg in self.consumer:
-
             message = json.loads(msg.value.decode('utf-8'), object_hook=json_util.object_hook)
             message = json.loads(str(message), object_hook=json_util.object_hook)
+            prediction_dict = {'rowID': message['rowID'], 'competition_id': self.competition_id, 'user_id': 0}
 
-            if message['type'] == "DATA" or message['type'] == "GOLDEN":
+            prediction_dict, num_records, sum_values = self.regression(message,
+                                                                       prediction_dict, num_records, sum_values)
+            prediction_dict, target_dict = self.classification(message, target_dict, prediction_dict)
 
-                if message['tag'] == 'TEST':
-                    prediction_dict = {'rowID': message['rowID'], 'competition_id': self.competition_id, 'user_id': 0}
-                    for key, value in self.sum_values.items():
-                        prediction_dict[key] = float(self.sum_values[key]) / int(self.num_records[key])
-                    submitted_on = datetime.datetime.now()
-                    prediction_dict['submitted_on'] = submitted_on
-                    predictions.insert_one(prediction_dict)
-                    del prediction_dict['submitted_on']
-                    prediction_dict['submitted_on'] = submitted_on.strftime("%Y-%m-%d %H:%M:%S")
-                    self.producer.send(self.output_topic, json.dumps(prediction_dict,
-                                                                     default=json_util.default).encode('utf-8'))
-                if message['tag'] == 'INIT' or message['tag'] == 'TRAIN':
-                    for target in self.targets:
-                        self.num_records[target] = self.num_records[target] + 1
-                        self.sum_values[target] = self.sum_values[target] + float(message[target])
+            if message['tag'] == 'TEST':
+                submitted_on = datetime.datetime.now()
+                prediction_dict['submitted_on'] = submitted_on
+                predictions.insert_one(prediction_dict)
+                del prediction_dict['submitted_on']
+                prediction_dict['submitted_on'] = submitted_on.strftime("%Y-%m-%d %H:%M:%S")
+                self.producer.send(self.output_topic, json.dumps(prediction_dict,
+                                                                 default=json_util.default).encode('utf-8'))
+
+    @staticmethod
+    def regression(message, prediction_dict, num_records, sum_values):
+
+        if message['type'] == "DATA" or message['type'] == "GOLDEN":
+
+            if message['tag'] == 'TEST':
+                for key, value in sum_values.items():
+                    prediction_dict[key] = float(sum_values[key]) / int(num_records[key])
+            if message['tag'] == 'INIT' or message['tag'] == 'TRAIN':
+                for target in sum_values.keys():
+                    num_records[target] = num_records[target] + 1
+                    sum_values[target] = sum_values[target] + float(message[target])
+
+        return prediction_dict, num_records, sum_values
+
+    @staticmethod
+    def classification(message, target_dict, prediction_dict):
+
+        if message['type'] == "DATA" or message['type'] == "GOLDEN":
+            if message['tag'] == 'TEST':
+                for target, value in target_dict.items():
+                    prediction_dict[target] = max(value.items(), key=operator.itemgetter(1))[0]
+            if message['tag'] == 'INIT' or message['tag'] == 'TRAIN':
+                for target in target_dict.keys():
+                    if str(message[target]) in target_dict[target]:
+                        target_dict[target][str(message[target])] += 1
+                    else:
+                        target_dict[target][str(message[target])] = 1
+        return prediction_dict, target_dict
