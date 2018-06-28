@@ -203,7 +203,7 @@ def confirm_email(token):
 
 @app.route('/auth/register', methods=['POST'])
 def register():
-    data = json.loads(request.data)
+    data = json.loads(request.data.decode('utf-8'))
     # print(data)
 
     first_name = data['firstName']
@@ -401,7 +401,7 @@ def get_datastreams():
             data_file_name = name + extension
             ds_path = os.path.join(data_directory, data_file_name)
             if not os.path.exists(data_directory):
-                os.mkdir(data_directory)
+                os.makedirs(data_directory)
             data_file.save(os.path.join(ds_path))
 
         datastream = Datastream(None, name=name, file_path=data_file_name)

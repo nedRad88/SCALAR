@@ -4,7 +4,7 @@ from pymongo import MongoClient
 import datetime
 
 
-class MongoRepository():
+class MongoRepository:
     client = None
 
     def __init__(self, mongo_host):

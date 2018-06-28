@@ -1,7 +1,6 @@
 from pyspark.sql import SparkSession
 from pyspark.sql.functions import *
 from pyspark.sql.types import *
-from functools import reduce
 import os
 
 # bin/pyspark --packages org.apache.spark:spark-streaming-kafka_2.10:1.5.2 # in container
@@ -46,6 +45,8 @@ class SparkEvaluator:
         messages3 = messages2.withColumn("timestamp_released", unix_timestamp(
             messages['Released'], "yyyy-MM-dd HH:mm:ss").cast(TimestampType()))
 
+        messages3.writeStream.format("console").start()
+
         prediction_stream = self.sc \
             .readStream \
             .format("kafka") \
@@ -88,15 +89,17 @@ class SparkEvaluator:
                                      "message_table.timestamp_deadline >= prediction_table.timestamp_submitted AND "
                                      "message_table.timestamp_deadline >= current_timestamp")\
                 .drop("prediction_rowID").drop("prediction_competition_id")
+            join_table = join_table\
+                .withColumn("num_submissions", when(join_table["timestamp_submitted"] <= join_table["timestamp_deadline"], 1).otherwise(0))\
+                .withColumn("latency", unix_timestamp(join_table["timestamp_submitted"]) - unix_timestamp(join_table["timestamp_released"]))
 
             for target in self.targets:
                 message_col = target
                 prediction_col = "prediction_" + target.replace(" ", "")
                 for measure in self.config[target.replace(" ", "")]:
                     measure_col = str(measure) + "_" + target.replace(" ", "")
-                    join_table = join_table.withColumn(measure_col,
-                                          abs((join_table[message_col] - join_table[prediction_col])/join_table[message_col]))
-                # df[measure_col] = abs((df[message_col] - df[prediction_col])/df[message_col])
+                    join_table = join_table\
+                        .withColumn(measure_col, abs((join_table[message_col] - join_table[prediction_col])/join_table[message_col]))
 
             join_table.show()
             sleep(1)
