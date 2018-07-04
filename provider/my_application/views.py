@@ -535,9 +535,13 @@ def get_leaderboard_by_competition(competition_id):
     competition_results = _MONGO_REPO.get_users_ranking_by_field_by_measure(competition_id, field, measure)
 
     for r in competition_results:
-        user = _USER_REPO.get_user_by_id(r['id'])
-        res = {'id': r['id'], 'firstName': user.first_name, 'lastName': user.last_name, 'email': user.email,
-               'measure': r['measures']}
+        if r['id'] == 0:
+            res = {'id': r['id'], 'firstName': "Test", 'lastName': "Baseline", 'email': " ",
+                   'measure': r['measures']}
+        else:
+            user = _USER_REPO.get_user_by_id(r['id'])
+            res = {'id': r['id'], 'firstName': user.first_name, 'lastName': user.last_name, 'email': user.email,
+                   'measure': r['measures']}
         results.append(res)
 
     return jsonify(results)

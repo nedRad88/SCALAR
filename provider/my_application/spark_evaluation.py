@@ -21,11 +21,13 @@ class SparkEvaluator:
         self.config = competition_config
 
     def main(self):
+        # Time window duration for validity of records and predictions
         window_duration = str(2 * self.competition.predictions_time_interval) + " " + "seconds"
         prediction_window_duration = str(self.competition.predictions_time_interval) + " " + "seconds"
 
+        # Column names in predictions stream
         fields = self.prediction_schema.fieldNames()
-
+        # Reading stream of records from Kafka
         golden = self.sc \
             .readStream \
             .format("kafka") \
@@ -35,7 +37,7 @@ class SparkEvaluator:
             .selectExpr("cast (value as string) as json")\
             .select(from_json("json", self.train_schema).alias("data"))\
             .select("data.*")
-
+        # Casting timestamps to TimestampType
         records = golden\
             .withColumn("timestamp_deadline",
                         unix_timestamp(golden['Deadline'], "yyyy-MM-dd HH:mm:ss").cast(TimestampType()))\
@@ -43,7 +45,7 @@ class SparkEvaluator:
                         unix_timestamp(golden['Released'], "yyyy-MM-dd HH:mm:ss").cast(TimestampType()))\
             .drop("Deadline")\
             .drop("Released")
-
+        # Reading stream of predictions from Kafka
         prediction_stream = self.sc \
             .readStream \
             .format("kafka") \
@@ -54,25 +56,26 @@ class SparkEvaluator:
             .select(from_json("json", self.prediction_schema).alias("data")) \
             .select("data.*")
 
+        # Renaming the fields to perform a join
         new_fields = []
         for field in fields:
             new_field = 'prediction_' + field
             new_fields.append(new_field)
-
         for idx in range(len(fields)):
             prediction_stream = prediction_stream.withColumnRenamed(fields[idx], new_fields[idx])
-
+        # Casting timestamps to TimestampType
         predictions = prediction_stream\
             .withColumn("timestamp_submitted", unix_timestamp(prediction_stream['prediction_submitted_on'],
                                                               "yyyy-MM-dd HH:mm:ss").cast(TimestampType()))\
             .drop("prediction_submitted_on")
 
+        # Putting watermarks on both streams
         records_with_watermark = records\
             .withWatermark("timestamp_deadline", window_duration)
 
         predictions_with_watermark = predictions\
             .withWatermark("timestamp_submitted", prediction_window_duration)
-
+        # Joining two streams
         join_result = predictions_with_watermark.join(
            records_with_watermark,
            expr("""
@@ -83,7 +86,10 @@ class SparkEvaluator:
             .drop("prediction_rowID")\
             .drop("prediction_competition_id")\
             .drop("competition_id")
-
+        # Creating columns for:
+        # number of submissions: this column has value 1 if the submission was before deadline, otherwise 0
+        # latency: this column represents the difference between submission time and publishing time (released)
+        # penalized: if submission was after the deadline then penalized column has value 1, otherwise 0
         join_table = join_result \
             .withColumn("num_submissions",
                         when(join_result["timestamp_submitted"] <= join_result["timestamp_deadline"], 1).otherwise(0)) \
@@ -94,7 +100,7 @@ class SparkEvaluator:
             .drop("rowID")
 
         columns_to_sum = ["latency", "num_submissions", "penalized"]
-
+        # Calculation on measures for individual predictions
         for target in self.targets:
             message_col = target
             prediction_col = "prediction_" + target.replace(" ", "")
@@ -112,18 +118,18 @@ class SparkEvaluator:
                     .drop(join_table[prediction_col])
                 if measure_col not in columns_to_sum:
                     columns_to_sum.append(measure_col)
-
+        # Dropping unnecessary columns
         join_table = join_table\
             .drop("timestamp_deadline")\
             .drop("timestamp_submitted")\
             .drop("timestamp_released")
 
         exprs = {x: "sum" for x in columns_to_sum}
-
+        # Grouping by user_id and aggregation
         results = join_table.groupBy("prediction_user_id")\
             .agg(exprs)\
             .withColumn("competition_id", lit(self.competition.competition_id))
-
+        # Calculating batch measures
         for target in self.targets:
             for measure in self.config[target.replace(" ", "")]:
                 batch_measure_col = str(measure) + "_" + target.replace(" ", "")
@@ -131,14 +137,15 @@ class SparkEvaluator:
                 results = results\
                     .withColumn(batch_measure_col, 100 * results[measure_col] / results["sum(num_submissions)"])\
                     .drop(measure_col)
-
+        # Preparing to send to Kafka
+        # Renaming and dropping columns
         results = results\
             .withColumn("latency", results["sum(latency)"] / results["sum(num_submissions)"])\
             .withColumnRenamed("sum(penalized)", "penalized")\
             .withColumnRenamed("sum(num_submissions)", "num_submissions")\
             .withColumnRenamed("prediction_user_id", "user_id")\
             .drop("sum(latency)")
-
+        # Sending stream to Kafka
         output_stream = results \
             .selectExpr("to_json(struct(*)) AS value")\
             .writeStream\
@@ -151,16 +158,3 @@ class SparkEvaluator:
 
         pred = predictions_with_watermark.writeStream.format("console").start()
         rec = records_with_watermark.writeStream.format("console").start()
-
-        # rec.awaitTermination()
-        # pred.awaitTermination()
-        # output_stream.awaitTermination()
-        """
-        .format("console")\
-        .outputMode("update")\
-        .start()
-        """
-        # .select(to_json(struct([results[x] for x in results.columns])).cast("string").alias("value"))\
-
-        # TODO now topic is competition.name.lower().replace(" ", "") + 'predictions'
-        # TODO  change it for the input and for the output put it with predictions

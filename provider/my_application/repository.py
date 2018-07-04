@@ -119,8 +119,6 @@ class MongoRepository:
                 stats['results'].append(row)
             final_stats.append(stats)
 
-        # print (final_stats)
-
         return final_stats
 
     def get_last_predictions_by_user(self, competition_id, now, field, measure, evaluation_time_interval):
