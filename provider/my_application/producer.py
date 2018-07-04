@@ -26,6 +26,7 @@ from pyspark.sql.functions import *
 from pyspark.sql.types import *
 from pyspark.sql.types import _infer_type
 from baseline_client import baselineClient
+from sparkToMongo import SparkToMongo
 
 os.environ['PYSPARK_SUBMIT_ARGS'] = '--packages org.apache.spark:spark-sql-kafka-0-10_2.11:2.3.1 pyspark-shell'
 spark = SparkSession.builder.appName("Kafka_structured_streaming").getOrCreate()
@@ -57,8 +58,13 @@ def _create_competition(competition, competition_config):
                      args=(competition.name.lower().replace(" ", "") + 'predictions',)).start()
     time.sleep(2)
     threading.Thread(target=_create_baseline, args=(competition, competition_config)).start()
+    threading.Thread(target=_create_evaluation_spark, args=(spark, SERVER_HOST, competition, competition_config)).start()
+    threading.Thread(target=_create_mongo_sink_evaluation, args=(SERVER_HOST, competition, competition_config)).start()
+
+
+def _create_evaluation_spark(spark, kafka_server, competition, competition_config):
     train_schema, prediction_schema, targets = _create_json_schema(competition, competition_config)
-    spark_evaluator = SparkEvaluator(spark, SERVER_HOST, competition,
+    spark_evaluator = SparkEvaluator(spark, kafka_server, competition,
                                      train_schema, prediction_schema, targets, competition_config)
     spark_evaluator.main()
 
@@ -112,6 +118,12 @@ def _create_json_schema(competition, competition_config):
         targets.append(str(key))
 
     return train_schema, prediction_schema, targets  # , test_schema, init_schema
+
+
+def _create_mongo_sink_evaluation(kafka_server, competition, competition_config):
+    spark_to_mongo = SparkToMongo(kafka_server, competition.name.lower().replace(" ", "") + 'spark_measures',
+                                  competition, competition_config)
+    spark_to_mongo.write()
 
 
 def _create_evaluation_engine(competition_id, config, evaluation_time_interval):
@@ -397,15 +409,15 @@ class Scheduler:
         # print("Start date: ", start_date)
 
         # config = {'Valeurs': ['MAPE']}
-        evaluation_job = self.scheduler.add_job(_create_evaluation_engine, trigger='interval',
-                                                seconds=evaluation_time_interval, start_date=start_date,
-                                                end_date=competition.end_date,
-                                                args=(competition.competition_id, competition_config,
-                                                      evaluation_time_interval),
-                                                id=str(competition.name + 'evaluation'))
+        # evaluation_job = self.scheduler.add_job(_create_evaluation_engine, trigger='interval',
+        #                                         seconds=evaluation_time_interval, start_date=start_date,
+        #                                         end_date=competition.end_date,
+        #                                         args=(competition.competition_id, competition_config,
+        #                                               evaluation_time_interval),
+        #                                         id=str(competition.name + 'evaluation'))
 
-        print("Created evaulation job")
-        jobs = self.scheduler.get_jobs()
+        # print("Created evaulation job")
+        # jobs = self.scheduler.get_jobs()
 
     def start(self):
         # print("Scheduler started!")

@@ -25,7 +25,7 @@ from repository import MongoRepository
 from flask import send_file
 import logging
 
-logging.basicConfig(level='DEBUG')
+logging.basicConfig(level='INFO')
 from itsdangerous import URLSafeTimedSerializer
 import csv
 from io import BytesIO
@@ -766,4 +766,4 @@ if __name__ == '__main__':
     # app.run(host='0.0.0.0', port='5000')
     # http_server = WSGIServer(('', 5000), app)
     # http_server.serve_forever()
-    wsgi.server(eventlet.listen(('', 5000)), app)
+    wsgi.server(eventlet.listen(('', 5000)), app, debug=True)

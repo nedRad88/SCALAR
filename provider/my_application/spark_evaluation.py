@@ -2,7 +2,7 @@ from pyspark.sql import SparkSession
 from pyspark.sql.functions import *
 from pyspark.sql.types import *
 import os
-from time import sleep
+
 
 # bin/pyspark --packages org.apache.spark:spark-streaming-kafka_2.10:1.5.2 # in container
 # os.environ['PYSPARK_SUBMIT_ARGS'] = '--packages org.apache.spark:spark-sql-kafka-0-10_2.11:2.3.1 pyspark-shell'
@@ -21,10 +21,8 @@ class SparkEvaluator:
         self.config = competition_config
 
     def main(self):
-        # watermark_delay = str(self.competition.time_interval) + " " + "seconds"
-        windowDuration = str(2 * self.competition.predictions_time_interval) + " " + "seconds"
+        window_duration = str(2 * self.competition.predictions_time_interval) + " " + "seconds"
         prediction_window_duration = str(self.competition.predictions_time_interval) + " " + "seconds"
-        # message_win = "10 seconds"
 
         fields = self.prediction_schema.fieldNames()
 
@@ -33,17 +31,16 @@ class SparkEvaluator:
             .format("kafka") \
             .option("kafka.bootstrap.servers", self.broker) \
             .option("subscribe", self.competition.name.lower().replace(" ", "") + 'spark_train') \
-            .load()
-
-        messages = golden.selectExpr("cast (value as string) as json")\
+            .load()\
+            .selectExpr("cast (value as string) as json")\
             .select(from_json("json", self.train_schema).alias("data"))\
             .select("data.*")
 
-        records = messages\
+        records = golden\
             .withColumn("timestamp_deadline",
-                        unix_timestamp(messages['Deadline'], "yyyy-MM-dd HH:mm:ss").cast(TimestampType()))\
+                        unix_timestamp(golden['Deadline'], "yyyy-MM-dd HH:mm:ss").cast(TimestampType()))\
             .withColumn("timestamp_released",
-                        unix_timestamp(messages['Released'], "yyyy-MM-dd HH:mm:ss").cast(TimestampType()))\
+                        unix_timestamp(golden['Released'], "yyyy-MM-dd HH:mm:ss").cast(TimestampType()))\
             .drop("Deadline")\
             .drop("Released")
 
@@ -52,27 +49,26 @@ class SparkEvaluator:
             .format("kafka") \
             .option("kafka.bootstrap.servers", self.broker) \
             .option("subscribe", self.competition.name.lower().replace(" ", "") + 'spark_predictions') \
-            .load()
-
-        prediction_stream_parsed = prediction_stream.selectExpr("cast (value as string) as json") \
+            .load()\
+            .selectExpr("cast (value as string) as json") \
             .select(from_json("json", self.prediction_schema).alias("data")) \
             .select("data.*")
 
-        newFields = []
+        new_fields = []
         for field in fields:
-            newField = 'prediction_' + field
-            newFields.append(newField)
+            new_field = 'prediction_' + field
+            new_fields.append(new_field)
 
         for idx in range(len(fields)):
-            prediction_stream_parsed = prediction_stream_parsed.withColumnRenamed(fields[idx], newFields[idx])
+            prediction_stream = prediction_stream.withColumnRenamed(fields[idx], new_fields[idx])
 
-        predictions = prediction_stream_parsed\
-            .withColumn("timestamp_submitted",
-                        unix_timestamp(prediction_stream_parsed['prediction_submitted_on'], "yyyy-MM-dd HH:mm:ss").cast(TimestampType()))\
+        predictions = prediction_stream\
+            .withColumn("timestamp_submitted", unix_timestamp(prediction_stream['prediction_submitted_on'],
+                                                              "yyyy-MM-dd HH:mm:ss").cast(TimestampType()))\
             .drop("prediction_submitted_on")
 
         records_with_watermark = records\
-            .withWatermark("timestamp_deadline", windowDuration)
+            .withWatermark("timestamp_deadline", window_duration)
 
         predictions_with_watermark = predictions\
             .withWatermark("timestamp_submitted", prediction_window_duration)
@@ -94,24 +90,36 @@ class SparkEvaluator:
             .withColumn("latency", unix_timestamp(join_result["timestamp_submitted"]) -
                         unix_timestamp(join_result["timestamp_released"]))\
             .withColumn("penalized", when(join_result["timestamp_submitted"] > join_result["timestamp_deadline"], 1)
-                        .otherwise(0))\
-            .drop("rowID")\
-            .drop("timestamp_submitted")\
-            .drop("timestamp_released")\
-            .drop("timestamp_deadline")
+                        .otherwise(0)) \
+            .drop("rowID")
+
         columns_to_sum = ["latency", "num_submissions", "penalized"]
+
         for target in self.targets:
             message_col = target
             prediction_col = "prediction_" + target.replace(" ", "")
             for measure in self.config[target.replace(" ", "")]:
                 measure_col = str(measure) + "_" + target.replace(" ", "")
                 join_table = join_table \
-                    .withColumn(measure_col,
-                                abs((join_table[message_col] - join_table[prediction_col]) / join_table[message_col])) \
-                    .drop(join_table[message_col]).drop(join_table[prediction_col])
+                    .withColumn(prediction_col,
+                                when(join_table["timestamp_submitted"] > join_table["timestamp_deadline"], 0)
+                                .otherwise(join_table[prediction_col]))
+                join_table = join_table \
+                    .withColumn(measure_col, when(join_table[message_col].isNotNull(),
+                                                  abs((join_table[message_col] - join_table[prediction_col])
+                                                      / join_table[message_col])).otherwise(1)) \
+                    .drop(join_table[message_col])\
+                    .drop(join_table[prediction_col])
                 if measure_col not in columns_to_sum:
                     columns_to_sum.append(measure_col)
+
+        join_table = join_table\
+            .drop("timestamp_deadline")\
+            .drop("timestamp_submitted")\
+            .drop("timestamp_released")
+
         exprs = {x: "sum" for x in columns_to_sum}
+
         results = join_table.groupBy("prediction_user_id")\
             .agg(exprs)\
             .withColumn("competition_id", lit(self.competition.competition_id))
@@ -128,88 +136,31 @@ class SparkEvaluator:
             .withColumn("latency", results["sum(latency)"] / results["sum(num_submissions)"])\
             .withColumnRenamed("sum(penalized)", "penalized")\
             .withColumnRenamed("sum(num_submissions)", "num_submissions")\
-            .drop("sum(latency)")\
+            .withColumnRenamed("prediction_user_id", "user_id")\
+            .drop("sum(latency)")
+
+        output_stream = results \
+            .selectExpr("to_json(struct(*)) AS value")\
             .writeStream\
-            .format("console")\
-            .outputMode("update")\
+            .format("kafka") \
+            .option("kafka.bootstrap.servers", self.broker) \
+            .option("topic", self.competition.name.lower().replace(" ", "") + 'spark_measures') \
+            .option("checkpointLocation", "/tmp/checkpoint") \
+            .outputMode("update") \
             .start()
 
-        pred = predictions_with_watermark.writeStream\
-            .format("console")\
-            .start()
+        pred = predictions_with_watermark.writeStream.format("console").start()
+        rec = records_with_watermark.writeStream.format("console").start()
 
-        mess = records_with_watermark.writeStream\
-            .format("console")\
-            .start()
-
+        # rec.awaitTermination()
+        # pred.awaitTermination()
+        # output_stream.awaitTermination()
         """
-        messages_window = messages3\
-            .groupBy(window("timestamp_released", windowDuration=windowDuration))\
-            .createTempView("message_batch")
-
-        predictions_window = predictions2\
-            .groupBy(window("timestamp_submitted", windowDuration=prediction_window_duration))\
-            .createTempView("prediction_batch")
+        .format("console")\
+        .outputMode("update")\
+        .start()
         """
-
-        """
-        messagequery = records\
-            .writeStream\
-            .queryName("message_table")\
-            .format("memory")\
-            .outputMode("append")\
-            .start()
-
-        join_table = spark.sql("select * from message_table, prediction_table "
-                                 "where message_table.rowID = prediction_table.prediction_rowID AND "
-                                 "message_table.competition_id = prediction_table.prediction_competition_id AND "
-                                 "message_table.timestamp_deadline >= prediction_table.timestamp_submitted") \
-            .drop("prediction_rowID").drop("prediction_competition_id")\
-            .writeStream\
-            .format("console")\
-            .start()
-            """
-        """
-        while messagequery.isActive:
-            join_table = self.sc.sql("select * from message_table, prediction_table "
-                                     "where message_table.rowID = prediction_table.prediction_rowID AND "
-                                     "message_table.competition_id = prediction_table.prediction_competition_id AND "
-                                     "message_table.timestamp_deadline >= prediction_table.timestamp_submitted")\
-                .drop("prediction_rowID").drop("prediction_competition_id")
-            
-            join_table = join_table\
-                .withColumn("num_submissions", when(join_table["timestamp_submitted"] <= join_table["timestamp_deadline"], 1).otherwise(0))\
-                .withColumn("latency", unix_timestamp(join_table["timestamp_submitted"]) - unix_timestamp(join_table["timestamp_released"]))
-            columns_to_sum = ["latency", "num_submissions"]
-            for target in self.targets:
-                message_col = target
-                prediction_col = "prediction_" + target.replace(" ", "")
-                for measure in self.config[target.replace(" ", "")]:
-                    measure_col = str(measure) + "_" + target.replace(" ", "")
-                    join_table = join_table\
-                        .withColumn(measure_col, abs((join_table[message_col] - join_table[prediction_col])/join_table[message_col]))\
-                        .drop(join_table[message_col]).drop(join_table[prediction_col])
-                    if measure_col not in columns_to_sum:
-                        columns_to_sum.append(measure_col)
-            
-            join_table = join_table\
-                .drop("rowID")\
-                .drop("timestamp_submitted")\
-                .drop("timestamp_released")\
-                .drop("competition_id")\
-                .drop("timestamp_deadline")\
-
-            results = join_table.groupBy("prediction_user_id")\
-                .agg(expr("sum(num_submissions)"), expr("sum(latency)"))\
-                .writeStream.format("console").outputMode("update").start()
-
-        # sleep(self.competition.predictions_time_interval)
-        """
-        # messagequery.awaitTermination()
-        # join_table.awaitTermination()
-        mess.awaitTermination()
-        pred.awaitTermination()
+        # .select(to_json(struct([results[x] for x in results.columns])).cast("string").alias("value"))\
 
         # TODO now topic is competition.name.lower().replace(" ", "") + 'predictions'
         # TODO  change it for the input and for the output put it with predictions
-
