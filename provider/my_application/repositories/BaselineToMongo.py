@@ -47,7 +47,7 @@ class BaselineToMongo:
 
         for msg in self.consumer:
             message = json.loads(msg.value.decode('utf-8'), object_hook=json_util.object_hook)
-            message = json.loads(str(message), object_hook=json_util.object_hook)
+            # message = json.loads(str(message), object_hook=json_util.object_hook)
             prediction_dict = {'rowID': message['rowID'], 'competition_id': self.competition_id, 'user_id': 0}
 
             prediction_dict, num_records, sum_values = self.regression(message,
@@ -66,29 +66,26 @@ class BaselineToMongo:
     @staticmethod
     def regression(message, prediction_dict, num_records, sum_values):
 
-        if message['type'] == "DATA" or message['type'] == "GOLDEN":
-
-            if message['tag'] == 'TEST':
-                for key, value in sum_values.items():
-                    prediction_dict[key] = float(sum_values[key]) / int(num_records[key])
-            if message['tag'] == 'INIT' or message['tag'] == 'TRAIN':
-                for target in sum_values.keys():
-                    num_records[target] = num_records[target] + 1
-                    sum_values[target] = sum_values[target] + float(message[target])
+        if message['tag'] == 'TEST':
+            for key, value in sum_values.items():
+                prediction_dict[key] = float(sum_values[key]) / int(num_records[key])
+        if message['tag'] == 'INIT' or message['tag'] == 'TRAIN':
+            for target in sum_values.keys():
+                num_records[target] = num_records[target] + 1
+                sum_values[target] = sum_values[target] + float(message[target])
 
         return prediction_dict, num_records, sum_values
 
     @staticmethod
     def classification(message, target_dict, prediction_dict):
 
-        if message['type'] == "DATA" or message['type'] == "GOLDEN":
-            if message['tag'] == 'TEST':
-                for target, value in target_dict.items():
-                    prediction_dict[target] = max(value.items(), key=operator.itemgetter(1))[0]
-            if message['tag'] == 'INIT' or message['tag'] == 'TRAIN':
-                for target in target_dict.keys():
-                    if str(message[target]) in target_dict[target]:
-                        target_dict[target][str(message[target])] += 1
-                    else:
-                        target_dict[target][str(message[target])] = 1
+        if message['tag'] == 'TEST':
+            for target, value in target_dict.items():
+                prediction_dict[target] = max(value.items(), key=operator.itemgetter(1))[0]
+        if message['tag'] == 'INIT' or message['tag'] == 'TRAIN':
+            for target in target_dict.keys():
+                if str(message[target]) in target_dict[target]:
+                    target_dict[target][str(message[target])] += 1
+                else:
+                    target_dict[target][str(message[target])] = 1
         return prediction_dict, target_dict

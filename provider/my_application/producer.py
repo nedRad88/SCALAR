@@ -109,13 +109,13 @@ def _create_json_schema(competition, competition_config):
     for key, value in target_dict.items():
         # test_schema.add(key, _infer_type(value))
         if competition_config[str(key).replace(" ", "")] == "MAPE":
-            train_schema.add(str(key), FloatType(), False)
+            train_schema.add(str(key).replace(" ", ""), FloatType(), False)
             prediction_schema.add(str(key).replace(" ", ""), FloatType(), False)
         else:
-            train_schema.add(str(key), StringType(), False)
+            train_schema.add(str(key).replace(" ", ""), StringType(), False)
             prediction_schema.add(str(key).replace(" ", ""), StringType(), False)
 
-        targets.append(str(key))
+        targets.append(str(key).replace(" ", ""))
 
     return train_schema, prediction_schema, targets  # , test_schema, init_schema
 
@@ -150,7 +150,7 @@ def _create_mongo_sink_consumer(topic):
 
 
 def _create_baseline(competition, competition_config):
-    topic = competition.name.lower().replace(" ", "") + 'predictions'
+    topic = competition.name.lower().replace(" ", "")
     baseline = BaselineToMongo(SERVER_HOST, topic, competition, competition_config)
     baseline.write()
 
@@ -204,7 +204,8 @@ class Producer:
                             values['rowID'] = rowID
                             rowID = rowID + 1
                             for i in range(0, len(data[row])):
-                                values[header[i]] = data[row][i]
+                                field = header[i].replace(" ", "")
+                                values[field] = data[row][i]
 
                             initial_batch.append(values)
                     # After the initial batch
@@ -227,11 +228,12 @@ class Producer:
                                         x = header[i].lower().replace(' ', '')  # Field name
                                         y = str(key.lower().replace(' ', ''))  # Key
                                         # If field name == target = > prediction
+                                        field = header[i].replace(" ", "")
                                         if x == y:
-                                            prediction[header[i]] = data[row][i]
+                                            prediction[field] = data[row][i]
                                         # If field name != target = > values
                                         else:
-                                            values[header[i]] = data[row][i]
+                                            values[field] = data[row][i]
 
                                 # add values to items list and prediction to predictions list
                                 items.append(values)
@@ -266,19 +268,20 @@ class Producer:
         deadline = datetime.datetime.now()
         # Test then train  ???
         deadline = deadline + datetime.timedelta(seconds=initial_training_time)
+
         # Accessing each group in the list test_groups
         for group in test_groups:
 
-            released_at = datetime.datetime.now()
+            train_released_at = datetime.datetime.now()
             if i != -1:
                 # In parallel accessing the predictions
                 train_group = train_groups[i]
                 # Adding tag, deadline and released at to every item in train group / prediction
                 for item in train_group:
                     item['tag'] = 'TRAIN'
-                    deadline = released_at + datetime.timedelta(seconds=int(predictions_time_interval))
-                    item['Deadline'] = deadline
-                    item['Released'] = released_at
+                    # deadline = deadline + datetime.timedelta(seconds=int(predictions_time_interval) * i+1)
+                    item['Deadline'] = train_released_at + datetime.timedelta(seconds=int(predictions_time_interval))
+                    item['Released'] = train_released_at
                     # item
                     try:
                         self.send(topic, json.dumps(item, default=json_util.default).encode('utf-8'))
@@ -289,6 +292,7 @@ class Producer:
                     del item['Deadline']
                     del item['Released']
                     del item['tag']
+                    deadline = released_at + datetime.timedelta(seconds=int(predictions_time_interval))
                     item['Deadline'] = deadline.strftime("%Y-%m-%d %H:%M:%S")
                     item['Released'] = released_at.strftime("%Y-%m-%d %H:%M:%S")
                     item['competition_id'] = competition_id
@@ -299,6 +303,7 @@ class Producer:
                         self.send(spark_topic, json.dumps(item, default=json_util.default).encode('utf-8'))
 
                         # print("Train item:", item)
+            released_at = datetime.datetime.now()
             # for item in test group add tag, deadline and released
             for item in group:
                 item['tag'] = 'TEST'

@@ -37,14 +37,6 @@ class SparkEvaluator:
             .selectExpr("cast (value as string) as json")\
             .select(from_json("json", self.train_schema).alias("data"))\
             .select("data.*")
-        # Casting timestamps to TimestampType
-        records = golden\
-            .withColumn("timestamp_deadline",
-                        unix_timestamp(golden['Deadline'], "yyyy-MM-dd HH:mm:ss").cast(TimestampType()))\
-            .withColumn("timestamp_released",
-                        unix_timestamp(golden['Released'], "yyyy-MM-dd HH:mm:ss").cast(TimestampType()))\
-            .drop("Deadline")\
-            .drop("Released")
         # Reading stream of predictions from Kafka
         prediction_stream = self.sc \
             .readStream \
@@ -55,6 +47,14 @@ class SparkEvaluator:
             .selectExpr("cast (value as string) as json") \
             .select(from_json("json", self.prediction_schema).alias("data")) \
             .select("data.*")
+        # Casting timestamps to TimestampType
+        records = golden\
+            .withColumn("timestamp_deadline",
+                        unix_timestamp(golden['Deadline'], "yyyy-MM-dd HH:mm:ss").cast(TimestampType()))\
+            .withColumn("timestamp_released",
+                        unix_timestamp(golden['Released'], "yyyy-MM-dd HH:mm:ss").cast(TimestampType()))\
+            .drop("Deadline")\
+            .drop("Released")
 
         # Renaming the fields to perform a join
         new_fields = []
@@ -94,9 +94,13 @@ class SparkEvaluator:
             .withColumn("num_submissions",
                         when(join_result["timestamp_submitted"] <= join_result["timestamp_deadline"], 1).otherwise(0)) \
             .withColumn("latency", unix_timestamp(join_result["timestamp_submitted"]) -
-                        unix_timestamp(join_result["timestamp_released"]))\
-            .withColumn("penalized", when(join_result["timestamp_submitted"] > join_result["timestamp_deadline"], 1)
-                        .otherwise(0)) \
+                        unix_timestamp(join_result["timestamp_released"])) \
+            .drop("timestamp_released")
+
+        join_table = join_table\
+            .withColumn("penalized", abs(join_table["num_submissions"] - lit(1)))\
+            .withColumn("latency", when(join_table["num_submissions"] == 0, self.competition.predictions_time_interval)
+                        .otherwise(join_table["latency"]))\
             .drop("rowID")
 
         columns_to_sum = ["latency", "num_submissions", "penalized"]
@@ -121,8 +125,7 @@ class SparkEvaluator:
         # Dropping unnecessary columns
         join_table = join_table\
             .drop("timestamp_deadline")\
-            .drop("timestamp_submitted")\
-            .drop("timestamp_released")
+            .drop("timestamp_submitted")
 
         exprs = {x: "sum" for x in columns_to_sum}
         # Grouping by user_id and aggregation
@@ -135,7 +138,7 @@ class SparkEvaluator:
                 batch_measure_col = str(measure) + "_" + target.replace(" ", "")
                 measure_col = "sum(" + str(measure) + "_" + target.replace(" ", "") + ")"
                 results = results\
-                    .withColumn(batch_measure_col, 100 * results[measure_col] / results["sum(num_submissions)"])\
+                    .withColumn(batch_measure_col, 100 * results[measure_col] / (results["sum(num_submissions)"] + results["sum(penalized)"]))\
                     .drop(measure_col)
         # Preparing to send to Kafka
         # Renaming and dropping columns
@@ -144,17 +147,23 @@ class SparkEvaluator:
             .withColumnRenamed("sum(penalized)", "penalized")\
             .withColumnRenamed("sum(num_submissions)", "num_submissions")\
             .withColumnRenamed("prediction_user_id", "user_id")\
-            .drop("sum(latency)")
+            .drop("sum(latency)") \
+            .writeStream \
+            .format("console") \
+            .outputMode("update") \
+            .start()
         # Sending stream to Kafka
-        output_stream = results \
-            .selectExpr("to_json(struct(*)) AS value")\
-            .writeStream\
+       #  output_stream = results \
+        #     .selectExpr("to_json(struct(*)) AS value")\
+
+        """
             .format("kafka") \
             .option("kafka.bootstrap.servers", self.broker) \
             .option("topic", self.competition.name.lower().replace(" ", "") + 'spark_measures') \
             .option("checkpointLocation", "/tmp/checkpoint") \
             .outputMode("update") \
             .start()
+        """
 
         pred = predictions_with_watermark.writeStream.format("console").start()
         rec = records_with_watermark.writeStream.format("console").start()
