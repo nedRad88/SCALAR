@@ -114,8 +114,14 @@ _COMPETITION_REPO = CompetitionRepository(_SQL_HOST, _SQL_DBNAME)
 _DATASTREAM_REPO = DatastreamRepository(_SQL_HOST, _SQL_DBNAME)
 _USER_REPO = UserRepository(_SQL_HOST, _SQL_DBNAME)
 _SUBSCRIPTION_REPO = SubscriptionRepository(_SQL_HOST, _SQL_DBNAME)
-
 _MONGO_REPO = MongoRepository(_MONGO_HOST)
+
+# Standard evaluation measures, should be written in MongoDB if they don't exist there already
+standard_measures = [{'id': 1, 'name': 'MAPE', 'type': 'regression'}, {'id': 2, 'name': 'MSE', 'type': 'regression'},
+                     {'id': 3, 'name': 'MAE', 'type': 'regression'},
+                     {'id': 4, 'name': 'ACC', 'type': 'classification'},
+                     {'id': 5, 'name': 'kappa', 'type': 'classification'}]
+_MONGO_REPO.insert_standard_measures(standard_measures=standard_measures)
 
 
 def authorized(*roles):
@@ -535,8 +541,10 @@ def get_leaderboard_by_competition(competition_id):
     competition_results = _MONGO_REPO.get_users_ranking_by_field_by_measure(competition_id, field, measure)
 
     for r in competition_results:
-        if r['id'] == 0:
-            res = {'id': r['id'], 'firstName': "Test", 'lastName': "Baseline", 'email': " ",
+        if r['id'] >= 100:
+            first_name = "Test"
+            last_name = "Baseline"
+            res = {'id': r['id'], 'firstName': first_name, 'lastName': last_name, 'email': " ",
                    'measure': r['measures']}
         else:
             user = _USER_REPO.get_user_by_id(r['id'])

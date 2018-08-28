@@ -237,11 +237,18 @@ class MongoRepository:
         # data = [{'id' : 1, 'measures' : 0.3}, {'id' : 2, 'measures' : 0.5}]
         return data
 
+    def insert_standard_measures(self, standard_measures):
+        db = self.client['evaluation_measures']
+        collection = db['standard_measures']
+        measures = collection.find({})
+        existing_measures = []
+        for m in measures:
+            existing_measures.append(m)
 
-
-
-
-
-
-
-
+        for measure in standard_measures:
+            insert = True
+            for m in existing_measures:
+                if m['name'] == measure['name']:
+                    insert = False
+            if insert:
+                collection.insert_one(measure)

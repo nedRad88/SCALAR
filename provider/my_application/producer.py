@@ -13,7 +13,7 @@ import sys
 import sqlalchemy
 from repositories.CompetitionRepository import CompetitionRepository, Competition, Datastream, DatastreamRepository
 from repositories.KafkaToMongo import ConsumerToMongo
-from repositories.BaselineToMongo import BaselineToMongo
+from repositories.BaselineToMongo_test import BaselineToMongo
 from spark_evaluation import SparkEvaluator
 from evaluator import Evaluator
 from bson import json_util
@@ -22,14 +22,16 @@ from consumer import DataStreamerServicer
 from stream_server import StreamServer
 import os
 from pyspark.sql import SparkSession
-from pyspark.sql.functions import *
-from pyspark.sql.types import *
-from pyspark.sql.types import _infer_type
-from baseline_client import baselineClient
 from sparkToMongo import SparkToMongo
+from pyspark.conf import SparkConf
+from repository import MongoRepository
 
 os.environ['PYSPARK_SUBMIT_ARGS'] = '--packages org.apache.spark:spark-sql-kafka-0-10_2.11:2.3.1 pyspark-shell'
-spark = SparkSession.builder.appName("Kafka_structured_streaming").getOrCreate()
+spark = SparkSession\
+    .builder\
+    .appName("Kafka_structured_streaming")\
+    .master("local[*]")\
+    .getOrCreate()
 # from apscheduler.schedulders.background.BackgroundScheduler import remove_job
 
 
@@ -52,72 +54,116 @@ _gRPC_SERVER = StreamServer()
 
 
 def _create_competition(competition, competition_config):
-    threading.Thread(target=_create_competition_thread, args=(competition, competition_config)).start()
+    items, predictions, initial_batch, classes = read_csv_file(competition, competition_config)
+    threading.Thread(target=_create_competition_thread, args=(competition, items, predictions, initial_batch)).start()
     threading.Thread(target=_create_consumer, args=(competition,)).start()
     threading.Thread(target=_create_mongo_sink_consumer,
                      args=(competition.name.lower().replace(" ", "") + 'predictions',)).start()
-    time.sleep(2)
     threading.Thread(target=_create_baseline, args=(competition, competition_config)).start()
-    threading.Thread(target=_create_evaluation_spark, args=(spark, SERVER_HOST, competition, competition_config)).start()
+    time.sleep(2)
+    threading.Thread(target=_create_evaluation_spark, args=(spark, SERVER_HOST, competition, competition_config, classes)).start()
     threading.Thread(target=_create_mongo_sink_evaluation, args=(SERVER_HOST, competition, competition_config)).start()
 
 
-def _create_evaluation_spark(spark, kafka_server, competition, competition_config):
-    train_schema, prediction_schema, targets = _create_json_schema(competition, competition_config)
-    spark_evaluator = SparkEvaluator(spark, kafka_server, competition,
-                                     train_schema, prediction_schema, targets, competition_config)
-    spark_evaluator.main()
+def read_csv_file(competition, competition_config, data_format='csv'):
+    initial_batch = []
+    items = []
+    predictions = []
+    classes = {}
+    initial_batch_size = competition.initial_batch_size
 
-
-def _create_json_schema(competition, competition_config):
     datastream = _DATASTREAM_REPO.get_datastream_by_id(competition.datastream_id)
-    file_name = datastream.file_path
-    file_path = os.path.join(_UPLOAD_REPO, _STREAM_REPO, file_name)
-    target_dict = {}
+    file_path = datastream.file_path
+    # Creating file path: ../local/data/uploads/stream_data_file
+    file_path = os.path.join(_UPLOAD_REPO, _STREAM_REPO, file_path)
 
-    with open(file_path, 'r') as csvfile:
-        datareader = csv.reader(csvfile, delimiter=',', quotechar='|')
-        data = list(datareader)
-        header = data[0]
-        data_sample = data[1]
-        for i in range(0, len(header)):
-            for key in competition_config.keys():
-                x = header[i].lower().replace(' ', '')  # Field name
-                y = str(key.lower().replace(' ', ''))  # Key
-                if x == y:
-                    # field = header[i].replace(" ", "")
-                    target_dict[header[i]] = data_sample[i]
-        print("Data sample: ", data_sample)
-        print("Target dict: ", target_dict)
+    # _UPLOAD_REPO+ file_path
+    # Read csv file
+    count_classes = False
+    for key in competition_config.keys():
+        for value in competition_config[key]:
+            if value in ["kappa", "f1", "precision", "recall"]:
+                count_classes = True
+                classes[key] = []
 
-    # timestamp_schema = StructType().add("$date", LongType(), False)
+    if data_format == 'csv':
+        try:
+            with open(file_path, 'r') as csvfile:
+                datareader = csv.reader(csvfile, delimiter=',', quotechar='|')
+                data = list(datareader)
+                nb_rows = len(data)
+                header = data[0]
+                rowID = 1
+                # Process initial batch
+                for row in range(1, initial_batch_size + 1):
+                    # If the row is not empty ???
+                    if not all(item == "" for item in data[row]):
 
-    train_schema = StructType()\
-        .add("Deadline", StringType(), False)\
-        .add("Released", StringType(), False)\
-        .add("competition_id", IntegerType(), False)\
-        .add("rowID", IntegerType(), False)
+                        values = {'tag': 'INIT', 'rowID': rowID}
+                        rowID = rowID + 1
+                        for i in range(0, len(data[row])):
+                            field = header[i].replace(" ", "")
+                            values[field] = data[row][i]
 
-    prediction_schema = StructType()\
-        .add("rowID", IntegerType(), False)\
-        .add("submitted_on", StringType(), False)\
-        .add("competition_id", IntegerType(), False)\
-        .add("user_id", IntegerType(), False)
+                        initial_batch.append(values)
+                # After the initial batch
+                for row in range(initial_batch_size + 1, nb_rows - 1):
+                    # If row is not empty ???
+                    if not all(item == "" for item in data[row]):
+                        # Create a dictionaries: values = {'rowID': rowID}
+                        # prediction = {'rowID': rowID}
+                        try:
+                            values = {}
+                            values['rowID'] = rowID
+                            prediction = {}
+                            prediction['rowID'] = rowID
+                            rowID = rowID + 1
+                            # print("Competition config: ", competition_config)
+                            # For every field in row
+                            for i in range(0, len(data[row])):
+                                # keys in competition_config  ??? targets?
+                                for key in competition_config.keys():
+                                    x = header[i].lower().replace(' ', '')  # Field name
+                                    y = str(key.lower().replace(' ', ''))  # Key
+                                    # If field name == target = > prediction
+                                    field = header[i].replace(" ", "")
+                                    if x == y:
+                                        prediction[field] = data[row][i]
+                                        if count_classes:
+                                            if str(data[row][i]) not in classes[field]:
+                                                classes[field].append(str(data[row][i]))
+                                    # If field name != target = > values
+                                    else:
+                                        values[field] = data[row][i]
 
-    targets = []
+                            # add values to items list and prediction to predictions list
+                            items.append(values)
+                            predictions.append(prediction)
 
-    for key, value in target_dict.items():
-        # test_schema.add(key, _infer_type(value))
-        if competition_config[str(key).replace(" ", "")] == "MAPE":
-            train_schema.add(str(key).replace(" ", ""), FloatType(), False)
-            prediction_schema.add(str(key).replace(" ", ""), FloatType(), False)
-        else:
-            train_schema.add(str(key).replace(" ", ""), StringType(), False)
-            prediction_schema.add(str(key).replace(" ", ""), StringType(), False)
+                        except Exception as e:
+                            print('error')
 
-        targets.append(str(key).replace(" ", ""))
+        except IOError as e:
+            print("could not open file" + file_path)
 
-    return train_schema, prediction_schema, targets  # , test_schema, init_schema
+    return items, predictions, initial_batch, classes
+
+
+def _create_evaluation_spark(spark_context, kafka_server, competition, competition_config, classes):
+    mongo = MongoRepository('172.22.0.3')
+    db = mongo.client['evaluation_measures']
+    collection = db['standard_measures']
+    measures = collection.find({})
+    regression_measures = []
+    classification_measures = []
+    for m in measures:
+        if m['type'] == 'regression':
+            regression_measures.append(m['name'])
+        if m['type'] == 'classification':
+            classification_measures.append(m['name'])
+    spark_evaluator = SparkEvaluator(spark_context, kafka_server, competition, competition_config, classes,
+                                     regression_measures, classification_measures)
+    spark_evaluator.run()
 
 
 def _create_mongo_sink_evaluation(kafka_server, competition, competition_config):
@@ -130,12 +176,12 @@ def _create_evaluation_engine(competition_id, config, evaluation_time_interval):
     threading.Thread(target=_create_evaluation_job, args=(competition_id, config, evaluation_time_interval)).start()
 
 
-def _create_competition_thread(competition, competition_config):
+def _create_competition_thread(competition, items, predictions, initial_batch):
     # print(competition, datetime.datetime.now())
     print("usao u create competition tred")
     producer = Producer(SERVER_HOST)  # 172.22.0.2:9092
 
-    producer.create_competition(competition, competition_config)
+    producer.create_competition(competition, items, predictions, initial_batch)
     # producer.producer.flush()
 
 
@@ -150,6 +196,7 @@ def _create_mongo_sink_consumer(topic):
 
 
 def _create_baseline(competition, competition_config):
+
     topic = competition.name.lower().replace(" ", "")
     baseline = BaselineToMongo(SERVER_HOST, topic, competition, competition_config)
     baseline.write()
@@ -174,76 +221,8 @@ class Producer:
 
         self.producer.send(topic, message)  # Sending messages to a certain topic
 
-    def main(self, topic, file_path, initial_batch_size, initial_training_time, batch_size, time_interval,
-             predictions_time_interval, competition_config, spark_topic, competition_id, with_timestamp=False, data_format='csv'):
-
-        initial_batch = []
-        items = []
-        predictions = []
-
-        # Creating file path: ../local/data/uploads/stream_data_file
-        file_path = os.path.join(_UPLOAD_REPO, _STREAM_REPO, file_path)
-
-        # _UPLOAD_REPO+ file_path
-        # Read csv file
-        if data_format == 'csv':
-            try:
-                with open(file_path, 'r') as csvfile:
-                    datareader = csv.reader(csvfile, delimiter=',', quotechar='|')
-                    data = list(datareader)
-                    nb_rows = len(data)
-                    header = data[0]
-                    rowID = 1
-                    # Process initial batch
-                    for row in range(1, initial_batch_size + 1):
-                        # If the row is not empty ???
-                        if not self.is_not_empty(data[row]):
-
-                            values = {}
-                            values['tag'] = 'INIT'
-                            values['rowID'] = rowID
-                            rowID = rowID + 1
-                            for i in range(0, len(data[row])):
-                                field = header[i].replace(" ", "")
-                                values[field] = data[row][i]
-
-                            initial_batch.append(values)
-                    # After the initial batch
-                    for row in range(initial_batch_size + 1, nb_rows - 1):
-                        # If row is not empty ???
-                        if not self.is_not_empty(data[row]):
-                            # Create a dictionaries: values = {'rowID': rowID}
-                            # prediction = {'rowID': rowID}
-                            try:
-                                values = {}
-                                values['rowID'] = rowID
-                                prediction = {}
-                                prediction['rowID'] = rowID
-                                rowID = rowID + 1
-                                # print("Competition config: ", competition_config)
-                                # For every field in row
-                                for i in range(0, len(data[row])):
-                                    # keys in competition_config  ??? targets?
-                                    for key in competition_config.keys():
-                                        x = header[i].lower().replace(' ', '')  # Field name
-                                        y = str(key.lower().replace(' ', ''))  # Key
-                                        # If field name == target = > prediction
-                                        field = header[i].replace(" ", "")
-                                        if x == y:
-                                            prediction[field] = data[row][i]
-                                        # If field name != target = > values
-                                        else:
-                                            values[field] = data[row][i]
-
-                                # add values to items list and prediction to predictions list
-                                items.append(values)
-                                predictions.append(prediction)
-
-                            except Exception as e:
-                                print('error')
-
-            except IOError as e:
-                print("could not open file" + file_path)
+    def main(self, topic, initial_batch, items, predictions, initial_training_time, batch_size, time_interval,
+             predictions_time_interval, spark_topic, competition_id, with_timestamp=False, data_format='csv'):
 
         for item in initial_batch:
             try:
@@ -363,19 +342,19 @@ class Producer:
         return all(item == "" for item in row)
 
     # Creating competition, competition_config ???
-    def create_competition(self, competition, competition_config):
+    def create_competition(self, competition, items, predictions,
+                                                              initial_batch):
         print("Came here, create competition: ", competition.name)
-        datastream = _DATASTREAM_REPO.get_datastream_by_id(competition.datastream_id)
         self.main(
             topic=competition.name.lower().replace(" ", ""),
-            file_path=datastream.file_path,
-            initial_batch_size=competition.initial_batch_size,
             initial_training_time=competition.initial_training_time,
+            initial_batch=initial_batch,
+            items=items,
+            predictions=predictions,
             batch_size=competition.batch_size,
             time_interval=competition.time_interval,
             predictions_time_interval=competition.predictions_time_interval,
-            competition_config=competition_config,
-            spark_topic=competition.name.lower().replace(" ", "")+'spark_train',
+            spark_topic=competition.name.lower().replace(" ", "") + 'spark_train',
             competition_id=competition.competition_id)
 
 

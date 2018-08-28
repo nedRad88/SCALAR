@@ -4,7 +4,7 @@
 ############################################################
 
 # Set the base image to Ubuntu
-FROM nedeljkoradulovic88/base1604:v4
+FROM nedeljkoradulovic88/base1604:v5
 # File Author / Maintainer
 MAINTAINER Nedeljko Radulovic
 
