@@ -12,6 +12,7 @@ MAINTAINER Nedeljko Radulovic
 WORKDIR /my_application
 ADD my_application /my_application
 
+
 # Expose ports
 EXPOSE 50051
 EXPOSE 9092
@@ -19,6 +20,10 @@ EXPOSE 27017
 EXPOSE 5005
 
 # Set the default directory where CMD will execute
+WORKDIR /my_application/Multiflow/scikit-multiflow-master
+RUN pip3 install -U numpy
+RUN pip3 install -U .
+
 WORKDIR /my_application
 
 # Set the default command to execute    

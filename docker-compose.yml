@@ -107,6 +107,7 @@ services:
     environment:
       TZ: "Europe/Paris"
       SPARK_CONF_DIR: /conf
+      PACKAGES: 'org.apache.spark:spark-sql-kafka-0-10_2.11:2.3.1'
     ports:
       - "4040:4040"
       - "6066:6066"
@@ -125,6 +126,8 @@ services:
       - 7006
       - 7077
       - 6066
+    #command: ['bin/spark-class org.apache.spark.deploy.master.Master', './bin/pyspark --packages org.apache.spark:spark-sql-kafka-0-10_2.11:2.3.1']
+
   worker:
     image: gettyimages/spark
     networks:
@@ -138,6 +141,7 @@ services:
       SPARK_WORKER_MEMORY: 2g
       SPARK_WORKER_PORT: 8881
       SPARK_WORKER_WEBUI_PORT: 8082
+      PACKAGES: 'org.apache.spark:spark-sql-kafka-0-10_2.11:2.3.1'
     links:
       - spark
     expose:

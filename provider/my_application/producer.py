@@ -13,7 +13,7 @@ import sys
 import sqlalchemy
 from repositories.CompetitionRepository import CompetitionRepository, Competition, Datastream, DatastreamRepository
 from repositories.KafkaToMongo import ConsumerToMongo
-from repositories.BaselineToMongo_test import BaselineToMongo
+from repositories.BaselineToMongo import BaselineToMongo
 from spark_evaluation import SparkEvaluator
 from evaluator import Evaluator
 from bson import json_util
@@ -26,11 +26,12 @@ from sparkToMongo import SparkToMongo
 from pyspark.conf import SparkConf
 from repository import MongoRepository
 
-os.environ['PYSPARK_SUBMIT_ARGS'] = '--packages org.apache.spark:spark-sql-kafka-0-10_2.11:2.3.1 pyspark-shell'
+# os.environ['PYSPARK_SUBMIT_ARGS'] = '--packages org.apache.spark:spark-sql-kafka-0-10_2.11:2.3.1 pyspark-shell'
 spark = SparkSession\
     .builder\
     .appName("Kafka_structured_streaming")\
-    .master("local[*]")\
+    .master("spark://172.22.0.8:7077")\
+    .config('spark.jars.packages', 'org.apache.spark:spark-sql-kafka-0-10_2.11:2.3.1')\
     .getOrCreate()
 # from apscheduler.schedulders.background.BackgroundScheduler import remove_job
 
