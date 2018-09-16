@@ -25,7 +25,7 @@ from repository import MongoRepository
 from flask import send_file
 import logging
 
-logging.basicConfig(level='DEBUG')
+logging.basicConfig(level='INFO')
 from itsdangerous import URLSafeTimedSerializer
 import csv
 from io import BytesIO
@@ -114,8 +114,14 @@ _COMPETITION_REPO = CompetitionRepository(_SQL_HOST, _SQL_DBNAME)
 _DATASTREAM_REPO = DatastreamRepository(_SQL_HOST, _SQL_DBNAME)
 _USER_REPO = UserRepository(_SQL_HOST, _SQL_DBNAME)
 _SUBSCRIPTION_REPO = SubscriptionRepository(_SQL_HOST, _SQL_DBNAME)
-
 _MONGO_REPO = MongoRepository(_MONGO_HOST)
+
+# Standard evaluation measures, should be written in MongoDB if they don't exist there already
+standard_measures = [{'id': 1, 'name': 'MAPE', 'type': 'regression'}, {'id': 2, 'name': 'MSE', 'type': 'regression'},
+                     {'id': 3, 'name': 'MAE', 'type': 'regression'},
+                     {'id': 4, 'name': 'ACC', 'type': 'classification'},
+                     {'id': 5, 'name': 'kappa', 'type': 'classification'}]
+_MONGO_REPO.insert_standard_measures(standard_measures=standard_measures)
 
 
 def authorized(*roles):
@@ -203,7 +209,7 @@ def confirm_email(token):
 
 @app.route('/auth/register', methods=['POST'])
 def register():
-    data = json.loads(request.data)
+    data = json.loads(request.data.decode('utf-8'))
     # print(data)
 
     first_name = data['firstName']
@@ -348,19 +354,7 @@ def competitions():
         evaluation_measures = {'competition_id': competition.competition_id, 'measures': competition_config}
         _MONGO_REPO.insert_document('evaluation_measures', 'evaluation_measures', evaluation_measures)
 
-        test_user = {}
-        test_user['user_id'] = 3
-        test_user['competition_code'] = code
-        test_user['email'] = "TEST"
-
-        if competition is not None and test_user is not None:
-            # insert subscriptions
-            subscription = Subscription(None, competition.competition_id, test_user['user_id'])
-            _SUBSCRIPTION_REPO.insert_one(subscription)
-
-            test_user['user_secret_key'] = get_subscription_token(competition.competition_id, user_id=test_user['user_id'])
-
-        _SCHEDULER.schedule_competition(competition, competition_config, test_user)
+        _SCHEDULER.schedule_competition(competition, competition_config)
         # print("***********Competition scheduled!**********")
 
         return json.dumps({'success': True}), 200, {'ContentType': 'application/json'}
@@ -413,7 +407,7 @@ def get_datastreams():
             data_file_name = name + extension
             ds_path = os.path.join(data_directory, data_file_name)
             if not os.path.exists(data_directory):
-                os.mkdir(data_directory)
+                os.makedirs(data_directory)
             data_file.save(os.path.join(ds_path))
 
         datastream = Datastream(None, name=name, file_path=data_file_name)
@@ -547,9 +541,15 @@ def get_leaderboard_by_competition(competition_id):
     competition_results = _MONGO_REPO.get_users_ranking_by_field_by_measure(competition_id, field, measure)
 
     for r in competition_results:
-        user = _USER_REPO.get_user_by_id(r['id'])
-        res = {'id': r['id'], 'firstName': user.first_name, 'lastName': user.last_name, 'email': user.email,
-               'measure': r['measures']}
+        if r['id'] >= 100:
+            first_name = "Test"
+            last_name = "Baseline"
+            res = {'id': r['id'], 'firstName': first_name, 'lastName': last_name, 'email': " ",
+                   'measure': r['measures']}
+        else:
+            user = _USER_REPO.get_user_by_id(r['id'])
+            res = {'id': r['id'], 'firstName': user.first_name, 'lastName': user.last_name, 'email': user.email,
+                   'measure': r['measures']}
         results.append(res)
 
     return jsonify(results)
@@ -778,4 +778,4 @@ if __name__ == '__main__':
     # app.run(host='0.0.0.0', port='5000')
     # http_server = WSGIServer(('', 5000), app)
     # http_server.serve_forever()
-    wsgi.server(eventlet.listen(('', 5000)), app)
+    wsgi.server(eventlet.listen(('', 5000)), app, debug=True)

@@ -13,3 +13,9 @@ print(dict)
 
 json1 = json.dumps(dict, default=json_util.default).encode('utf-8')
 print(json1)
+
+
+hello_list = []
+
+for item in hello_list:
+    print("Hello")

@@ -46,6 +46,8 @@ services:
       - /etc/localtime:/etc/localtime:ro
     container_name: sql_db
     command: [mysqld, --default-authentication-plugin=mysql_native_password]
+    depends_on:
+      - spark
 
   provider:
     build: provider
@@ -96,6 +98,65 @@ services:
       - /etc/localtime:/etc/localtime:ro
     depends_on:
       - sql_db
+
+  spark:
+    image: gettyimages/spark
+    networks:
+      new_network:
+        ipv4_address: 172.22.0.8
+    environment:
+      TZ: "Europe/Paris"
+      SPARK_CONF_DIR: /conf
+      PACKAGES: 'org.apache.spark:spark-sql-kafka-0-10_2.11:2.3.1'
+    ports:
+      - "4040:4040"
+      - "6066:6066"
+      - "7077:7077"
+      - "8080:8080"
+    container_name: spark
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+      - ./provider/my_application/conf:/conf
+    expose:
+      - 7001
+      - 7002
+      - 7003
+      - 7004
+      - 7005
+      - 7006
+      - 7077
+      - 6066
+    #command: ['bin/spark-class org.apache.spark.deploy.master.Master', './bin/pyspark --packages org.apache.spark:spark-sql-kafka-0-10_2.11:2.3.1']
+
+  worker:
+    image: gettyimages/spark
+    networks:
+      new_network:
+        ipv4_address: 172.22.0.9
+    command: 'bin/spark-class org.apache.spark.deploy.worker.Worker spark://172.22.0.8:7077'
+    hostname: worker
+    environment:
+      SPARK_CONF_DIR: /conf
+      SPARK_WORKER_CORES: 2
+      SPARK_WORKER_MEMORY: 2g
+      SPARK_WORKER_PORT: 8881
+      SPARK_WORKER_WEBUI_PORT: 8082
+      PACKAGES: 'org.apache.spark:spark-sql-kafka-0-10_2.11:2.3.1'
+    links:
+      - spark
+    expose:
+      - 7012
+      - 7013
+      - 7014
+      - 7015
+      - 7016
+      - 8881
+    ports:
+      - 8082:8082
+    container_name: worker
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+      - ./provider/my_application/conf:/conf
 
 networks:
   new_network:
