@@ -1,0 +1,56 @@
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: spark
+  name: spark
+spec:
+  ports:
+  - name: "4040"
+    port: 4040
+    targetPort: 4040
+  - name: "6066"
+    port: 6066
+    targetPort: 6066
+  - name: "7077"
+    port: 7077
+    targetPort: 7077
+  - name: "8080"
+    port: 8080
+    targetPort: 8080
+  selector:
+    app: spark
+  clusterIP: None
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: spark
+  name: spark
+spec:
+  replicas: 1
+  strategy: {}
+  template:
+    metadata:
+      labels:
+        app: spark
+    spec:
+      containers:
+      - env:
+        - name: PACKAGES
+          value: org.apache.spark:spark-sql-kafka-0-10_2.11:2.3.1
+        - name: SPARK_CONF_DIR
+          value: /conf
+        - name: TZ
+          value: Europe/Paris
+        image: gettyimages/spark
+        name: spark
+        ports:
+        - containerPort: 4040
+        - containerPort: 6066
+        - containerPort: 7077
+        - containerPort: 8080
+        resources: {}
+      restartPolicy: Always
+status: {}
