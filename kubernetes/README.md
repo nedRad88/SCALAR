@@ -1,4 +1,4 @@
-# When Kubernetes met Terraform... on Azure
+# Deploy Provider App on Kubernetes
 
 Terraform provides an easy way to define, preview, and deploy cloud infrastructure by using a [covenient templating language](https://www.terraform.io/docs/configuration/syntax.html). One of the main advantages of Terraform is presence of many [providers](https://www.terraform.io/docs/providers/) which is useful because it allows us to interact with various destination API's (Azure, VMware, Alicloud, AWS, … even GitHub and DNS) in consistent manner utilizing Terraform template language.  
 To use Terraform for provisioning Azure Kubernetes Service (AKS), a couple of prerequisites must be met.
@@ -131,7 +131,7 @@ kubectl apply -f sql-db-pv-claim.yaml
 kubectl apply -f mongo-db-pv-claim.yaml
 kubectl apply -f provider-pv-claim.yaml
 ```
-followd by the deployment of application services:
+followed by the deployment of application services:
 ```
 kubectl apply -f sql-db-deployment.yaml
 kubectl apply -f mongo-db-deployment.yaml
