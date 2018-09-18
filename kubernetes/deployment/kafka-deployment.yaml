@@ -1,0 +1,46 @@
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: kafka
+  name: kafka
+spec:
+  ports:
+  - name: "9092"
+    port: 9092
+    targetPort: 9092
+  - name: "2181"
+    port: 2181
+    targetPort: 2181
+  selector:
+    app: kafka
+  clusterIP: None
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: kafka
+  name: kafka
+spec:
+  replicas: 1
+  strategy: {}
+  template:
+    metadata:
+      labels:
+        app: kafka
+    spec:
+      containers:
+      - env:
+        - name: KAFKA_ADVERTISED_HOST_NAME
+          value: 172.22.0.2
+        - name: TZ
+          value: Europe/Paris
+        image: spotify/kafka
+        name: kafka
+        ports:
+        - containerPort: 9092
+        - containerPort: 2181
+        resources: {}
+      restartPolicy: Always
+status: {}
