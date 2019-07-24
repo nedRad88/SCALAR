@@ -7,6 +7,7 @@ from auth import decode_auth_token, get_auth_token
 from subscription_auth import get_subscription_token
 from functools import wraps
 from flask_mail import Mail, Message
+from gevent.pywsgi import WSGIServer
 import threading
 from flask import request
 import json
@@ -52,8 +53,8 @@ app = Flask(__name__)
 
 app.config['MAIL_SERVER'] = 'smtp.gmail.com'
 app.config['MAIL_PORT'] = 465
-app.config['MAIL_USERNAME'] = 'nedeljko.radulovic88@gmail.com'
-app.config['MAIL_PASSWORD'] = 'usracuseU11i22'  # 'd1i3h5i7a'
+app.config['MAIL_USERNAME'] = 'streaming.challenge@gmail.com'
+app.config['MAIL_PASSWORD'] = 'c0mp3tit1on2019'  # 'd1i3h5i7a'
 app.config['MAIL_USE_TLS'] = False
 app.config['MAIL_USE_SSL'] = True
 app.config['SECRET_KEY'] = 's3cr3t'
@@ -63,6 +64,8 @@ app.debug = True
 
 _SCHEDULER = Scheduler()
 _SCHEDULER.start()
+
+registration_deadline = dt.datetime(2019, 8, 25, 00, 00)
 
 
 def generate_confirmation_token(email):
@@ -114,8 +117,14 @@ _COMPETITION_REPO = CompetitionRepository(_SQL_HOST, _SQL_DBNAME)
 _DATASTREAM_REPO = DatastreamRepository(_SQL_HOST, _SQL_DBNAME)
 _USER_REPO = UserRepository(_SQL_HOST, _SQL_DBNAME)
 _SUBSCRIPTION_REPO = SubscriptionRepository(_SQL_HOST, _SQL_DBNAME)
-
 _MONGO_REPO = MongoRepository(_MONGO_HOST)
+
+# Standard evaluation measures, should be written in MongoDB if they don't exist there already
+standard_measures = [{'id': 1, 'name': 'MAPE', 'type': 'regression'}, {'id': 2, 'name': 'MSE', 'type': 'regression'},
+                     {'id': 3, 'name': 'MAE', 'type': 'regression'},
+                     {'id': 4, 'name': 'ACC', 'type': 'classification'},
+                     {'id': 5, 'name': 'kappa', 'type': 'classification'}]
+_MONGO_REPO.insert_standard_measures(standard_measures=standard_measures)
 
 
 def authorized(*roles):
@@ -203,7 +212,8 @@ def confirm_email(token):
 
 @app.route('/auth/register', methods=['POST'])
 def register():
-    data = json.loads(request.data)
+
+    data = json.loads(request.data.decode('utf-8'))
     # print(data)
 
     first_name = data['firstName']
@@ -218,10 +228,11 @@ def register():
     token = generate_confirmation_token(email)
 
     # Sending Confirmation email
-    msg = Message('Streaming Data Challenge : Registration confirmed', sender='nedeljko.radulovic88@gmail.com',
+    msg = Message('Streaming Data Challenge : Registration confirmed', sender='streaming.challenge@gmail.com',
                   recipients=[email])
     # msg.body = "Hello  " + first_name + ' ' + last_name + "\n\n Welcome to Streaming Data Challenge platform \n\n Cheers, \n\n The team \n Please confirm \n" "http://streamigchallenge.cloudapp.net:5000/auth/api/account/confirm/"+ token
-    msg.body = "Hello  " + first_name + ' ' + last_name + "\n\n Welcome to Streaming Data Challenge platform \n\n Cheers, \n\n The team \n Please confirm \n" "http://streamingcompetition.francecentral.cloudapp.azure.com:5000/auth/api/account/confirm/" + token
+    msg.body = "Hello  " + first_name + ' ' + last_name + "\n\n Welcome to Streaming Data Challenge platform \n\n Cheers, \n\n The team \n Please confirm \n" "localhost:5000/auth/api/account/confirm/" + token
+    # http: // streamingcompetition.francecentral.cloudapp.azure.com
     # Was localhost:5000/auth...
     mail.send(msg)
 
@@ -401,7 +412,7 @@ def get_datastreams():
             data_file_name = name + extension
             ds_path = os.path.join(data_directory, data_file_name)
             if not os.path.exists(data_directory):
-                os.mkdir(data_directory)
+                os.makedirs(data_directory)
             data_file.save(os.path.join(ds_path))
 
         datastream = Datastream(None, name=name, file_path=data_file_name)
@@ -535,9 +546,15 @@ def get_leaderboard_by_competition(competition_id):
     competition_results = _MONGO_REPO.get_users_ranking_by_field_by_measure(competition_id, field, measure)
 
     for r in competition_results:
-        user = _USER_REPO.get_user_by_id(r['id'])
-        res = {'id': r['id'], 'firstName': user.first_name, 'lastName': user.last_name, 'email': user.email,
-               'measure': r['measures']}
+        if r['id'] >= 100:
+            first_name = "Test"
+            last_name = "Baseline"
+            res = {'id': r['id'], 'firstName': first_name, 'lastName': last_name, 'email': " ",
+                   'measure': r['measures']}
+        else:
+            user = _USER_REPO.get_user_by_id(r['id'])
+            res = {'id': r['id'], 'firstName': user.first_name, 'lastName': user.last_name, 'email': user.email,
+                   'measure': r['measures']}
         results.append(res)
 
     return jsonify(results)

@@ -4,7 +4,7 @@ from pymongo import MongoClient
 import datetime
 
 
-class MongoRepository():
+class MongoRepository:
     client = None
 
     def __init__(self, mongo_host):
@@ -118,8 +118,6 @@ class MongoRepository():
 
                 stats['results'].append(row)
             final_stats.append(stats)
-
-        # print (final_stats)
 
         return final_stats
 
@@ -239,11 +237,18 @@ class MongoRepository():
         # data = [{'id' : 1, 'measures' : 0.3}, {'id' : 2, 'measures' : 0.5}]
         return data
 
+    def insert_standard_measures(self, standard_measures):
+        db = self.client['evaluation_measures']
+        collection = db['standard_measures']
+        measures = collection.find({})
+        existing_measures = []
+        for m in measures:
+            existing_measures.append(m)
 
-
-
-
-
-
-
-
+        for measure in standard_measures:
+            insert = True
+            for m in existing_measures:
+                if m['name'] == measure['name']:
+                    insert = False
+            if insert:
+                collection.insert_one(measure)
