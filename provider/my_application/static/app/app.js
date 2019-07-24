@@ -129,9 +129,9 @@ app.constant('dashboardSections', {
     ]
 });
 
+var ressourceServerBaseUri = process.env.DNS_NAME;
+var oAuthServiceBase = ressourceServerBaseUri + 'auth/';
 
-var oAuthServiceBase = 'http://localhost:5000/auth/';
-var ressourceServerBaseUri = 'http://localhost:5000/';
 
 //var oAuthServiceBase = 'http://streamingcompetition.francecentral.cloudapp.azure.com:5000/auth/';
 //var ressourceServerBaseUri = 'http://streamingcompetition.francecentral.cloudapp.azure.com:5000/';

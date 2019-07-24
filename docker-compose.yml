@@ -60,6 +60,7 @@ services:
         ipv4_address: 172.22.0.5
     environment:
       TZ: "Europe/Paris"
+      DNS_NAME: "http://localhost"
     volumes:
       - /home/nedeljko/uploaded_data:/local/data
       - /etc/localtime:/etc/localtime:ro

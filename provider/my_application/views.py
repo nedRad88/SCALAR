@@ -66,6 +66,7 @@ _SCHEDULER = Scheduler()
 _SCHEDULER.start()
 
 registration_deadline = dt.datetime(2019, 8, 25, 00, 00)
+dns_name = os.environ["DNS_NAME"]
 
 
 def generate_confirmation_token(email):
@@ -231,7 +232,7 @@ def register():
     msg = Message('Streaming Data Challenge : Registration confirmed', sender='streaming.challenge@gmail.com',
                   recipients=[email])
     # msg.body = "Hello  " + first_name + ' ' + last_name + "\n\n Welcome to Streaming Data Challenge platform \n\n Cheers, \n\n The team \n Please confirm \n" "http://streamigchallenge.cloudapp.net:5000/auth/api/account/confirm/"+ token
-    msg.body = "Hello  " + first_name + ' ' + last_name + "\n\n Welcome to Streaming Data Challenge platform \n\n Cheers, \n\n The team \n Please confirm \n" "localhost:5000/auth/api/account/confirm/" + token
+    msg.body = "Hello  " + first_name + ' ' + last_name + "\n\n Welcome to Streaming Data Challenge platform \n\n Cheers, \n\n The team \n Please confirm \n" + dns_name + ":5000/auth/api/account/confirm/" + token
     # http: // streamingcompetition.francecentral.cloudapp.azure.com
     # Was localhost:5000/auth...
     mail.send(msg)
