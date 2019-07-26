@@ -24,7 +24,6 @@ class BaselineToMongo:
         self.output_topic = competition.name.lower().replace(" ", "") + 'spark_predictions'
 
     def write(self):
-
         db = self.mongo_repository.client['data']
         predictions = db['predictions_v2']
         regression_targets = []
