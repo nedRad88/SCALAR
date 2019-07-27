@@ -56,4 +56,4 @@ spec:
     targetPort: 50051
   selector:
     app: provider
-  type: NodePort
+  type: LoadBalancer
