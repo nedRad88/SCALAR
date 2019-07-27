@@ -19,9 +19,6 @@ spec:
       containers:
       - name: provider
         image: nedeljkoradulovic88/provider
-        env:
-        - name: TZ
-          value: Europe/Paris
         ports:
         - containerPort: 5000
           name: "provider5000"
@@ -29,6 +26,9 @@ spec:
           name: "provider5005"
         - containerPort: 50051
           name: "provider50051"
+        env:
+        - name: TZ
+          value: Europe/Paris
         volumeMounts:
         - name: provider-data
           mountPath: /local/data

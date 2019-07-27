@@ -1,38 +1,26 @@
-apiVersion: v1
-kind: Service
-metadata:
-  name: sql-db
-  labels:
-    app: sql-db
-spec:
-  ports:
-  - name: "3306"
-    port: 3306
-    targetPort: 3306
-  selector:
-    app: sql-db
-  clusterIP: None
----
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: sql-db
+  name: mysql
   labels:
-    app: sql-db
+    app: mysql
 spec:
   selector:
     matchLabels:
-      app: sql-db
+      app: mysql
   strategy:
     type: Recreate
   template:
     metadata:
       labels:
-        app: sql-db
+        app: mysql
     spec:
       containers:
-      - image: mysql:5.7.21
-        name: sql-db
+      - name: mysql
+        image: mysql:5.7.21
+        ports:
+        - containerPort: 3306
+          name: mysql
         env:
         - name: MYSQL_DATABASE
           value: sample
@@ -44,13 +32,25 @@ spec:
           value: mysql
         - name: TZ
           value: Europe/Paris
-        ports:
-        - containerPort: 3306
         volumeMounts:
-        - name: sql-db-claim
+        - name: mysql-data
           mountPath: /var/lib/mysql
       volumes:
-      - name: sql-db-claim
+      - name: mysql-data
         persistentVolumeClaim:
-          claimName: sql-db-claim
-status: {}
+          claimName: mysql-pvc
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: mysql
+  labels:
+    app: mysql
+spec:
+  ports:
+  - name: mysql
+    port: 3306
+    targetPort: 3306
+  selector:
+    app: mysql
+  clusterIP: None
