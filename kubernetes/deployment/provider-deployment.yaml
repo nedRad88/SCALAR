@@ -1,3 +1,42 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: provider
+  labels:
+    app: provider
+spec:
+  selector:
+    matchLabels:
+      app: provider
+  replicas: 1
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: provider
+    spec:
+      containers:
+      - name: provider
+        image: nedeljkoradulovic88/provider
+        env:
+        - name: TZ
+          value: Europe/Paris
+        ports:
+        - containerPort: 5000
+          name: "provider5000"
+        - containerPort: 5005
+          name: "provider5005"
+        - containerPort: 50051
+          name: "provider50051"
+        volumeMounts:
+        - name: provider-data
+          mountPath: /local/data
+      volumes:
+      - name: provider-data
+        persistentVolumeClaim:
+          claimName: provider-pvc
+---
 apiVersion: v1
 kind: Service
 metadata:
@@ -17,43 +56,4 @@ spec:
     targetPort: 50051
   selector:
     app: provider
-  type: LoadBalancer
----
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: provider
-  labels:
-    app: provider
-spec:
-  selector:
-    matchLabels:
-      app: provider
-  strategy:
-    type: Recreate
-  template:
-    metadata:
-      labels:
-        app: provider
-    spec:
-      containers:
-      - image: provider
-        name: provider
-        env:
-        - name: TZ
-          value: Europe/Paris
-        ports:
-        - containerPort: 5000
-          name: "provider5000"
-        - containerPort: 5005
-          name: "provider5005"
-        - containerPort: 50051
-          name: "provider50051"
-        volumeMounts:
-        - name: provider-claim
-          mountPath: /local/data
-      volumes:
-      - name: provider-claim
-        persistentVolumeClaim:
-          claimName: provider-claim
-status: {}
+  type: NodePort
