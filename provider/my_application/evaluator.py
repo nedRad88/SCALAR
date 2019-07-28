@@ -4,8 +4,19 @@ import time
 import math
 from repository import MongoRepository
 import sys
+import os
+import json
 
-mongo_repository = MongoRepository('172.22.0.3')
+with open('config.json') as json_data_file:
+    config = json.load(json_data_file)
+
+try:
+    _MONGO_HOST = os.environ['MONGO_HOST']
+except Exception:
+    _MONGO_HOST = config['MONGO_HOST']
+
+
+mongo_repository = MongoRepository(_MONGO_HOST)
 db = mongo_repository.client['data']
 db_evaluations = mongo_repository.client['evaluation_measures']
 

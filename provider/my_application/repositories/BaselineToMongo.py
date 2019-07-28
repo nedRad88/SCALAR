@@ -5,6 +5,15 @@ from bson import json_util
 import datetime
 import operator
 from bson.objectid import ObjectId
+import os
+
+with open('config.json') as json_data_file:
+    config = json.load(json_data_file)
+
+try:
+    _MONGO_HOST = os.environ['MONGO_HOST']
+except Exception:
+    _MONGO_HOST = config['MONGO_HOST']
 
 
 class BaselineToMongo:
@@ -16,7 +25,7 @@ class BaselineToMongo:
         self.consumer = KafkaConsumer(bootstrap_servers=kafka_server, auto_offset_reset='earliest')
         self.consumer.subscribe(topic)
         self.client = SimpleClient(kafka_server)
-        self.mongo_repository = MongoRepository('172.22.0.3')
+        self.mongo_repository = MongoRepository(_MONGO_HOST)
         self.config = competition_config
         self.targets = competition_config.keys()
         self.competition_id = competition.competition_id

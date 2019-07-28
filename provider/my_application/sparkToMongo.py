@@ -5,6 +5,15 @@ import json
 from bson import json_util
 # import logging
 # logging.basicConfig(level='DEBUG')
+import os
+
+with open('config.json') as json_data_file:
+    config = json.load(json_data_file)
+
+try:
+    _MONGO_HOST = os.environ['MONGO_HOST']
+except Exception:
+    _MONGO_HOST = config['MONGO_HOST']
 
 
 class SparkToMongo:
@@ -12,7 +21,7 @@ class SparkToMongo:
         self.consumer = KafkaConsumer(bootstrap_servers=kafka_server, auto_offset_reset='earliest')
         self.consumer.subscribe(topic)
         self.client = SimpleClient(kafka_server)
-        self.mongo_repository = MongoRepository('172.22.0.3')
+        self.mongo_repository = MongoRepository(_MONGO_HOST)
         self.db_evaluations = self.mongo_repository.client['evaluation_measures']
         self.competition = competition
         self.config = config
