@@ -30,7 +30,7 @@ spec:
         - name: TZ
           value: Europe/Paris
         - name: DNS_NAME
-          value: "http://40.89.161.88"
+          value: "http://app.streaming-challenge.com"
         - name: SQL_HOST
           value: "mysql+pymysql://mysql:mysql@mysql/"
         - name: KAFKA_HOST
