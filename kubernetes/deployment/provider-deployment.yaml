@@ -29,6 +29,18 @@ spec:
         env:
         - name: TZ
           value: Europe/Paris
+        - name: DNS_NAME
+          value: "http://40.89.161.88"
+        - name: SQL_HOST
+          value: "mysql+pymysql://mysql:mysql@mysql/"
+        - name: KAFKA_HOST
+          value: "kafka:9092"
+        - name: SQL_DBNAME
+          value: "sample"
+        - name: MONGO_HOST
+          value: "mongodb"
+        - name: SPARK_HOST
+          value: "spark"
         imagePullPolicy: Always
         volumeMounts:
         - name: provider-data
