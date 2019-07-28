@@ -1,3 +1,38 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: spark
+  name: spark
+spec:
+  selector:
+    matchLabels:
+      app: spark
+  replicas: 1
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: spark
+    spec:
+      containers:
+      - env:
+        - name: PACKAGES
+          value: org.apache.spark:spark-sql-kafka-0-10_2.11:2.3.1
+        - name: SPARK_CONF_DIR
+          value: /conf
+        - name: TZ
+          value: Europe/Paris
+        image: gettyimages/spark
+        name: spark
+        ports:
+        - containerPort: 4040
+        - containerPort: 6066
+        - containerPort: 7077
+        - containerPort: 8080
+      restartPolicy: Always
+---
 apiVersion: v1
 kind: Service
 metadata:
@@ -21,36 +56,3 @@ spec:
   selector:
     app: spark
   clusterIP: None
----
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  labels:
-    app: spark
-  name: spark
-spec:
-  replicas: 1
-  strategy: {}
-  template:
-    metadata:
-      labels:
-        app: spark
-    spec:
-      containers:
-      - env:
-        - name: PACKAGES
-          value: org.apache.spark:spark-sql-kafka-0-10_2.11:2.3.1
-        - name: SPARK_CONF_DIR
-          value: /conf
-        - name: TZ
-          value: Europe/Paris
-        image: gettyimages/spark
-        name: spark
-        ports:
-        - containerPort: 4040
-        - containerPort: 6066
-        - containerPort: 7077
-        - containerPort: 8080
-        resources: {}
-      restartPolicy: Always
-status: {}
