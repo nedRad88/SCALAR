@@ -129,8 +129,10 @@ app.constant('dashboardSections', {
     ]
 });
 
-var ressourceServerBaseUri = str.concat(process.env.DNS_NAME, ":5000/");
-var oAuthServiceBase = str.concat(ressourceServerBaseUri, 'auth/');
+var ressourceServerBaseUri = "http://40.89.161.88:5000/"
+    //str.concat(process.env.DNS_NAME, ":5000/");
+var oAuthServiceBase = "http://40.89.161.88:5000/auth/"
+    //str.concat(ressourceServerBaseUri, 'auth/');
 
 
 //var oAuthServiceBase = 'http://streamingcompetition.francecentral.cloudapp.azure.com:5000/auth/';

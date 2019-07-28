@@ -40,7 +40,6 @@ spark = SparkSession\
 
 _ONE_DAY_IN_SECONDS = 60 * 60 * 24
 
-
 with open('config.json') as json_data_file:
     config = json.load(json_data_file)
 
