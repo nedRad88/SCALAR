@@ -42,9 +42,20 @@ _ONE_DAY_IN_SECONDS = 60 * 60 * 24
 with open('config.json') as json_data_file:
     config = json.load(json_data_file)
 
-SERVER_HOST = config['SERVER_HOST']  # 172.22.0.2:9092
-_SQL_HOST = config['SQL_HOST']
-_SQL_DBNAME = config['SQL_DBNAME']
+try:
+    _SQL_HOST = os.environ['SQL_HOST']
+except Exception:
+    _SQL_HOST = config['SQL_HOST']
+
+try:
+    _SQL_DBNAME = os.environ['SQL_DBNAME']
+except Exception:
+    _SQL_DBNAME = config['SQL_DBNAME']
+try:
+    SERVER_HOST = os.environ['SERVER_HOST']
+except Exception:
+    SERVER_HOST = config['SERVER_HOST']  # 172.22.0.2:9092
+
 _UPLOAD_REPO = config['UPLOAD_REPO']
 _STREAM_REPO = config['STREAM_DATA_FILE']
 

@@ -65,7 +65,7 @@ app.debug = True
 _SCHEDULER = Scheduler()
 _SCHEDULER.start()
 
-registration_deadline = dt.datetime(2019, 8, 25, 00, 00)
+#registration_deadline = dt.datetime(2019, 8, 25, 00, 00)
 dns_name = os.environ["DNS_NAME"]
 
 
@@ -109,10 +109,21 @@ app.jinja_options = jinja_options
 
 with open('config.json') as json_data_file:
     config = json.load(json_data_file)
+try:
+    _SQL_HOST = os.environ['SQL_HOST']
+except Exception:
+    _SQL_HOST = config['SQL_HOST']
 
-_SQL_HOST = config['SQL_HOST']
-_SQL_DBNAME = config['SQL_DBNAME']
-_MONGO_HOST = config['MONGO_HOST']
+try:
+    _SQL_DBNAME = os.environ['SQL_DBNAME']
+except Exception:
+    _SQL_DBNAME = config['SQL_DBNAME']
+
+try:
+    _MONGO_HOST = os.environ['MONGO_HOST']
+except Exception:
+    _MONGO_HOST = config['MONGO_HOST']
+
 
 _COMPETITION_REPO = CompetitionRepository(_SQL_HOST, _SQL_DBNAME)
 _DATASTREAM_REPO = DatastreamRepository(_SQL_HOST, _SQL_DBNAME)
