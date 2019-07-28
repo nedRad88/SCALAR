@@ -1,3 +1,33 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: kafka
+  name: kafka
+spec:
+  selector:
+    matchLabels:
+      app: kafka
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: kafka
+    spec:
+      containers:
+      - image: spotify/kafka
+        name: kafka
+        ports:
+        - containerPort: 9092
+        - containerPort: 2181
+        env:
+        - name: KAFKA_ADVERTISED_HOST_NAME
+          value: 172.22.0.2
+        - name: TZ
+          value: Europe/Paris
+      restartPolicy: Always
+---
 apiVersion: v1
 kind: Service
 metadata:
@@ -15,32 +45,3 @@ spec:
   selector:
     app: kafka
   clusterIP: None
----
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  labels:
-    app: kafka
-  name: kafka
-spec:
-  replicas: 1
-  strategy: {}
-  template:
-    metadata:
-      labels:
-        app: kafka
-    spec:
-      containers:
-      - env:
-        - name: KAFKA_ADVERTISED_HOST_NAME
-          value: 172.22.0.2
-        - name: TZ
-          value: Europe/Paris
-        image: spotify/kafka
-        name: kafka
-        ports:
-        - containerPort: 9092
-        - containerPort: 2181
-        resources: {}
-      restartPolicy: Always
-status: {}
