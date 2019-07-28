@@ -5,6 +5,9 @@ metadata:
     app: mongodb
   name: mongodb
 spec:
+  selector:
+    matchLabels:
+      app: mongodb
   replicas: 1
   strategy:
     type: Recreate
@@ -24,12 +27,12 @@ spec:
           value: Europe/Paris
         volumeMounts:
         - mountPath: /data/db
-          name: mono-data
+          name: mongo-data
       restartPolicy: Always
       volumes:
-      - name: mono-data
+      - name: mongo-data
         persistentVolumeClaim:
-          claimName: mono-pvc
+          claimName: mongo-pvc
 ---
 apiVersion: v1
 kind: Service
