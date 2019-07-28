@@ -122,6 +122,13 @@ Then we run `kubectl proxy` to be able to access the dashboard, and finally, the
 `http://localhost:8001/api/v1/namespaces/kube-system/services/kubernetes-dashboard/proxy/#!/overview?namespace=default`
 
 
+## Create Docker Hub secret
+
+```
+kubectl create secret docker-registry regcred --docker-server=https://index.docker.io/v1/ --docker-username=<your-name> --docker-password=<your-pword> --docker-email=<your-email>
+```  
+*Note: Docker email can be any properly formatted email address (e.g. fake@email.com).*
+
 ## Deploying pods
 
 Place yourself inside the deployments folder and first deploy peristent volumes:  
