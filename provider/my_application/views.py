@@ -26,7 +26,7 @@ from repository import MongoRepository
 from flask import send_file
 import logging
 
-logging.basicConfig(level='DEBUG')
+logging.basicConfig(level='INFO')
 from itsdangerous import URLSafeTimedSerializer
 import csv
 from io import BytesIO
@@ -60,7 +60,7 @@ app.config['MAIL_USE_SSL'] = True
 app.config['SECRET_KEY'] = 's3cr3t'
 app.config['SECURITY_PASSWORD_SALT'] = 'my_precious_two'
 mail = Mail(app)
-app.debug = True
+app.debug = False
 
 _SCHEDULER = Scheduler()
 _SCHEDULER.start()
