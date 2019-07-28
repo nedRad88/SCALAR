@@ -20,7 +20,7 @@ spec:
       - args:
         - bin/spark-class
         - org.apache.spark.deploy.worker.Worker
-        - spark://172.22.0.8:7077
+        - spark://spark:7077
         env:
         - name: PACKAGES
           value: org.apache.spark:spark-sql-kafka-0-10_2.11:2.3.1
