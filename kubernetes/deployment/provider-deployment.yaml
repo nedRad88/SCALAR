@@ -29,6 +29,7 @@ spec:
         env:
         - name: TZ
           value: Europe/Paris
+        imagePullPolicy: Always
         volumeMounts:
         - name: provider-data
           mountPath: /local/data
@@ -36,6 +37,8 @@ spec:
       - name: provider-data
         persistentVolumeClaim:
           claimName: provider-pvc
+      imagePullSecrets:
+      - name: dockerhub-auth
 ---
 apiVersion: v1
 kind: Service
