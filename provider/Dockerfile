@@ -4,13 +4,14 @@
 ############################################################
 
 # Set the base image to Ubuntu
-FROM nedeljkoradulovic88/base1604:v4
+FROM nedeljkoradulovic88/base1604:v5
 # File Author / Maintainer
 MAINTAINER Nedeljko Radulovic
 
 # Copy directory
 WORKDIR /my_application
 ADD my_application /my_application
+
 
 # Expose ports
 EXPOSE 50051
@@ -19,6 +20,11 @@ EXPOSE 27017
 EXPOSE 5005
 
 # Set the default directory where CMD will execute
+WORKDIR /my_application/Multiflow/scikit-multiflow-master
+RUN pip3 install --upgrade pip
+RUN pip3 install -U numpy
+RUN pip3 install -U .
+
 WORKDIR /my_application
 
 # Set the default command to execute    
