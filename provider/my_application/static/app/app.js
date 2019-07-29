@@ -129,11 +129,11 @@ app.constant('dashboardSections', {
     ]
 });
 
-var ressourceServerBaseUri = "http://localhost:5000/";
+var ressourceServerBaseUri = "http://app.streaming-challenge.com:5000/";
 
-//"http://app.streaming-challenge.com:5000/"
-var oAuthServiceBase = "http://localhost:5000/auth/";
-// "http://app.streaming-challenge.com:5000/auth/"
+//
+var oAuthServiceBase = "http://app.streaming-challenge.com:5000/auth/";
+//
 
 
 //var oAuthServiceBase = 'http://streamingcompetition.francecentral.cloudapp.azure.com:5000/auth/';
