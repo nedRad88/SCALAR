@@ -11,9 +11,12 @@ _ONE_DAY_IN_SECONDS = 60 * 60 * 24
 with open('config.json') as json_data_file:
     config = json.load(json_data_file)
 
+dns_name = os.environ["DNS_NAME"]
+
 _UPLOAD_REPO = config['UPLOAD_REPO']
 _COMPETITION_GENERATED_CODE = config['COMPETITION_GENERATED_CODE']
 
+stream_server = dns_name + ":50051"
 
 class StreamServer:
     server = None
@@ -26,7 +29,7 @@ class StreamServer:
             # self.server.add_insecure_port('http://streamigchallenge.cloudapp.net:50051')
             # self.server.add_insecure_port('http://streamingcompetition.francecentral.cloudapp.azure.com:50051')
             # print("***********Adding server***********")
-            self.server.add_insecure_port('0.0.0.0:50051')
+            self.server.add_insecure_port(stream_server)
             grpc.insecure_channel()
             # print("added port to stream server: 2")
             # self.server.add_insecure_port('172.22.0.5:50051')
