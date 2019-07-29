@@ -33,7 +33,6 @@ class BaselineToMongo:
         self.output_topic = competition.name.lower().replace(" ", "") + 'spark_predictions'
 
     def write(self):
-
         db = self.mongo_repository.client['data']
         predictions = db['predictions_v2']
         regression_targets = []
@@ -58,20 +57,23 @@ class BaselineToMongo:
         for msg in self.consumer:
             message = json.loads(msg.value.decode('utf-8'), object_hook=json_util.object_hook)
             # message = json.loads(str(message), object_hook=json_util.object_hook)
-            prediction_dict = {'rowID': message['rowID'], 'competition_id': self.competition_id, 'user_id': 0}
+            prediction_dict = {'rowID': message['rowID'], 'competition_id': self.competition_id}
 
             prediction_dict, num_records, sum_values = self.regression(message,
                                                                        prediction_dict, num_records, sum_values)
             prediction_dict, target_dict = self.classification(message, target_dict, prediction_dict)
             if message['tag'] == 'TEST':
-                submitted_on = datetime.datetime.now()
-                prediction_dict['submitted_on'] = submitted_on
-                prediction_dict['_id'] = ObjectId()
-                predictions.insert_one(prediction_dict)
-                del prediction_dict['submitted_on']
-                prediction_dict['submitted_on'] = submitted_on.strftime("%Y-%m-%d %H:%M:%S")
-                self.producer.send(self.output_topic, json.dumps(prediction_dict,
-                                                                 default=json_util.default).encode('utf-8'))
+                for i in range(0, 10):
+                    prediction_dict['user_id'] = i + 100
+                    prediction_dict['Valeurs'] = prediction_dict['Valeurs'] + prediction_dict['user_id'] * 10
+                    submitted_on = datetime.datetime.now()
+                    prediction_dict['submitted_on'] = submitted_on
+                    prediction_dict['_id'] = ObjectId()
+                    predictions.insert_one(prediction_dict)
+                    del prediction_dict['submitted_on']
+                    prediction_dict['submitted_on'] = submitted_on.strftime("%Y-%m-%d %H:%M:%S")
+                    self.producer.send(self.output_topic, json.dumps(prediction_dict,
+                                                                     default=json_util.default).encode('utf-8'))
 
     @staticmethod
     def regression(message, prediction_dict, num_records, sum_values):

@@ -15,7 +15,6 @@ __pycache__/
 env/
 build/
 develop-eggs/
-dist/
 downloads/
 eggs/
 .eggs/
@@ -27,6 +26,7 @@ var/
 *.egg-info/
 .installed.cfg
 *.egg
+scikit-multiflow/*
 
 # PyInstaller
 #  Usually these files are written by a python script from a template

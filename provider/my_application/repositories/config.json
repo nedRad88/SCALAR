@@ -1,0 +1,17 @@
+{
+
+    
+    "SERVER_HOST" : "172.22.0.2:9092",
+    "SQL_HOST" : "mysql+pymysql://mysql:mysql@172.22.0.4/",
+    "SQL_DBNAME" : "sample",
+    "UPLOAD_REPO":"../local/data/uploads/",
+    "COMPETITION_PROTO_REPO":"competition_proto_file",
+    "COMPETITION_GENERATED_CODE" : "competition_generated_code",
+    "STREAM_DATA_FILE": "stream_data_file",
+    "TOPIC" : "prevision",
+    "TARGET_CLASS" : "Valeurs",
+    "MONGO_HOST" : "172.22.0.3"
+    
+} 
+
+

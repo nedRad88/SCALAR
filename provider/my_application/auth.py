@@ -3,13 +3,21 @@ import datetime
 import time
 from repositories.CompetitionRepository import User, UserRepository
 import json
+import os
 
 SECRET_KEY = b"\xf6f \x8a\x08Q\xbd\xca\x0c\x87t|\x0b<\xc0\xb4\x13\xb4\xc6\x13\x8d\x8f\xe6&"
 
 with open('config.json') as json_data_file:
     config = json.load(json_data_file)
-_SQL_HOST = config['SQL_HOST']
-_SQL_DBNAME = config['SQL_DBNAME']
+try:
+    _SQL_HOST = os.environ['SQL_HOST']
+except Exception:
+    _SQL_HOST = config['SQL_HOST']
+try:
+    _SQL_DBNAME = os.environ['SQL_DBNAME']
+except Exception:
+    _SQL_DBNAME = config['SQL_DBNAME']
+
 _USER_REPO = UserRepository(_SQL_HOST, _SQL_DBNAME)
 
 
