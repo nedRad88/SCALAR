@@ -82,6 +82,7 @@ def _create_competition(competition, competition_config):
     threading.Thread(target=_create_evaluation_spark, args=(spark, SERVER_HOST, competition, competition_config, classes)).start()
     threading.Thread(target=_create_mongo_sink_evaluation, args=(SERVER_HOST, competition, competition_config)).start()
 
+
 def read_csv_file(competition, competition_config, data_format='csv'):
     initial_batch = []
     items = []
