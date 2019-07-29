@@ -24,9 +24,21 @@ from repositories.CompetitionRepository import Subscription, SubscriptionReposit
 
 with open('config.json') as json_data_file:
     config = json.load(json_data_file)
+try:
+    _SQL_HOST = os.environ['SQL_HOST']
+except Exception:
+    _SQL_HOST = config['SQL_HOST']
 
-_SQL_HOST = config['SQL_HOST']
-_SQL_DBNAME = config['SQL_DBNAME']
+try:
+    _SQL_DBNAME = os.environ['SQL_DBNAME']
+except Exception:
+    _SQL_DBNAME = config['SQL_DBNAME']
+try:
+    _MONGO_HOST = os.environ['MONGO_HOST']
+except Exception:
+    _MONGO_HOST = config['MONGO_HOST']
+
+
 _UPLOAD_REPO = config['UPLOAD_REPO']
 _COMPETITION_GENERATED_CODE = config['COMPETITION_GENERATED_CODE']
 
@@ -169,7 +181,7 @@ class DataStreamerServicer:
         self.producer = ProducerToMongoSink(server)  # 172.22.0.2:9092
         self.kafka_producer = KafkaProducer(bootstrap_servers=server)
 
-        self.repo = MongoRepository('172.22.0.3')
+        self.repo = MongoRepository(_MONGO_HOST)
         self.competition = competition
 
         # Defining three topics: input (competition name), output (competition name + predictions)

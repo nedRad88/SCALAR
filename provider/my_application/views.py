@@ -26,7 +26,7 @@ from repository import MongoRepository
 from flask import send_file
 import logging
 
-logging.basicConfig(level='DEBUG')
+logging.basicConfig(level='INFO')
 from itsdangerous import URLSafeTimedSerializer
 import csv
 from io import BytesIO
@@ -60,10 +60,13 @@ app.config['MAIL_USE_SSL'] = True
 app.config['SECRET_KEY'] = 's3cr3t'
 app.config['SECURITY_PASSWORD_SALT'] = 'my_precious_two'
 mail = Mail(app)
-app.debug = True
+app.debug = False
 
 _SCHEDULER = Scheduler()
 _SCHEDULER.start()
+
+#registration_deadline = dt.datetime(2019, 8, 25, 00, 00)
+dns_name = os.environ["DNS_NAME"]
 
 
 def generate_confirmation_token(email):
@@ -106,10 +109,21 @@ app.jinja_options = jinja_options
 
 with open('config.json') as json_data_file:
     config = json.load(json_data_file)
+try:
+    _SQL_HOST = os.environ['SQL_HOST']
+except Exception:
+    _SQL_HOST = config['SQL_HOST']
 
-_SQL_HOST = config['SQL_HOST']
-_SQL_DBNAME = config['SQL_DBNAME']
-_MONGO_HOST = config['MONGO_HOST']
+try:
+    _SQL_DBNAME = os.environ['SQL_DBNAME']
+except Exception:
+    _SQL_DBNAME = config['SQL_DBNAME']
+
+try:
+    _MONGO_HOST = os.environ['MONGO_HOST']
+except Exception:
+    _MONGO_HOST = config['MONGO_HOST']
+
 
 _COMPETITION_REPO = CompetitionRepository(_SQL_HOST, _SQL_DBNAME)
 _DATASTREAM_REPO = DatastreamRepository(_SQL_HOST, _SQL_DBNAME)
@@ -210,6 +224,7 @@ def confirm_email(token):
 
 @app.route('/auth/register', methods=['POST'])
 def register():
+
     data = json.loads(request.data.decode('utf-8'))
     # print(data)
 
@@ -228,7 +243,7 @@ def register():
     msg = Message('Streaming Data Challenge : Registration confirmed', sender='streaming.challenge@gmail.com',
                   recipients=[email])
     # msg.body = "Hello  " + first_name + ' ' + last_name + "\n\n Welcome to Streaming Data Challenge platform \n\n Cheers, \n\n The team \n Please confirm \n" "http://streamigchallenge.cloudapp.net:5000/auth/api/account/confirm/"+ token
-    msg.body = "Hello  " + first_name + ' ' + last_name + "\n\n Welcome to Streaming Data Challenge platform \n\n Cheers, \n\n The team \n Please confirm \n" "localhost:5000/auth/api/account/confirm/" + token
+    msg.body = "Hello " + first_name + ' ' + last_name + ", \n\nWelcome to Streaming Data Challenge platform! \n\nCheers, \nThe team \n\nPlease click on the link below to confirm your e-mail.\n" "http://app.streaming-challenge.com:5000/auth/api/account/confirm/" + token
     # http: // streamingcompetition.francecentral.cloudapp.azure.com
     # Was localhost:5000/auth...
     mail.send(msg)

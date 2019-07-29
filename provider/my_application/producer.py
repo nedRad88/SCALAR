@@ -27,10 +27,12 @@ from pyspark.conf import SparkConf
 from repository import MongoRepository
 
 # os.environ['PYSPARK_SUBMIT_ARGS'] = '--packages org.apache.spark:spark-sql-kafka-0-10_2.11:2.3.1 pyspark-shell'
+spark_master = "spark://" + os.environ['SPARK_HOST'] + ":7077"
+
 spark = SparkSession\
     .builder\
     .appName("Kafka_structured_streaming")\
-    .master("spark://172.22.0.8:7077")\
+    .master(spark_master)\
     .config('spark.jars.packages', 'org.apache.spark:spark-sql-kafka-0-10_2.11:2.3.1')\
     .getOrCreate()
 # from apscheduler.schedulders.background.BackgroundScheduler import remove_job
@@ -38,13 +40,28 @@ spark = SparkSession\
 
 _ONE_DAY_IN_SECONDS = 60 * 60 * 24
 
-
 with open('config.json') as json_data_file:
     config = json.load(json_data_file)
 
-SERVER_HOST = config['SERVER_HOST']  # 172.22.0.2:9092
-_SQL_HOST = config['SQL_HOST']
-_SQL_DBNAME = config['SQL_DBNAME']
+try:
+    _SQL_HOST = os.environ['SQL_HOST']
+except Exception:
+    _SQL_HOST = config['SQL_HOST']
+
+try:
+    _SQL_DBNAME = os.environ['SQL_DBNAME']
+except Exception:
+    _SQL_DBNAME = config['SQL_DBNAME']
+try:
+    SERVER_HOST = os.environ['KAFKA_HOST']
+except Exception:
+    SERVER_HOST = config['KAFKA_HOST']  # 172.22.0.2:9092
+
+try:
+    _MONGO_HOST = os.environ['MONGO_HOST']
+except Exception:
+    _MONGO_HOST = config['MONGO_HOST']
+
 _UPLOAD_REPO = config['UPLOAD_REPO']
 _STREAM_REPO = config['STREAM_DATA_FILE']
 
@@ -64,7 +81,6 @@ def _create_competition(competition, competition_config):
     time.sleep(2)
     threading.Thread(target=_create_evaluation_spark, args=(spark, SERVER_HOST, competition, competition_config, classes)).start()
     threading.Thread(target=_create_mongo_sink_evaluation, args=(SERVER_HOST, competition, competition_config)).start()
-
 
 def read_csv_file(competition, competition_config, data_format='csv'):
     initial_batch = []
@@ -151,7 +167,8 @@ def read_csv_file(competition, competition_config, data_format='csv'):
 
 
 def _create_evaluation_spark(spark_context, kafka_server, competition, competition_config, classes):
-    mongo = MongoRepository('172.22.0.3')
+    mongo = MongoRepository(_MONGO_HOST)
+
     db = mongo.client['evaluation_measures']
     collection = db['standard_measures']
     measures = collection.find({})
@@ -363,7 +380,7 @@ class Scheduler:
 
     def __init__(self):
         jobstores = {
-            'default': MongoDBJobStore(database='apscheduler', collection='jobs', host='172.22.0.3', port=27017)}
+            'default': MongoDBJobStore(database='apscheduler', collection='jobs', host=_MONGO_HOST, port=27017)}
         self.scheduler = BackgroundScheduler(jobstores=jobstores)
         # print("Version: ", sys.version)
 
