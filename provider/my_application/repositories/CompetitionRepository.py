@@ -214,14 +214,27 @@ class CompetitionRepository(BaseRepository):
 
     def get_all_competitions(self, status=None, page=None, step=None):
         now = datetime.now()
+        results = None
         if status == 'all':
-            results = self.session.query(Competition)
+            try:
+                results = self.session.query(Competition)
+            except Exception:
+                self.session.rollback()
         elif status == 'active':
-            results = self.session.query(Competition).filter(and_(Competition.end_date > now, Competition.start_date < now))
+            try:
+                results = self.session.query(Competition).filter(and_(Competition.end_date > now, Competition.start_date < now))
+            except Exception:
+                self.session.rollback()
         elif status == 'coming':
-            results = self.session.query(Competition).filter(Competition.start_date >= now)
+            try:
+                results = self.session.query(Competition).filter(Competition.start_date >= now)
+            except Exception:
+                self.session.rollback()
         elif status == 'finished':
-            results = self.session.query(Competition).filter(Competition.end_date <= now)
+            try:
+                results = self.session.query(Competition).filter(Competition.end_date <= now)
+            except Exception:
+                self.session.rollback()
         else:
             raise ValueError('Unknown type ' + status)
 
@@ -254,22 +267,43 @@ class CompetitionRepository(BaseRepository):
             return None
 
     def get_competitions_by_user(self, user_id, status, page, step):
-
-        sub_query = self.session.query(Subscription).filter_by(user_id=user_id).subquery()
+        sub_query = None
+        results = None
+        try:
+            sub_query = self.session.query(Subscription).filter_by(user_id=user_id).subquery()
+        except Exception:
+            self.session.rollback()
 
         now = datetime.now()
         if status == 'all':
-            results = self.session.query(Competition).join(sub_query,
-                                                           sub_query.c.competition_id == Competition.competition_id)
+            try:
+                results = self.session.query(Competition).join(sub_query,
+                                                               sub_query.c.competition_id == Competition.competition_id)
+            except Exception:
+                self.session.rollback()
+
         elif status == 'active':
-            results = self.session.query(Competition).filter(and_(Competition.end_date > now,
-                                                                  Competition.start_date < now)).join(sub_query, sub_query.c.competition_id == Competition.competition_id)
+            try:
+                results = self.session.query(Competition).filter(and_(Competition.end_date > now,
+                                                                      Competition.start_date < now)).join(sub_query,
+                                                                                                          sub_query.c.competition_id == Competition.competition_id)
+            except Exception:
+                self.session.rollback()
+
         elif status == 'coming':
-            results = self.session.query(Competition).filter(Competition.start_date >= now).join(sub_query,
-                                                                                                 sub_query.c.competition_id == Competition.competition_id)
+            try:
+                results = self.session.query(Competition).filter(Competition.start_date >= now).join(sub_query,
+                                                                                                     sub_query.c.competition_id == Competition.competition_id)
+            except Exception:
+                self.session.rollback()
+
         elif status == 'finished':
-            results = self.session.query(Competition).filter(Competition.end_date <= now).join(sub_query,
-                                                                                               sub_query.c.competition_id == Competition.competition_id)
+            try:
+                results = self.session.query(Competition).filter(Competition.end_date <= now).join(sub_query,
+                                                                                                   sub_query.c.competition_id == Competition.competition_id)
+            except Exception:
+                self.session.rollback()
+
         else:
             raise ValueError('Unknown type ' + status)
 
@@ -304,12 +338,19 @@ class DatastreamRepository(BaseRepository):
         BaseRepository.__init__(self, host, dbname)
 
     def get_datastream_by_id(self, datastream_id):
-        results = self.session.query(Datastream).filter_by(datastream_id=datastream_id)
+        results = None
+        try:
+            results = self.session.query(Datastream).filter_by(datastream_id=datastream_id)
+        except Exception:
+            self.session.rollback()
         return results[0]
 
     def get_all_datastreams(self, page=None, step=None):
-
-        results = self.session.query(Datastream)
+        results = None
+        try:
+            results = self.session.query(Datastream)
+        except Exception:
+            self.session.rollback()
 
         copy = results
 
@@ -330,20 +371,34 @@ class UserRepository(BaseRepository):
         BaseRepository.__init__(self, host, dbname)
 
     def get_user_by_id(self, id):
-        results = self.session.query(User).filter_by(user_id=id).first()
+        results = None
+        try:
+            results = self.session.query(User).filter_by(user_id=id).first()
+        except Exception:
+            self.session.rollback()
         return results
 
     def get_user_by_email(self, email):
-        results = self.session.query(User).filter_by(email=email).first()
+        results = None
+        try:
+            results = self.session.query(User).filter_by(email=email).first()
+        except Exception:
+            self.session.rollback()
         return results
-        """
+
+    """
         if len(results) > 0 :
             return results[0]
         else:
-            return None"""
+            return None
+    """
 
     def get_all_users(self):
-        results = self.session.query(User)
+        results = None
+        try:
+            results = self.session.query(User)
+        except Exception:
+            self.session.rollback()
         return results
 
     def delete_many(self, users):
@@ -363,15 +418,27 @@ class SubscriptionRepository(BaseRepository):
         BaseRepository.__init__(self, host, dbname)
 
     def get_competition_subscribers(self, competition_id):
-        users = self.session.query(Subscription).filter_by(competition_id=competition_id)
+        users = None
+        try:
+            users = self.session.query(Subscription).filter_by(competition_id=competition_id)
+        except Exception:
+            self.session.rollback()
         return users
 
     def check_subscription(self, competition_id, user_id):
-        s = self.session.query(Subscription).filter_by(competition_id=competition_id, user_id=user_id)
+        subscribed = None
+        try:
+            s = self.session.query(Subscription).filter_by(competition_id=competition_id, user_id=user_id)
+            subscribed = False if len(list(s)) == 0 else True
+        except Exception:
+            self.session.rollback()
 
-        subscribed = False if len(list(s)) == 0 else True
         return subscribed
 
     def get_subscription(self, competition_id, user_id):
-        s = self.session.query(Subscription).filter_by(competition_id=competition_id, user_id=user_id).first()
+        s = None
+        try:
+            s = self.session.query(Subscription).filter_by(competition_id=competition_id, user_id=user_id).first()
+        except Exception:
+            self.session.rollback()
         return s

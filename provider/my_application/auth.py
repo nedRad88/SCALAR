@@ -27,7 +27,7 @@ def get_auth_token(user):
     data_base_user = _USER_REPO.get_user_by_email(user['id'])
     print(data_base_user)
 
-    if data_base_user == None:
+    if data_base_user is None:
         return (404, "Email Not found ! please check or register")
 
     if not data_base_user.check_password(user['password']):

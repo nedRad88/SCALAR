@@ -212,12 +212,15 @@ def confirm_email(token):
         logging.debug("Token not valid")
 
     user = _USER_REPO.get_user_by_email(email)
-    if user.confirmed:
-        logging.debug("already confirmed")
-        # flash('Account already confirmed. Please login.', 'success')
+    if user is None:
+        print("User not registered.")
     else:
-        _USER_REPO.confirm_user(user)
-        print('Account confirmed')
+        if user.confirmed:
+            logging.debug("already confirmed")
+            # flash('Account already confirmed. Please login.', 'success')
+        else:
+            _USER_REPO.confirm_user(user)
+            print('Account confirmed')
 
     return json.dumps({'success': True}), 200, {'ContentType': 'application/json'}
 
