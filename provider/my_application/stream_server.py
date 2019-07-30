@@ -11,12 +11,10 @@ _ONE_DAY_IN_SECONDS = 60 * 60 * 24
 with open('config.json') as json_data_file:
     config = json.load(json_data_file)
 
-dns_name = os.environ["DNS_NAME"]
 
 _UPLOAD_REPO = config['UPLOAD_REPO']
 _COMPETITION_GENERATED_CODE = config['COMPETITION_GENERATED_CODE']
 
-stream_server = dns_name + ":50051"
 
 class StreamServer:
     server = None
