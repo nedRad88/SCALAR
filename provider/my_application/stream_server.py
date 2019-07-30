@@ -28,7 +28,6 @@ class StreamServer:
             # self.server.add_insecure_port('http://streamingcompetition.francecentral.cloudapp.azure.com:50051')
             # print("***********Adding server***********")
             self.server.add_insecure_port('0.0.0.0:50051')
-            grpc.insecure_channel()
             # print("added port to stream server: 2")
             # self.server.add_insecure_port('172.22.0.5:50051')
             self.server.start()
