@@ -10,7 +10,7 @@ services:
       - "9092:9092"
       - "2181:2181"
     environment:
-      KAFKA_ADVERTISED_HOST_NAME: "172.22.0.2"
+      KAFKA_ADVERTISED_HOST_NAME: "kafka"
       TZ: "Europe/Paris"
     container_name: kafka
     volumes:
@@ -62,7 +62,7 @@ services:
       TZ: "Europe/Paris"
       DNS_NAME: "http://localhost"
       SQL_HOST: "mysql+pymysql://mysql:mysql@172.22.0.4/"
-      KAFKA_HOST: "172.22.0.2:9092"
+      KAFKA_HOST: "kafka:9092"
       SQL_DBNAME: "sample"
       MONGO_HOST: "172.22.0.3"
       SPARK_HOST: "172.22.0.8"

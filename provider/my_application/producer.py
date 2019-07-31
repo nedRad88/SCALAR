@@ -185,8 +185,7 @@ def _create_evaluation_spark(spark_context, kafka_server, competition, competiti
 
 
 def _create_mongo_sink_evaluation(kafka_server, competition, competition_config):
-    spark_to_mongo = SparkToMongo(kafka_server, competition.name.lower().replace(" ", "") + 'spark_measures',
-                                  competition, competition_config)
+    spark_to_mongo = SparkToMongo(kafka_server, competition.name.lower().replace(" ", "") + 'spark_measures', competition, competition_config)
     spark_to_mongo.write()
 
 

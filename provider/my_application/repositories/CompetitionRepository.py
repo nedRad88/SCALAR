@@ -155,7 +155,7 @@ class BaseRepository():
 
     def __init__(self, host, dbname):
 
-        self.engine = create_engine(host + dbname)
+        self.engine = create_engine(host + dbname, pool_pre_ping=True)
         self.sessionmaker = sessionmaker()
         # self.sessionmaker = SingletonSession().instance
         self.sessionmaker.configure(bind=self.engine)

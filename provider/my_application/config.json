@@ -1,7 +1,7 @@
 {
 
     
-    "SERVER_HOST" : "172.22.0.2:9092",
+    "SERVER_HOST" : "kafka:9092",
     "SQL_HOST" : "mysql+pymysql://mysql:mysql@172.22.0.4/",
     "SQL_DBNAME" : "sample",
     "UPLOAD_REPO":"../local/data/uploads/",

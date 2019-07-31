@@ -26,7 +26,7 @@ from repository import MongoRepository
 from flask import send_file
 import logging
 
-logging.basicConfig(level='INFO')
+logging.basicConfig(level='DEBUG')
 from itsdangerous import URLSafeTimedSerializer
 import csv
 from io import BytesIO
@@ -60,13 +60,13 @@ app.config['MAIL_USE_SSL'] = True
 app.config['SECRET_KEY'] = 's3cr3t'
 app.config['SECURITY_PASSWORD_SALT'] = 'my_precious_two'
 mail = Mail(app)
-app.debug = False
+app.debug = True
 
 _SCHEDULER = Scheduler()
 _SCHEDULER.start()
 
 #registration_deadline = dt.datetime(2019, 8, 25, 00, 00)
-dns_name = os.environ["DNS_NAME"]
+# dns_name = os.environ["DNS_NAME"]
 
 
 def generate_confirmation_token(email):
