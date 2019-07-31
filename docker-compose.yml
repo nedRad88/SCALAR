@@ -1,16 +1,33 @@
 version: '3'
 
 services:
-  kafka:
-    image: spotify/kafka
+  zookeeper:
     networks:
       new_network:
-        ipv4_address: 172.22.0.2
+        ipv4_address: 172.22.0.30
+    image: wurstmeister/zookeeper
+    ports: 
+      - "2181:2181" 
+    container_name: zookeeper
+  kafka:
+    image: wurstmeister/kafka
     ports:
       - "9092:9092"
-      - "2181:2181"
+    networks:
+      new_network:
+        ipv4_address: 172.22.0.22
     environment:
-      KAFKA_ADVERTISED_HOST_NAME: "kafka"
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_LISTENERS:
+        "INTERNAL://kafka:9092,\
+         EXTERNAL://:9094"
+      KAFKA_ADVERTISED_LISTENERS:
+        "INTERNAL://kafka:9092,\
+         EXTERNAL://nedeljko-Precision-7530:9094"
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP:
+        "INTERNAL:PLAINTEXT,\
+         EXTERNAL:PLAINTEXT"
+      KAFKA_INTER_BROKER_LISTENER_NAME: INTERNAL
       TZ: "Europe/Paris"
     container_name: kafka
     volumes:
@@ -144,7 +161,7 @@ services:
     environment:
       SPARK_CONF_DIR: /conf
       SPARK_WORKER_CORES: 2
-      SPARK_WORKER_MEMORY: 2g
+      SPARK_WORKER_MEMORY: 4g
       SPARK_WORKER_PORT: 8881
       SPARK_WORKER_WEBUI_PORT: 8082
       PACKAGES: 'org.apache.spark:spark-sql-kafka-0-10_2.11:2.3.1'

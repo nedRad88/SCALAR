@@ -360,8 +360,7 @@ class Producer:
         return all(item == "" for item in row)
 
     # Creating competition, competition_config ???
-    def create_competition(self, competition, items, predictions,
-                                                              initial_batch):
+    def create_competition(self, competition, items, predictions, initial_batch):
         print("Came here, create competition: ", competition.name)
         self.main(
             topic=competition.name.lower().replace(" ", ""),
