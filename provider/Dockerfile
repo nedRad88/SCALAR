@@ -23,6 +23,8 @@ EXPOSE 5005
 WORKDIR /my_application/Multiflow/scikit-multiflow-master
 RUN pip3 install --upgrade pip
 RUN pip3 install -U numpy
+RUN pip3 uninstall -y kafka-python
+RUN pip3 install -U kafka-python
 RUN pip3 install -U .
 
 WORKDIR /my_application
