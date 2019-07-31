@@ -169,6 +169,7 @@ def read_csv_file(competition, competition_config, data_format='csv'):
 
 def _create_evaluation_spark(spark_context, kafka_server, competition, competition_config, classes):
     mongo = MongoRepository(_MONGO_HOST)
+
     db = mongo.client['evaluation_measures']
     collection = db['standard_measures']
     measures = collection.find({})

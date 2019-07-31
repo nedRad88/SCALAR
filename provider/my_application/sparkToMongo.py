@@ -5,6 +5,7 @@ import json
 from bson import json_util
 # import logging
 # logging.basicConfig(level='DEBUG')
+
 import os
 
 with open('config.json') as json_data_file:

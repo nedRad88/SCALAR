@@ -212,12 +212,15 @@ def confirm_email(token):
         logging.debug("Token not valid")
 
     user = _USER_REPO.get_user_by_email(email)
-    if user.confirmed:
-        logging.debug("already confirmed")
-        # flash('Account already confirmed. Please login.', 'success')
+    if user is None:
+        print("User not registered.")
     else:
-        _USER_REPO.confirm_user(user)
-        print('Account confirmed')
+        if user.confirmed:
+            logging.debug("already confirmed")
+            # flash('Account already confirmed. Please login.', 'success')
+        else:
+            _USER_REPO.confirm_user(user)
+            print('Account confirmed')
 
     return json.dumps({'success': True}), 200, {'ContentType': 'application/json'}
 
@@ -792,7 +795,7 @@ def download_proto_file(competition_id):
 
 
 if __name__ == '__main__':
-    # app.run(host='0.0.0.0', port='5000')
+    # app.run(host='0.0.0.0', port='5000', debug=True)
     # http_server = WSGIServer(('', 5000), app)
     # http_server.serve_forever()
     wsgi.server(eventlet.listen(('', 5000)), app)
