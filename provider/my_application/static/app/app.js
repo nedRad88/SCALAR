@@ -129,8 +129,8 @@ app.constant('dashboardSections', {
     ]
 });
 
-// var oAuthServiceBase = 'http://localhost:5000/auth/';
-// var ressourceServerBaseUri = 'http://localhost:5000/';
+//var oAuthServiceBase = 'http://localhost:5000/auth/';
+//var ressourceServerBaseUri = 'http://localhost:5000/';
 
 var ressourceServerBaseUri = 'http://app.streaming-challenge.com:5000/';
 var oAuthServiceBase = 'http://app.streaming-challenge.com:5000/auth/';

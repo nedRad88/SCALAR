@@ -561,7 +561,7 @@ def get_leaderboard_by_competition(competition_id):
     competition_results = _MONGO_REPO.get_users_ranking_by_field_by_measure(competition_id, field, measure)
 
     for r in competition_results:
-        if r['id'] >= 100:
+        if r['id'] >= 100 or r['id'] < 1:
             first_name = "Test"
             last_name = "Baseline"
             res = {'id': r['id'], 'firstName': first_name, 'lastName': last_name, 'email': " ",
@@ -726,7 +726,7 @@ def get_messages(competition_id, field, measure):
         if competition is not None:
             request.environ['eventlet.minimum_write_chunk_size'] = 1
             Response.content_type = 'text/event-stream'
-            # Response.cache_control = 'no-cache'
+            Response.cache_control = 'no-cache'
             # Response.headers['Cache-Control'] = 'no-cache'
 
             return Response(stream_results(competition), mimetype="text/event-stream")
@@ -796,6 +796,6 @@ def download_proto_file(competition_id):
 
 if __name__ == '__main__':
     # app.run(host='0.0.0.0', port='5000', debug=True)
-    # http_server = WSGIServer(('', 5000), app)
-    # http_server.serve_forever()
-    wsgi.server(eventlet.listen(('', 5000)), app)
+    http_server = WSGIServer(('', 5000), app)
+    http_server.serve_forever()
+    # wsgi.server(eventlet.listen(('', 5000)), app)

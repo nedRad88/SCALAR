@@ -62,11 +62,13 @@ class SparkEvaluator:
             .drop("submitted_on") \
             .withColumnRenamed("rowID", "prediction_rowID")\
             .withColumnRenamed("competition_id", "prediction_competition_id")\
-            .withWatermark("timestamp_submitted", prediction_window_duration)
+            .dropDuplicates("rowID", "competition_id", "user_id")
 
         predictions = reduce(lambda data, idx: data.withColumnRenamed(target_columns[idx],
                                                                       prediction_target_columns[idx]),
                              range(len(target_columns)), prediction_stream)
+        predictions = predictions \
+            .withWatermark("timestamp_submitted", prediction_window_duration)
 
         # Joining two streams
         join_result = predictions.join(
@@ -214,28 +216,18 @@ class SparkEvaluator:
         """
         # .selectExpr("to_json(struct(*)) AS value") \
         pred = predictions \
-            .writeStream\
-            .format("console")\
-            .outputMode("append")\
-            .start()
-        """.format("kafka")\
+            .selectExpr("to_json(struct(*)) AS value") \
+            .writeStream \
+            .queryName(self.competition.name.lower().replace(" ", "") + 'prediction_stream') \
+            .trigger(processingTime=prediction_window_duration) \
+            .format("kafka")\
             .option("kafka.bootstrap.servers", self.broker) \
             .option("topic", self.competition.name.lower().replace(" ", "") + 'dead_end') \
             .option("checkpointLocation", checkpoints[0]) \
             .outputMode("append") \
             .start()
-"""
-        gold = golden \
-            .writeStream\
-            .format("console") \
-            .outputMode("append") \
-            .start()
 
-        """
-            .selectExpr("to_json(struct(*)) AS value") \
-            .writeStream \
-            .queryName(self.competition.name.lower().replace(" ", "") + 'prediction_stream') \
-            .trigger(processingTime=prediction_window_duration) \
+        gold = golden \
             .selectExpr("to_json(struct(*)) AS value") \
             .writeStream \
             .queryName(self.competition.name.lower().replace(" ", "") + 'training_stream') \
@@ -246,7 +238,7 @@ class SparkEvaluator:
             .option("checkpointLocation", checkpoints[1]) \
             .outputMode("append") \
             .start()
-"""
+
         output_stream = results_final \
             .withColumn("latency", results_final["sum(latency)"] / (
                     results_final["sum(total_num)"])) \
@@ -259,7 +251,7 @@ class SparkEvaluator:
             .format("kafka") \
             .option("kafka.bootstrap.servers", self.broker) \
             .option("topic", self.competition.name.lower().replace(" ", "") + 'spark_measures') \
-            .option("checkpointLocation", "/tmp/checkpoint") \
+            .option("checkpointLocation", checkpoints[2]) \
             .outputMode("update") \
             .start()
 

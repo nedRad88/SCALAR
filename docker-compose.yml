@@ -28,6 +28,8 @@ services:
         "INTERNAL:PLAINTEXT,\
          EXTERNAL:PLAINTEXT"
       KAFKA_INTER_BROKER_LISTENER_NAME: INTERNAL
+      KAFKA_LOG4J_ROOT_LOGLEVEL: WARN
+      KAFKA_TOOLS_LOG4J_LOGLEVEL: ERROR
       TZ: "Europe/Paris"
     container_name: kafka
     volumes:
@@ -123,7 +125,7 @@ services:
       - sql_db
 
   spark:
-    image: gettyimages/spark
+    image: gettyimages/spark:2.3.1-hadoop-3.0
     networks:
       new_network:
         ipv4_address: 172.22.0.8
@@ -152,7 +154,7 @@ services:
     #command: ['bin/spark-class org.apache.spark.deploy.master.Master', './bin/pyspark --packages org.apache.spark:spark-sql-kafka-0-10_2.11:2.3.1']
 
   worker:
-    image: gettyimages/spark
+    image: gettyimages/spark:2.3.1-hadoop-3.0
     networks:
       new_network:
         ipv4_address: 172.22.0.9
