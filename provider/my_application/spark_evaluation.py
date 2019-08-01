@@ -62,7 +62,7 @@ class SparkEvaluator:
             .drop("submitted_on") \
             .withColumnRenamed("rowID", "prediction_rowID")\
             .withColumnRenamed("competition_id", "prediction_competition_id")\
-            .dropDuplicates("rowID", "competition_id", "user_id")
+            .dropDuplicates(["rowID", "competition_id", "user_id"])
 
         predictions = reduce(lambda data, idx: data.withColumnRenamed(target_columns[idx],
                                                                       prediction_target_columns[idx]),

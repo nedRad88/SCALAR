@@ -172,9 +172,8 @@ class BaseRepository():
             self.session.add(row)
             self.session.flush()
             self.session.commit()
-        except exc.DataError as dE:
+        except Exception:
             self.session.rollback()
-            print(str(dE))
 
     def insert_many(self, rows):
 
@@ -183,9 +182,8 @@ class BaseRepository():
                 self.session.add(row)
                 self.session.flush()
             self.session.commit()
-        except exc.DataError as dE:
+        except Exception:
             self.session.rollback()
-            print(str(dE))
 
     def delete_one(self, row):
 
