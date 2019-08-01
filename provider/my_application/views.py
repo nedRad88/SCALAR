@@ -173,15 +173,6 @@ def authorized(*roles):
 def index():
     return render_template("base.html")
 
-
-@app.after_request
-def after_request(response):
-    response.headers["Cache-Control"] = "no-cache, no-store, must-revalidate, public, max-age=0"
-    response.headers["Expires"] = 0
-    response.headers["Pragma"] = "no-cache"
-    return response
-
-
 ######################################################################################
 ############                      Auth Server                             ############
 ######################################################################################
@@ -735,6 +726,7 @@ def get_messages(competition_id, field, measure):
             request.environ['eventlet.minimum_write_chunk_size'] = 1
             Response.content_type = 'text/event-stream'
             # Response.cache_control = 'no-cache'
+            # Response.headers['Cache-Control'] = 'no-cache'
             # Response.headers['Cache-Control'] = 'no-cache'
 
             return Response(stream_results(competition), mimetype="text/event-stream")
