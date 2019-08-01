@@ -17,7 +17,11 @@ spec:
         app: worker
     spec:
       containers:
-      - args:
+      - name: worker
+        image: gettyimages/spark:2.3.1-hadoop-3.0
+        ports:
+        - containerPort: 8082
+        args:
         - bin/spark-class
         - org.apache.spark.deploy.worker.Worker
         - spark://spark:7077
@@ -34,11 +38,6 @@ spec:
           value: "8881"
         - name: SPARK_WORKER_WEBUI_PORT
           value: "8082"
-        image: gettyimages/spark
-        name: worker
-        ports:
-        - containerPort: 8082
-      hostname: worker
       restartPolicy: Always
 ---
 apiVersion: v1

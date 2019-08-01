@@ -17,20 +17,20 @@ spec:
         app: spark
     spec:
       containers:
-      - env:
+      - name: spark
+        image: gettyimages/spark:2.3.1-hadoop-3.0
+        ports:
+        - containerPort: 4040
+        - containerPort: 6066
+        - containerPort: 7077
+        - containerPort: 8080
+        env:
         - name: PACKAGES
           value: org.apache.spark:spark-sql-kafka-0-10_2.11:2.3.1
         - name: SPARK_CONF_DIR
           value: /conf
         - name: TZ
           value: Europe/Paris
-        image: gettyimages/spark
-        name: spark
-        ports:
-        - containerPort: 4040
-        - containerPort: 6066
-        - containerPort: 7077
-        - containerPort: 8080
       restartPolicy: Always
 ---
 apiVersion: v1
@@ -53,6 +53,9 @@ spec:
   - name: "8080"
     port: 8080
     targetPort: 8080
+  - name: "8081"
+    port: 8081
+    targetPort: 8081
   selector:
     app: spark
   clusterIP: None
