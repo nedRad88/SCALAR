@@ -8,13 +8,13 @@ from functools import reduce
 
 # bin/pyspark --packages org.apache.spark:spark-sql-kafka-0-10_2.11:2.3.1 # in container
 # os.environ['PYSPARK_SUBMIT_ARGS'] = '--packages org.apache.spark:spark-sql-kafka-0-10_2.11:2.3.1 pyspark-shell'
-spark = SparkSession.builder.appName("Kafka_structured_streaming").getOrCreate()
+# spark = SparkSession.builder.appName("Kafka_structured_streaming").getOrCreate()
 
 
 class SparkEvaluator:
     def __init__(self, spark_context, kafka_server, competition, competition_config, classes, regression_measures,
                  classification_measures):
-        self.sc = spark
+        self.sc = spark_context
         self.broker = kafka_server  # 172.22.0.2:9092
         self.competition = competition
         self.config = competition_config
