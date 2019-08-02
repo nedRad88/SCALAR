@@ -1,0 +1,56 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: worker
+  name: worker
+spec:
+  selector:
+    matchLabels:
+      app: worker
+  replicas: 1
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: worker
+    spec:
+      containers:
+      - name: worker
+        image: gettyimages/spark:2.3.1-hadoop-3.0
+        ports:
+        - containerPort: 8082
+        args:
+        - bin/spark-class
+        - org.apache.spark.deploy.worker.Worker
+        - spark://spark:7077
+        env:
+        - name: PACKAGES
+          value: org.apache.spark:spark-sql-kafka-0-10_2.11:2.3.1
+        - name: SPARK_CONF_DIR
+          value: /conf
+        - name: SPARK_WORKER_CORES
+          value: "2"
+        - name: SPARK_WORKER_MEMORY
+          value: 2g
+        - name: SPARK_WORKER_PORT
+          value: "8881"
+        - name: SPARK_WORKER_WEBUI_PORT
+          value: "8082"
+      restartPolicy: Always
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: worker
+  name: worker
+spec:
+  ports:
+  - name: "8082"
+    port: 8082
+    targetPort: 8082
+  selector:
+    app: worker
+  clusterIP: None
