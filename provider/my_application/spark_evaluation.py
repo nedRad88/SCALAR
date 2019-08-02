@@ -62,7 +62,6 @@ class SparkEvaluator:
             .drop("submitted_on") \
             .withColumnRenamed("rowID", "prediction_rowID")\
             .withColumnRenamed("competition_id", "prediction_competition_id")\
-            .dropDuplicates(['prediction_rowID', 'prediction_competition_id', 'user_id'])\
             .withWatermark("timestamp_submitted", prediction_window_duration)
 
         predictions = reduce(lambda data, idx: data.withColumnRenamed(target_columns[idx],
@@ -214,6 +213,7 @@ class SparkEvaluator:
             .start()
         """
         # .selectExpr("to_json(struct(*)) AS value") \
+        """
         pred = predictions \
             .selectExpr("to_json(struct(*)) AS value") \
             .writeStream \
@@ -237,6 +237,7 @@ class SparkEvaluator:
             .option("checkpointLocation", checkpoints[1]) \
             .outputMode("append") \
             .start()
+            """
 
         output_stream = results_final \
             .withColumn("latency", results_final["sum(latency)"] / (
@@ -247,6 +248,8 @@ class SparkEvaluator:
             .drop("sum(total_num)") \
             .selectExpr("to_json(struct(*)) AS value") \
             .writeStream \
+            .queryName(self.competition.name.lower().replace(" ", "") + 'measures_stream') \
+            .trigger(processingTime=prediction_window_duration) \
             .format("kafka") \
             .option("kafka.bootstrap.servers", self.broker) \
             .option("topic", self.competition.name.lower().replace(" ", "") + 'spark_measures') \
@@ -254,9 +257,9 @@ class SparkEvaluator:
             .outputMode("update") \
             .start()
 
-        pred.awaitTermination()
-        gold.awaitTermination()
-        # output_stream.awaitTermination()
+        # pred.awaitTermination()
+        # gold.awaitTermination()
+        output_stream.awaitTermination()
 
     def run(self):
 
