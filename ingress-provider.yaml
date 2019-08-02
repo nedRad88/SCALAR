@@ -1,0 +1,20 @@
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  name: provider-ingress 
+  annotations:
+    kubernetes.io/ingress.class: nginx
+    nginx.ingress.kubernetes.io/rewrite-target: /
+spec:  
+  tls:
+  - hosts:
+    - <-DNS->.provider.app
+    secretName: provider-app-cert
+  rules:
+  - host: <-DNS->.provider.app
+    http:
+      paths:      
+      - backend:
+          serviceName: provider
+          servicePort: 5000
+        path: /

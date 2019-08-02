@@ -187,8 +187,11 @@ class BaseRepository():
 
     def delete_one(self, row):
 
-        self.session.delete(row)
-        self.session.commit()
+        try:
+            self.session.delete(row)
+            self.session.commit()
+        except Exception:
+            self.session.rollback()
 
 
 class CompetitionRepository(BaseRepository):

@@ -1,0 +1,74 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: provider
+  labels:
+    app: provider
+spec:
+  selector:
+    matchLabels:
+      app: provider
+  replicas: 1
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: provider
+    spec:
+      containers:
+      - name: provider
+        image: nedeljkoradulovic88/provider
+        ports:
+        - containerPort: 5000
+          name: "provider5000"
+        - containerPort: 5005
+          name: "provider5005"
+        - containerPort: 50051
+          name: "provider50051"
+        env:
+        - name: TZ
+          value: Europe/Paris
+        - name: DNS_NAME
+          value: "http://app.streaming-challenge.com"
+        - name: SQL_HOST
+          value: "mysql+pymysql://mysql:mysql@mysql/"
+        - name: KAFKA_HOST
+          value: "kafka:9092"
+        - name: SQL_DBNAME
+          value: "sample"
+        - name: MONGO_HOST
+          value: "mongodb"
+        - name: SPARK_HOST
+          value: "spark"
+        imagePullPolicy: Always
+        volumeMounts:
+        - name: provider-data
+          mountPath: /local/data
+      volumes:
+      - name: provider-data
+        persistentVolumeClaim:
+          claimName: provider-pvc
+      imagePullSecrets:
+      - name: dockerhub-auth
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: provider
+  labels:
+    app: provider
+spec:
+  ports:
+  - name: "5000"
+    port: 5000
+    targetPort: 5000
+  - name: "5005"
+    port: 5005
+    targetPort: 5005
+  - name: "50051"
+    port: 50051
+    targetPort: 50051
+  selector:
+    app: provider
+  type: LoadBalancer

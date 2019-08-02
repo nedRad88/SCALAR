@@ -5,8 +5,9 @@
 
 # Set the base image to Ubuntu
 FROM nedeljkoradulovic88/base1604:v5
+
 # File Author / Maintainer
-MAINTAINER Nedeljko Radulovic
+LABEL MAINTEINER="Nedeljko Radulovic"
 
 # Copy directory
 WORKDIR /my_application
