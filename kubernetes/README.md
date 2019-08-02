@@ -134,17 +134,17 @@ kubectl create secret docker-registry regcred --docker-server=https://index.dock
 Place yourself inside the deployments folder and first deploy peristent volumes:  
 
 ```
-kubectl apply -f sql-db-pv-claim.yaml
-kubectl apply -f mongo-db-pv-claim.yaml
-kubectl apply -f provider-pv-claim.yaml
+kubectl apply -f azure-storage-class.yaml
+kubectl apply -f mysql-pvc.yaml
+kubectl apply -f mongo-pvc.yaml
+kubectl apply -f provider-pvc.yaml
 ```
 followed by the deployment of application services:
 ```
-kubectl apply -f sql-db-deployment.yaml
-kubectl apply -f mongo-db-deployment.yaml
-kubectl apply -f mongo-express-deployment.yaml
-kubectl apply -f myadmin-deployment.yaml
+kubectl apply -f mysql-deployment.yaml
+kubectl apply -f mongo-deployment.yaml
 kubectl apply -f kafka-deployment.yaml
+kubectl apply -f zookeeper-deployment.yaml
 kubectl apply -f spark-deployment.yaml
 kubectl apply -f worker-deployment.yaml
 kubectl apply -f provider-deployment.yaml
