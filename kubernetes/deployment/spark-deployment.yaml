@@ -18,7 +18,7 @@ spec:
     spec:
       containers:
       - name: spark
-        image: gettyimages/spark:2.3.1-hadoop-3.0
+        image: nedeljkoradulovic88/spark
         ports:
         - containerPort: 4040
         - containerPort: 6066
@@ -37,7 +37,9 @@ spec:
           value: /conf
         - name: TZ
           value: Europe/Paris
-      restartPolicy: Always
+        imagePullPolicy: Always
+      imagePullSecrets:
+      - name: dockerhub-auth
 ---
 apiVersion: v1
 kind: Service
