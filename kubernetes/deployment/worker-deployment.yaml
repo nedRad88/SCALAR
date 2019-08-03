@@ -39,7 +39,7 @@ spec:
         - name: SPARK_WORKER_CORES
           value: "2"
         - name: SPARK_WORKER_MEMORY
-          value: 2g
+          value: 4g
         - name: SPARK_WORKER_PORT
           value: "8881"
         - name: SPARK_WORKER_WEBUI_PORT
