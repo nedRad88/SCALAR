@@ -125,7 +125,7 @@ services:
       - sql_db
 
   spark:
-    image: nedeljkoradulovic88/spark
+    image: nedeljkoradulovic88/spark:51
     networks:
       new_network:
         ipv4_address: 172.22.0.8
@@ -141,7 +141,6 @@ services:
     container_name: spark
     volumes:
       - /etc/localtime:/etc/localtime:ro
-      - ./provider/my_application/conf:/conf
     expose:
       - 7001
       - 7002
@@ -154,7 +153,7 @@ services:
     #command: ['bin/spark-class org.apache.spark.deploy.master.Master', './bin/pyspark --packages org.apache.spark:spark-sql-kafka-0-10_2.11:2.3.1']
 
   worker1:
-    image: nedeljkoradulovic88/spark
+    image: nedeljkoradulovic88/spark:51
     networks:
       new_network:
         ipv4_address: 172.22.0.9
@@ -181,10 +180,9 @@ services:
     container_name: worker1
     volumes:
       - /etc/localtime:/etc/localtime:ro
-      - ./provider/my_application/conf:/conf
 
   worker2:
-    image: nedeljkoradulovic88/spark
+    image: nedeljkoradulovic88/spark:51
     networks:
       new_network:
         ipv4_address: 172.22.0.10
@@ -211,7 +209,6 @@ services:
     container_name: worker2
     volumes:
       - /etc/localtime:/etc/localtime:ro
-      - ./provider/my_application/conf:/conf
 
 networks:
   new_network:
