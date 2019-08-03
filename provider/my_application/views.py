@@ -728,6 +728,7 @@ def get_messages(competition_id, field, measure):
             # Response.cache_control = 'no-cache'
             # Response.headers['Cache-Control'] = 'no-cache'
 
+
             return Response(stream_results(competition), mimetype="text/event-stream")
         else:
             return json.dumps('Competition not found !, please check'), 404, {'ContentType': 'application/json'}
