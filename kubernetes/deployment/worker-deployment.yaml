@@ -44,7 +44,9 @@ spec:
           value: "8881"
         - name: SPARK_WORKER_WEBUI_PORT
           value: "8082"
-      restartPolicy: Always
+        imagePullPolicy: Always
+      imagePullSecrets:
+      - name: dockerhub-auth
 ---
 apiVersion: v1
 kind: Service

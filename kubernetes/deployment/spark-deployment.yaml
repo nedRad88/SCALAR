@@ -37,7 +37,9 @@ spec:
           value: /conf
         - name: TZ
           value: Europe/Paris
-      restartPolicy: Always
+        imagePullPolicy: Always
+      imagePullSecrets:
+      - name: dockerhub-auth
 ---
 apiVersion: v1
 kind: Service
