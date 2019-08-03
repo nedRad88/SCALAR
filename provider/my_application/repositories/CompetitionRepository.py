@@ -78,16 +78,19 @@ class Datastream(_BASE):
     datastream_id = Column(Integer, primary_key=True, autoincrement=True)
     name = Column(String(64))
     file_path = Column(String(255))
-    __table_args__ = (UniqueConstraint('name'),)
+    description = Column(String(255))
     competitions = relationship("Competition", back_populates='datastream', lazy='dynamic')
 
-    def __init__(self, datastream_id, name, file_path):
+    __table_args__ = (UniqueConstraint('name'),)
+
+    def __init__(self, datastream_id, name, description, file_path):
         self.datastream_id = datastream_id
         self.name = name
+        self.description = description
         self.file_path = file_path
 
     def serialize(self):
-        return {'datastream_id': self.datastream_id, 'name': self.name}
+        return {'datastream_id': self.datastream_id, 'name': self.name, 'description': self.description}
 
 
 class User(_BASE):
@@ -155,7 +158,7 @@ class BaseRepository():
 
     def __init__(self, host, dbname):
 
-        self.engine = create_engine(host + dbname, pool_pre_ping=True)
+        self.engine = create_engine(host + dbname)
         self.sessionmaker = sessionmaker()
         # self.sessionmaker = SingletonSession().instance
         self.sessionmaker.configure(bind=self.engine)
