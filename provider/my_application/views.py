@@ -429,7 +429,7 @@ def get_datastreams():
                 os.makedirs(data_directory)
             data_file.save(os.path.join(ds_path))
 
-        datastream = Datastream(None, name=name, file_path=data_file_name)
+        datastream = Datastream(None, name=name, file_path=data_file_name, description=description)
         _DATASTREAM_REPO.insert_one(datastream)
 
         return json.dumps({'success': True}), 200, {'ContentType': 'application/json'}
