@@ -359,7 +359,6 @@ class DatastreamRepository(BaseRepository):
 
         if results is not None:
             copy = results
-
             if step:
                 results = results.limit(step)
 
