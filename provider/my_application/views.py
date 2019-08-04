@@ -642,7 +642,12 @@ def get_messages(competition_id, field, measure):
                 if len(results) > 0:
                     random_user_results = results[0]['results']
                     last_interval = random_user_results[len(random_user_results) - 1]['label']
+                    last_interval_date = dt.datetime(year=int(last_interval["Year"]), month=int(last_interval["Month"]),
+                                                     day=int(last_interval["Day"]), hour=int(last_interval["Hour"]),
+                                                     minute=int(last_interval["Minute"]), second=int(last_interval["Second"]))
 
+                    pause.until(last_interval_date + dt.timedelta(days=0, seconds=evaluation_time_interval))
+                    """
                     if int(last_interval['Year']) % 4 != 0:
                         leap_year = False
                     elif int(last_interval['Year']) % 100 != 0:
@@ -691,13 +696,14 @@ def get_messages(competition_id, field, measure):
                         minute=pause_minute,
                         second=pause_second
                     ))
+                    """
 
             continue_loop = True
 
             while continue_loop:
                 now = datetime.now()
 
-                if now > competition.end_date + dt.timedelta(seconds=evaluation_time_interval):
+                if now > competition.end_date + dt.timedelta(days=0, seconds=evaluation_time_interval):
                     continue_loop = False
 
                 else:

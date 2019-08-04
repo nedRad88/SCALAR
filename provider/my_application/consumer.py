@@ -177,7 +177,7 @@ class DataStreamerServicer:
 
     def __init__(self, server, competition):
 
-        self.consumer = KafkaConsumer(bootstrap_servers=server, auto_offset_reset='earliest')  # 172.22.0.2:9092
+        self.consumer = KafkaConsumer(bootstrap_servers=server, auto_offset_reset='earliest', consumer_timeout_ms=competition.initial_training_time * 10000)  # 172.22.0.2:9092
         self.producer = ProducerToMongoSink(server)  # 172.22.0.2:9092
         self.kafka_producer = KafkaProducer(bootstrap_servers=server)
 
@@ -277,7 +277,7 @@ class DataStreamerServicer:
             context.set_details('Please check your authentication token, the secret does not match')
             yield self.file_pb2.Message()
 
-        end_date = self.competition.end_date + 2 * datetime.timedelta(seconds=self.competition.predictions_time_interval)
+        end_date = self.competition.end_date + 5 * datetime.timedelta(seconds=self.competition.predictions_time_interval)
 
         try:
             t = threading.Thread(target=receive_predictions,
