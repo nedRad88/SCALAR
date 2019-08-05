@@ -76,7 +76,7 @@ def _create_competition(competition, competition_config):
     threading.Thread(target=_create_competition_thread, args=(competition, items, predictions, initial_batch)).start()
     threading.Thread(target=_create_consumer, args=(competition,)).start()
     threading.Thread(target=_create_mongo_sink_consumer,
-                     args=(competition.name.lower().replace(" ", "") + 'predictions',)).start()
+                     args=(competition.name.lower().replace(" ", "") + 'predictions', competition,)).start()
     threading.Thread(target=_create_baseline, args=(competition, competition_config)).start()
     time.sleep(2)
     threading.Thread(target=_create_evaluation_spark, args=(spark, SERVER_HOST, competition, competition_config, classes)).start()
@@ -208,8 +208,8 @@ def _create_consumer(competition):
     _gRPC_SERVER.add_server(streamer, competition)
 
 
-def _create_mongo_sink_consumer(topic):
-    mongo_writer = ConsumerToMongo(SERVER_HOST, topic)
+def _create_mongo_sink_consumer(topic, competition):
+    mongo_writer = ConsumerToMongo(SERVER_HOST, topic, competition)
     mongo_writer.write('data')
 
 

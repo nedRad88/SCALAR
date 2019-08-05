@@ -78,16 +78,19 @@ class Datastream(_BASE):
     datastream_id = Column(Integer, primary_key=True, autoincrement=True)
     name = Column(String(64))
     file_path = Column(String(255))
-    __table_args__ = (UniqueConstraint('name'),)
+    description = Column(String(255))
     competitions = relationship("Competition", back_populates='datastream', lazy='dynamic')
 
-    def __init__(self, datastream_id, name, file_path):
+    __table_args__ = (UniqueConstraint('name'),)
+
+    def __init__(self, datastream_id, name, description, file_path):
         self.datastream_id = datastream_id
         self.name = name
+        self.description = description
         self.file_path = file_path
 
     def serialize(self):
-        return {'datastream_id': self.datastream_id, 'name': self.name}
+        return {'datastream_id': self.datastream_id, 'name': self.name, 'description': self.description}
 
 
 class User(_BASE):
@@ -155,7 +158,7 @@ class BaseRepository():
 
     def __init__(self, host, dbname):
 
-        self.engine = create_engine(host + dbname, pool_pre_ping=True)
+        self.engine = create_engine(host + dbname)
         self.sessionmaker = sessionmaker()
         # self.sessionmaker = SingletonSession().instance
         self.sessionmaker.configure(bind=self.engine)
@@ -239,26 +242,29 @@ class CompetitionRepository(BaseRepository):
         else:
             raise ValueError('Unknown type ' + status)
 
-        copy = results
+        if results is not None:
+            copy = results
 
-        if step:
-            results = results.limit(step)
+            if step:
+                results = results.limit(step)
 
-        if page:
-            results = results.offset((page - 1) * step)
+            if page:
+                results = results.offset((page - 1) * step)
 
-        data = []
-        for r in results:
-            row = {}
-            row['name'] = r.name
-            row['id'] = r.competition_id
-            row['description'] = r.description
-            row['start_date'] = r.start_date.strftime("%Y-%m-%d %H:%M")
-            row['end_date'] = r.end_date.strftime("%Y-%m-%d %H:%M")
+            data = []
+            for r in results:
+                row = {}
+                row['name'] = r.name
+                row['id'] = r.competition_id
+                row['description'] = r.description
+                row['start_date'] = r.start_date.strftime("%Y-%m-%d %H:%M")
+                row['end_date'] = r.end_date.strftime("%Y-%m-%d %H:%M")
 
-            data.append(row)
+                data.append(row)
 
-        return {'data': data, 'total': copy.count()}
+            return {'data': data, 'total': copy.count()}
+        else:
+            return {'data': [], 'total': 0}
 
     def get_competition_by_code(self, code):
         results = self.session.query(Competition).filter_by(code=code)
@@ -308,28 +314,29 @@ class CompetitionRepository(BaseRepository):
         else:
             raise ValueError('Unknown type ' + status)
 
-        copy = results
+        if results is not None:
+            copy = results
 
-        if step:
-            results = results.limit(step)
+            if step:
+                results = results.limit(step)
 
-        if page:
-            results = results.offset((page - 1) * step)
+            if page:
+                results = results.offset((page - 1) * step)
 
-        data = []
-        for r in results:
-            print('results', r)
-            row = {}
-            row['name'] = r.name
-            row['id'] = r.competition_id
-            row['description'] = r.description
-            row['start_date'] = r.start_date.strftime("%Y-%m-%d %H:%M")
-            row['end_date'] = r.end_date.strftime("%Y-%m-%d %H:%M")
+            data = []
+            for r in results:
+                row = {}
+                row['name'] = r.name
+                row['id'] = r.competition_id
+                row['description'] = r.description
+                row['start_date'] = r.start_date.strftime("%Y-%m-%d %H:%M")
+                row['end_date'] = r.end_date.strftime("%Y-%m-%d %H:%M")
 
-            data.append(row)
+                data.append(row)
 
-        print(data) # TODO
-        return {'data': data, 'total': copy.count()}
+            return {'data': data, 'total': copy.count()}
+        else:
+            return {'data': [], 'total': 0}
 
 
 class DatastreamRepository(BaseRepository):
@@ -353,17 +360,19 @@ class DatastreamRepository(BaseRepository):
         except Exception:
             self.session.rollback()
 
-        copy = results
+        if results is not None:
+            copy = results
+            if step:
+                results = results.limit(step)
 
-        if step:
-            results = results.limit(step)
+            if page:
+                results = results.offset((page - 1) * step)
 
-        if page:
-            results = results.offset((page - 1) * step)
+            data = [r.serialize() for r in results]
 
-        data = [r.serialize() for r in results]
-
-        return {'data': data, 'total': copy.count()}
+            return {'data': data, 'total': copy.count()}
+        else:
+            return {'data': [], 'total': 0}
 
 
 class UserRepository(BaseRepository):

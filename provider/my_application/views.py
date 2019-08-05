@@ -245,7 +245,7 @@ def register():
     msg = Message('Streaming Data Challenge : Registration confirmed', sender='streaming.challenge@gmail.com',
                   recipients=[email])
     # msg.body = "Hello  " + first_name + ' ' + last_name + "\n\n Welcome to Streaming Data Challenge platform \n\n Cheers, \n\n The team \n Please confirm \n" "http://streamigchallenge.cloudapp.net:5000/auth/api/account/confirm/"+ token
-    msg.body = "Hello " + first_name + ' ' + last_name + ", \n\nWelcome to Streaming Data Challenge platform! \n\nCheers, \nThe team \n\nPlease click on the link below to confirm your e-mail.\n" "http://app.streaming-challenge.com:5000/auth/api/account/confirm/" + token
+    msg.body = "Hello " + first_name + ' ' + last_name + ", \n\nWelcome to Streaming Data Challenge platform! \n\nCheers, \nThe team \n\nPlease click on the link below to confirm your e-mail.\n" "http://app.streaming-challenge.com:80/auth/api/account/confirm/" + token
     # http: // streamingcompetition.francecentral.cloudapp.azure.com
     # Was localhost:5000/auth...
     mail.send(msg)
@@ -429,7 +429,7 @@ def get_datastreams():
                 os.makedirs(data_directory)
             data_file.save(os.path.join(ds_path))
 
-        datastream = Datastream(None, name=name, file_path=data_file_name)
+        datastream = Datastream(None, name=name, file_path=data_file_name, description=description)
         _DATASTREAM_REPO.insert_one(datastream)
 
         return json.dumps({'success': True}), 200, {'ContentType': 'application/json'}
@@ -642,7 +642,11 @@ def get_messages(competition_id, field, measure):
                 if len(results) > 0:
                     random_user_results = results[0]['results']
                     last_interval = random_user_results[len(random_user_results) - 1]['label']
-                    pause_until = last_interval + dt.timedelta(0, evaluation_time_interval)
+                    last_interval_date = dt.datetime(year=int(last_interval["Year"]), month=int(last_interval["Month"]),
+                                                     day=int(last_interval["Day"]), hour=int(last_interval["Hour"]),
+                                                     minute=int(last_interval["Minute"]), second=int(last_interval["Second"]))
+
+                    pause.until(last_interval_date + dt.timedelta(days=0, seconds=evaluation_time_interval))
                     """
                     if int(last_interval['Year']) % 4 != 0:
                         leap_year = False
@@ -683,15 +687,23 @@ def get_messages(competition_id, field, measure):
                                 if pause_month > 12:
                                     pause_month = pause_month - 12
                                     pause_year = pause_year + 1
+
+                    pause.until(datetime(
+                        year=pause_year,
+                        month=pause_month,
+                        day=pause_day,
+                        hour=pause_hour,
+                        minute=pause_minute,
+                        second=pause_second
+                    ))
                     """
-                    pause.until(pause_until)
 
             continue_loop = True
 
             while continue_loop:
                 now = datetime.now()
 
-                if now > competition.end_date + dt.timedelta(seconds=evaluation_time_interval):
+                if now > competition.end_date + dt.timedelta(days=0, seconds=evaluation_time_interval):
                     continue_loop = False
 
                 else:
@@ -721,6 +733,7 @@ def get_messages(competition_id, field, measure):
             Response.content_type = 'text/event-stream'
             # Response.cache_control = 'no-cache'
             # Response.headers['Cache-Control'] = 'no-cache'
+
 
             return Response(stream_results(competition), mimetype="text/event-stream")
         else:

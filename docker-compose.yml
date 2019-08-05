@@ -71,7 +71,7 @@ services:
   provider:
     build: provider
     ports:
-      - "5000:5000"
+      - "80:5000"
       - "5005:5005"
       - "50051:50051"
     networks:
@@ -125,7 +125,7 @@ services:
       - sql_db
 
   spark:
-    image: gettyimages/spark:2.3.1-hadoop-3.0
+    image: nedeljkoradulovic88/spark:51
     networks:
       new_network:
         ipv4_address: 172.22.0.8
@@ -141,7 +141,6 @@ services:
     container_name: spark
     volumes:
       - /etc/localtime:/etc/localtime:ro
-      - ./provider/my_application/conf:/conf
     expose:
       - 7001
       - 7002
@@ -153,13 +152,13 @@ services:
       - 6066
     #command: ['bin/spark-class org.apache.spark.deploy.master.Master', './bin/pyspark --packages org.apache.spark:spark-sql-kafka-0-10_2.11:2.3.1']
 
-  worker:
-    image: gettyimages/spark:2.3.1-hadoop-3.0
+  worker1:
+    image: nedeljkoradulovic88/spark:51
     networks:
       new_network:
         ipv4_address: 172.22.0.9
     command: 'bin/spark-class org.apache.spark.deploy.worker.Worker spark://172.22.0.8:7077'
-    hostname: worker
+    hostname: worker1
     environment:
       SPARK_CONF_DIR: /conf
       SPARK_WORKER_CORES: 2
@@ -178,10 +177,38 @@ services:
       - 8881
     ports:
       - 8082:8082
-    container_name: worker
+    container_name: worker1
     volumes:
       - /etc/localtime:/etc/localtime:ro
-      - ./provider/my_application/conf:/conf
+
+  worker2:
+    image: nedeljkoradulovic88/spark:51
+    networks:
+      new_network:
+        ipv4_address: 172.22.0.10
+    command: 'bin/spark-class org.apache.spark.deploy.worker.Worker spark://172.22.0.8:7077'
+    hostname: worker2
+    environment:
+      SPARK_CONF_DIR: /conf
+      SPARK_WORKER_CORES: 2
+      SPARK_WORKER_MEMORY: 4g
+      SPARK_WORKER_PORT: 8881
+      SPARK_WORKER_WEBUI_PORT: 8082
+      PACKAGES: 'org.apache.spark:spark-sql-kafka-0-10_2.11:2.3.1'
+    links:
+      - spark
+    expose:
+      - 7012
+      - 7013
+      - 7014
+      - 7015
+      - 7016
+      - 8881
+    ports:
+      - 8085:8085
+    container_name: worker2
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
 
 networks:
   new_network:

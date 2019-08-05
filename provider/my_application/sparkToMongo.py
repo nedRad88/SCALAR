@@ -19,7 +19,8 @@ except Exception:
 
 class SparkToMongo:
     def __init__(self, kafka_server, topic, competition, config):
-        self.consumer = KafkaConsumer(bootstrap_servers=kafka_server, auto_offset_reset='earliest')
+        self.consumer = KafkaConsumer(bootstrap_servers=kafka_server, auto_offset_reset='earliest',
+                                      consumer_timeout_ms=competition.initial_training_time * 30000)
         self.consumer.subscribe(topic)
         self.client = SimpleClient(kafka_server)
         self.mongo_repository = MongoRepository(_MONGO_HOST)
@@ -29,6 +30,8 @@ class SparkToMongo:
 
     def write(self):
 
+        db = self.mongo_repository.client['evaluation_measures']
+        measures_coll = db['measures']
         for msg in self.consumer:
             message = json.loads(msg.value.decode('utf-8'), object_hook=json_util.object_hook)
             # message = json.loads(str(message), object_hook=json_util.object_hook)
@@ -55,4 +58,4 @@ class SparkToMongo:
                     time_series_instance['measures'][new_fields[1]][new_fields[0]] = message[key]
                     time_series_instance['batch_measures'][new_fields[1]][new_fields[0]] = message[key]
 
-            self.db_evaluations.measures.insert_one(time_series_instance)
+            measures_coll.insert_one(time_series_instance)

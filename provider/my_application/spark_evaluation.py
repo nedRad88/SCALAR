@@ -3,7 +3,7 @@ from pyspark.sql.functions import *
 from pyspark.sql.types import *
 import os
 from functools import reduce
-# from skmultiflow.metrics import ConfusionMatrix
+from skmultiflow.core.utils.data_structures import ConfusionMatrix
 # TODO deal with skmultiflow
 
 # bin/pyspark --packages org.apache.spark:spark-sql-kafka-0-10_2.11:2.3.1 # in container
@@ -33,7 +33,7 @@ class SparkEvaluator:
             .format("kafka") \
             .option("kafka.bootstrap.servers", self.broker) \
             .option("subscribe", self.competition.name.lower().replace(" ", "") + 'spark_train') \
-            .option("kafkaConsumer.pollTimeoutMs", self.competition.predictions_time_interval * 1000) \
+            .option("kafkaConsumer.pollTimeoutMs", 1000) \
             .load()\
             .selectExpr("cast (value as string) as json")\
             .select(from_json("json", train_schema).alias("data"))\
@@ -52,7 +52,7 @@ class SparkEvaluator:
             .format("kafka") \
             .option("kafka.bootstrap.servers", self.broker) \
             .option("subscribe", self.competition.name.lower().replace(" ", "") + 'spark_predictions') \
-            .option("kafkaConsumer.pollTimeoutMs", self.competition.predictions_time_interval * 1000)\
+            .option("kafkaConsumer.pollTimeoutMs", 300)\
             .load()\
             .selectExpr("cast (value as string) as json") \
             .select(from_json("json", prediction_schema).alias("data")) \
@@ -60,8 +60,9 @@ class SparkEvaluator:
             .withColumn("timestamp_submitted", unix_timestamp('submitted_on',
                                                               "yyyy-MM-dd HH:mm:ss").cast(TimestampType())) \
             .drop("submitted_on") \
-            .withColumnRenamed("rowID", "prediction_rowID") \
-            .withColumnRenamed("competition_id", "prediction_competition_id")
+            .withColumnRenamed("rowID", "prediction_rowID")\
+            .withColumnRenamed("competition_id", "prediction_competition_id")\
+            .dropDuplicates(["user_id", "prediction_competition_id", "prediction_rowID"])
 
         predictions = reduce(lambda data, idx: data.withColumnRenamed(target_columns[idx],
                                                                       prediction_target_columns[idx]),
@@ -213,8 +214,8 @@ class SparkEvaluator:
             .outputMode("update") \
             .start()
         """
-        # .selectExpr("to_json(struct(*)) AS value") \
 
+        # .selectExpr("to_json(struct(*)) AS value") \
         pred = predictions \
             .selectExpr("to_json(struct(*)) AS value") \
             .writeStream \
@@ -240,13 +241,16 @@ class SparkEvaluator:
             .start()
 
         output_stream = results_final \
-            .withColumn("latency", results_final["sum(latency)"] / (results_final["sum(total_num)"])) \
+            .withColumn("latency", results_final["sum(latency)"] / (
+                    results_final["sum(total_num)"])) \
             .withColumnRenamed("sum(penalized)", "penalized") \
             .withColumnRenamed("sum(num_submissions)", "num_submissions") \
             .drop("sum(latency)") \
             .drop("sum(total_num)") \
             .selectExpr("to_json(struct(*)) AS value") \
             .writeStream \
+            .queryName(self.competition.name.lower().replace(" ", "") + 'measure_stream') \
+            .trigger(processingTime=prediction_window_duration) \
             .format("kafka") \
             .option("kafka.bootstrap.servers", self.broker) \
             .option("topic", self.competition.name.lower().replace(" ", "") + 'spark_measures') \
@@ -254,9 +258,9 @@ class SparkEvaluator:
             .outputMode("update") \
             .start()
 
-        pred.awaitTermination()
-        gold.awaitTermination()
-        # output_stream.awaitTermination()
+        # pred.awaitTermination()
+        # gold.awaitTermination()
+        output_stream.awaitTermination()
 
     def run(self):
 
@@ -297,7 +301,7 @@ class SparkEvaluator:
 
         # return train_schema, prediction_schema, targets  # , test_schema, init_schema
         # Time window duration for watermarking
-        window_duration = str(2 * self.competition.predictions_time_interval) + " " + "seconds"
+        window_duration = str(5 * self.competition.predictions_time_interval) + " " + "seconds"
         prediction_window_duration = str(self.competition.predictions_time_interval) + " " + "seconds"
 
         # Creating lists of column names which wiil be used later during calculations and transformations

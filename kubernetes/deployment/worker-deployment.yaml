@@ -18,13 +18,17 @@ spec:
     spec:
       containers:
       - name: worker
-        image: gettyimages/spark:2.3.1-hadoop-3.0
+        image: nedeljkoradulovic88/spark
         ports:
         - containerPort: 8082
+        - containerPort: 7012
+        - containerPort: 7013
+        - containerPort: 7014
+        - containerPort: 7015
+        - containerPort: 7016
+        - containerPort: 8881
         args:
-        - bin/spark-class
-        - org.apache.spark.deploy.worker.Worker
-        - spark://spark:7077
+        - bin/spark-class org.apache.spark.deploy.worker.Worker spark://spark:7077
         env:
         - name: PACKAGES
           value: org.apache.spark:spark-sql-kafka-0-10_2.11:2.3.1
@@ -33,12 +37,14 @@ spec:
         - name: SPARK_WORKER_CORES
           value: "2"
         - name: SPARK_WORKER_MEMORY
-          value: 2g
+          value: 4g
         - name: SPARK_WORKER_PORT
           value: "8881"
         - name: SPARK_WORKER_WEBUI_PORT
           value: "8082"
-      restartPolicy: Always
+        imagePullPolicy: Always
+      imagePullSecrets:
+      - name: dockerhub-auth
 ---
 apiVersion: v1
 kind: Service
@@ -51,6 +57,24 @@ spec:
   - name: "8082"
     port: 8082
     targetPort: 8082
+  - name: "7012"
+    port: 7012
+    targetPort: 7012
+  - name: "7013"
+    port: 7013
+    targetPort: 7013
+  - name: "7014"
+    port: 7014
+    targetPort: 7014
+  - name: "7015"
+    port: 7015
+    targetPort: 7015
+  - name: "7016"
+    port: 7016
+    targetPort: 7016
+  - name: "8881"
+    port: 8881
+    targetPort: 8881
   selector:
     app: worker
   clusterIP: None

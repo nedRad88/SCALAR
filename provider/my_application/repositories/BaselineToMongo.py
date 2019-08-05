@@ -22,7 +22,8 @@ class BaselineToMongo:
 
     def __init__(self, kafka_server, topic, competition, competition_config):
 
-        self.consumer = KafkaConsumer(bootstrap_servers=kafka_server, auto_offset_reset='earliest')
+        self.consumer = KafkaConsumer(bootstrap_servers=kafka_server, auto_offset_reset='earliest',
+                                      consumer_timeout_ms=competition.initial_training_time * 10000)
         self.consumer.subscribe(topic)
         self.client = SimpleClient(kafka_server)
         self.mongo_repository = MongoRepository(_MONGO_HOST)
