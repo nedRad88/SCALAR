@@ -34,6 +34,8 @@ services:
     container_name: kafka
     volumes:
       - /etc/localtime:/etc/localtime:ro
+    depends_on:
+      - zookeeper
 
   mongo_db:
     image: mongo
@@ -66,7 +68,7 @@ services:
     container_name: sql_db
     command: [mysqld, --default-authentication-plugin=mysql_native_password]
     depends_on:
-      - spark
+      - spark-master
 
   provider:
     build: provider
@@ -124,7 +126,7 @@ services:
     depends_on:
       - sql_db
 
-  spark:
+  spark-master:
     image: nedeljkoradulovic88/spark:51
     networks:
       new_network:
@@ -138,7 +140,7 @@ services:
       - "6066:6066"
       - "7077:7077"
       - "8080:8080"
-    container_name: spark
+    container_name: spark-master
     volumes:
       - /etc/localtime:/etc/localtime:ro
     expose:
@@ -157,7 +159,7 @@ services:
     networks:
       new_network:
         ipv4_address: 172.22.0.9
-    command: 'bin/spark-class org.apache.spark.deploy.worker.Worker spark://172.22.0.8:7077'
+    command: 'bin/spark-class org.apache.spark.deploy.worker.Worker spark://spark-master:7077'
     hostname: worker1
     environment:
       SPARK_CONF_DIR: /conf
@@ -167,7 +169,7 @@ services:
       SPARK_WORKER_WEBUI_PORT: 8082
       PACKAGES: 'org.apache.spark:spark-sql-kafka-0-10_2.11:2.3.1'
     links:
-      - spark
+      - spark-master
     expose:
       - 7012
       - 7013
@@ -186,7 +188,7 @@ services:
     networks:
       new_network:
         ipv4_address: 172.22.0.10
-    command: 'bin/spark-class org.apache.spark.deploy.worker.Worker spark://172.22.0.8:7077'
+    command: 'bin/spark-class org.apache.spark.deploy.worker.Worker spark://spark-master:7077'
     hostname: worker2
     environment:
       SPARK_CONF_DIR: /conf
@@ -196,7 +198,7 @@ services:
       SPARK_WORKER_WEBUI_PORT: 8082
       PACKAGES: 'org.apache.spark:spark-sql-kafka-0-10_2.11:2.3.1'
     links:
-      - spark
+      - spark-master
     expose:
       - 7012
       - 7013

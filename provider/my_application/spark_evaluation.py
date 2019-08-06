@@ -254,7 +254,7 @@ class SparkEvaluator:
             .format("kafka") \
             .option("kafka.bootstrap.servers", self.broker) \
             .option("topic", self.competition.name.lower().replace(" ", "") + 'spark_measures') \
-            .option("checkpointLocation", "/tmp/checkpoint") \
+            .option("checkpointLocation", checkpoints[2]) \
             .outputMode("update") \
             .start()
 
