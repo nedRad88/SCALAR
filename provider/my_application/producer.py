@@ -34,7 +34,7 @@ spark = SparkSession\
     .appName("Kafka_structured_streaming")\
     .master(spark_master)\
     .config('spark.jars.packages', 'org.apache.spark:spark-sql-kafka-0-10_2.11:2.3.1')\
-    .config('spark.driver.host', 'provider')\
+    .config('spark.driver.host', os.environ['SPARK_DRIVER_HOST'])\
     .getOrCreate()
 # from apscheduler.schedulders.background.BackgroundScheduler import remove_job
 
