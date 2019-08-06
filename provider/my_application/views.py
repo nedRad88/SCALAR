@@ -245,7 +245,7 @@ def register():
     msg = Message('Streaming Data Challenge : Registration confirmed', sender='streaming.challenge@gmail.com',
                   recipients=[email])
     # msg.body = "Hello  " + first_name + ' ' + last_name + "\n\n Welcome to Streaming Data Challenge platform \n\n Cheers, \n\n The team \n Please confirm \n" "http://streamigchallenge.cloudapp.net:5000/auth/api/account/confirm/"+ token
-    msg.body = "Hello " + first_name + ' ' + last_name + ", \n\nWelcome to Streaming Data Challenge platform! \n\nCheers, \nThe team \n\nPlease click on the link below to confirm your e-mail.\n" "http://app.streaming-challenge.com:80/auth/api/account/confirm/" + token
+    msg.body = "Hello " + first_name + ' ' + last_name + ", \n\nWelcome to Streaming Data Challenge platform! \n\nCheers, \nThe team \n\nPlease click on the link below to confirm your e-mail.\n" "http://localhost:80/auth/api/account/confirm/" + token
     # http: // streamingcompetition.francecentral.cloudapp.azure.com
     # Was localhost:5000/auth...
     mail.send(msg)
