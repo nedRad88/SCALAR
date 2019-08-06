@@ -121,13 +121,13 @@ services:
       - sql_db
 
   spark-master:
-    image: nedeljkoradulovic88/spark:51
+    image: nedeljkoradulovic88/spark
     networks:
       - new_network
     environment:
       TZ: "Europe/Paris"
       SPARK_CONF_DIR: /conf
-      PACKAGES: 'org.apache.spark:spark-sql-kafka-0-10_2.12:2.4.1'
+      PACKAGES: 'org.apache.spark:spark-sql-kafka-0-10_2.11:2.4.0'
     ports:
       - "4040:4040"
       - "6066:6066"
@@ -145,10 +145,10 @@ services:
       - 7006
       - 7077
       - 6066
-    #command: ['bin/spark-class org.apache.spark.deploy.master.Master', './bin/pyspark --packages org.apache.spark:spark-sql-kafka-0-10_2.12:2.4.1']
+    #command: ['bin/spark-class org.apache.spark.deploy.master.Master', './bin/pyspark --packages org.apache.spark:spark-sql-kafka-0-10_2.11:2.4.0']
 
   worker1:
-    image: nedeljkoradulovic88/spark:51
+    image: nedeljkoradulovic88/spark
     networks:
       - new_network
     command: 'bin/spark-class org.apache.spark.deploy.worker.Worker spark://spark-master:7077'
@@ -159,7 +159,7 @@ services:
       SPARK_WORKER_MEMORY: 4g
       SPARK_WORKER_PORT: 8881
       SPARK_WORKER_WEBUI_PORT: 8082
-      PACKAGES: 'org.apache.spark:spark-sql-kafka-0-10_2.12:2.4.1'
+      PACKAGES: 'org.apache.spark:spark-sql-kafka-0-10_2.11:2.4.0'
     links:
       - spark-master
     expose:
@@ -176,7 +176,7 @@ services:
       - /etc/localtime:/etc/localtime:ro
 
   worker2:
-    image: nedeljkoradulovic88/spark:51
+    image: nedeljkoradulovic88/spark
     networks:
       - new_network
     command: 'bin/spark-class org.apache.spark.deploy.worker.Worker spark://spark-master:7077'
@@ -187,7 +187,7 @@ services:
       SPARK_WORKER_MEMORY: 4g
       SPARK_WORKER_PORT: 8881
       SPARK_WORKER_WEBUI_PORT: 8082
-      PACKAGES: 'org.apache.spark:spark-sql-kafka-0-10_2.12:2.4.1'
+      PACKAGES: 'org.apache.spark:spark-sql-kafka-0-10_2.11:2.4.0'
     links:
       - spark-master
     expose:
