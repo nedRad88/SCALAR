@@ -86,7 +86,7 @@ services:
       KAFKA_HOST: "kafka:9092"
       SQL_DBNAME: "sample"
       MONGO_HOST: "172.22.0.3"
-      SPARK_HOST: "172.22.0.8"
+      SPARK_HOST: spark-master
     volumes:
       - /home/nedeljko/uploaded_data:/local/data
       - /etc/localtime:/etc/localtime:ro
