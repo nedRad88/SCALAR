@@ -16,6 +16,7 @@ spec:
       labels:
         app: worker
     spec:
+      hostname: worker
       containers:
       - name: worker
         image: nedeljkoradulovic88/spark
@@ -27,8 +28,9 @@ spec:
         - containerPort: 7015
         - containerPort: 7016
         - containerPort: 8881
-        args:
-        - bin/spark-class org.apache.spark.deploy.worker.Worker spark://spark:7077
+        # args:
+        # - bin/spark-class org.apache.spark.deploy.worker.Worker spark://spark:7077
+        command: ["bin/spark-class", "org.apache.spark.deploy.worker.Worker", "spark://spark-master:7077"]
         env:
         - name: PACKAGES
           value: org.apache.spark:spark-sql-kafka-0-10_2.11:2.3.1
