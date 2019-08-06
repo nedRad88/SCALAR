@@ -34,6 +34,7 @@ spark = SparkSession\
     .appName("Kafka_structured_streaming")\
     .master(spark_master)\
     .config('spark.jars.packages', 'org.apache.spark:spark-sql-kafka-0-10_2.11:2.3.1')\
+    .config('spark.driver.host', 'provider')\
     .getOrCreate()
 # from apscheduler.schedulders.background.BackgroundScheduler import remove_job
 
@@ -61,6 +62,11 @@ try:
     _MONGO_HOST = os.environ['MONGO_HOST']
 except Exception:
     _MONGO_HOST = config['MONGO_HOST']
+
+try:
+    SPARK_DRIVER_HOST = os.environ['SPARK_DRIVER_HOST']
+except Exception:
+    SPARK_DRIVER_HOST = config['SPARK_DRIVER_HOST']
 
 _UPLOAD_REPO = config['UPLOAD_REPO']
 _STREAM_REPO = config['STREAM_DATA_FILE']
