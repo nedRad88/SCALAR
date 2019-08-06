@@ -26,14 +26,14 @@ from sparkToMongo import SparkToMongo
 from pyspark.conf import SparkConf
 from repository import MongoRepository
 
-# os.environ['PYSPARK_SUBMIT_ARGS'] = '--packages org.apache.spark:spark-sql-kafka-0-10_2.11:2.3.1 pyspark-shell'
+# os.environ['PYSPARK_SUBMIT_ARGS'] = '--packages org.apache.spark:spark-sql-kafka-0-10_2.12:2.4.1 pyspark-shell'
 spark_master = "spark://" + os.environ['SPARK_HOST'] + ":7077"
 
 spark = SparkSession\
     .builder\
     .appName("Kafka_structured_streaming")\
     .master(spark_master)\
-    .config('spark.jars.packages', 'org.apache.spark:spark-sql-kafka-0-10_2.11:2.3.1')\
+    .config('spark.jars.packages', 'org.apache.spark:spark-sql-kafka-0-10_2.12:2.4.1')\
     .config('spark.driver.host', os.environ['SPARK_DRIVER_HOST'])\
     .config('spark.network.timeout', 800)\
     .getOrCreate()

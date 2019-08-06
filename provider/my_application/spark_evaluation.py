@@ -6,8 +6,8 @@ from functools import reduce
 # from skmultiflow.core.utils.data_structures import ConfusionMatrix
 # TODO deal with skmultiflow
 
-# bin/pyspark --packages org.apache.spark:spark-sql-kafka-0-10_2.11:2.3.1 # in container
-# os.environ['PYSPARK_SUBMIT_ARGS'] = '--packages org.apache.spark:spark-sql-kafka-0-10_2.11:2.3.1 pyspark-shell'
+# bin/pyspark --packages org.apache.spark:spark-sql-kafka-0-10_2.12:2.4.1 # in container
+# os.environ['PYSPARK_SUBMIT_ARGS'] = '--packages org.apache.spark:spark-sql-kafka-0-10_2.12:2.4.1 pyspark-shell'
 # spark = SparkSession.builder.appName("Kafka_structured_streaming").getOrCreate()
 
 
@@ -22,7 +22,7 @@ class SparkEvaluator:
         self.classes = classes
         self.regression_measures = regression_measures
         self.classification_measures = classification_measures
-        # os.environ['PYSPARK_SUBMIT_ARGS'] = '--packages org.apache.spark:spark-sql-kafka-0-10_2.11:2.3.1 pyspark-shell'
+        # os.environ['PYSPARK_SUBMIT_ARGS'] = '--packages org.apache.spark:spark-sql-kafka-0-10_2.12:2.4.1 pyspark-shell'
 
     def main(self, window_duration, prediction_window_duration, train_schema, prediction_schema,
              prediction_target_columns, measure_columns, target_columns, sum_columns,
