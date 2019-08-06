@@ -3,8 +3,7 @@ version: '3'
 services:
   zookeeper:
     networks:
-      new_network:
-        ipv4_address: 172.22.0.30
+      - new_network
     image: wurstmeister/zookeeper
     ports: 
       - "2181:2181" 
@@ -14,8 +13,7 @@ services:
     ports:
       - "9092:9092"
     networks:
-      new_network:
-        ipv4_address: 172.22.0.22
+      - new_network
     environment:
       KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
       KAFKA_LISTENERS:
@@ -40,8 +38,7 @@ services:
   mongo_db:
     image: mongo
     networks:
-      new_network:
-        ipv4_address: 172.22.0.3
+      - new_network
     environment:
       TZ: "Europe/Paris"
     volumes:
@@ -52,8 +49,7 @@ services:
   sql_db:
     image: mysql:5.7.21
     networks:
-      new_network:
-        ipv4_address: 172.22.0.4
+      - new_network
     ports:
       - "3306:3306"
     environment:
@@ -77,16 +73,16 @@ services:
       - "5005:5005"
       - "50051:50051"
     networks:
-      new_network:
-        ipv4_address: 172.22.0.5
+      - new_network
     environment:
       TZ: "Europe/Paris"
       DNS_NAME: "http://localhost"
-      SQL_HOST: "mysql+pymysql://mysql:mysql@172.22.0.4/"
+      SQL_HOST: "mysql+pymysql://mysql:mysql@sql_db/"
       KAFKA_HOST: "kafka:9092"
       SQL_DBNAME: "sample"
-      MONGO_HOST: "172.22.0.3"
-      SPARK_HOST: spark-master
+      MONGO_HOST: "mongo_db"
+      SPARK_HOST: "spark-master"
+      SPARK_DRIVER_HOST: "provider"
     volumes:
       - /home/nedeljko/uploaded_data:/local/data
       - /etc/localtime:/etc/localtime:ro
@@ -97,8 +93,7 @@ services:
   mongo-express:
     image: mongo-express
     networks:
-      new_network:
-        ipv4_address: 172.22.0.6
+      - new_network
     links:
       - mongo_db:mongo
     environment:
@@ -114,8 +109,7 @@ services:
   myadmin:
     image: nedeljkoradulovic88/phpmyadminbase:v1
     networks:
-      new_network:
-        ipv4_address: 172.22.0.7
+      - new_network
     links:
       - sql_db:db
     ports:
@@ -129,8 +123,7 @@ services:
   spark-master:
     image: nedeljkoradulovic88/spark:51
     networks:
-      new_network:
-        ipv4_address: 172.22.0.8
+      - new_network
     environment:
       TZ: "Europe/Paris"
       SPARK_CONF_DIR: /conf
@@ -157,8 +150,7 @@ services:
   worker1:
     image: nedeljkoradulovic88/spark:51
     networks:
-      new_network:
-        ipv4_address: 172.22.0.9
+      - new_network
     command: 'bin/spark-class org.apache.spark.deploy.worker.Worker spark://spark-master:7077'
     hostname: worker1
     environment:
@@ -186,8 +178,7 @@ services:
   worker2:
     image: nedeljkoradulovic88/spark:51
     networks:
-      new_network:
-        ipv4_address: 172.22.0.10
+      - new_network
     command: 'bin/spark-class org.apache.spark.deploy.worker.Worker spark://spark-master:7077'
     hostname: worker2
     environment:

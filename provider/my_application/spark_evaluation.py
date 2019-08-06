@@ -3,7 +3,7 @@ from pyspark.sql.functions import *
 from pyspark.sql.types import *
 import os
 from functools import reduce
-from skmultiflow.core.utils.data_structures import ConfusionMatrix
+# from skmultiflow.core.utils.data_structures import ConfusionMatrix
 # TODO deal with skmultiflow
 
 # bin/pyspark --packages org.apache.spark:spark-sql-kafka-0-10_2.11:2.3.1 # in container

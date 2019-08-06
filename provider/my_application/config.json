@@ -10,7 +10,8 @@
     "STREAM_DATA_FILE": "stream_data_file",
     "TOPIC" : "prevision",
     "TARGET_CLASS" : "Valeurs",
-    "MONGO_HOST" : "172.22.0.3"
+    "MONGO_HOST" : "172.22.0.3",
+    "SPARK_DRIVER_HOST": "provider"
     
 } 
 
