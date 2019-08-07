@@ -35,6 +35,8 @@ spark = SparkSession\
     .master(spark_master)\
     .config('spark.jars.packages', 'org.apache.spark:spark-sql-kafka-0-10_2.11:2.4.0')\
     .config('spark.driver.host', os.environ['SPARK_DRIVER_HOST'])\
+    .config('spark.driver.port', os.environ['SPARK_DRIVER_PORT'])\
+    .config('spark.blockManager.port', os.environ['SPARK_BLOCKMANAGER_PORT'])\
     .config('spark.network.timeout', 800)\
     .getOrCreate()
 # from apscheduler.schedulders.background.BackgroundScheduler import remove_job

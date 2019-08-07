@@ -72,6 +72,7 @@ services:
       - "80:5000"
       - "5005:5005"
       - "50051:50051"
+      - "13666:13666"
     networks:
       - new_network
     environment:
@@ -83,6 +84,8 @@ services:
       MONGO_HOST: "mongo_db"
       SPARK_HOST: "spark-master"
       SPARK_DRIVER_HOST: "provider"
+      SPARK_DRIVER_PORT: "5005"
+      SPARK_BLOCKMANAGER_PORT: "13666"
     volumes:
       - /home/nedeljko/uploaded_data:/local/data
       - /etc/localtime:/etc/localtime:ro
