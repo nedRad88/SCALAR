@@ -16,6 +16,7 @@ from bson import json_util
 import json
 import bson
 import threading
+import multiprocessing
 import copy
 import itertools
 from subscription_auth import decode_subscription_token
@@ -54,29 +55,42 @@ def receive_predictions(producer, predictions, competition_id, user_id, output_t
         # for prediction in predictions:
         # print("Waiting for predictions")
         now = datetime.datetime.now()
+        print("1. Pocetak:", now)
+        document = {}
+        document['Valeurs'] = 55555
+
         if now > end_date:
             break
         predictions._state.rpc_errors = []
         try:
-            prediction = predictions.next()
+            # prediction = predictions.next()
             # print("Prediction", prediction)
+            document['rowID'] = 23
             try:
                 # print(prediction)
                 # Load msg to json
-                document = json.loads(json_format.MessageToJson(prediction), object_hook=json_util.object_hook)
+
+                print("2. Posle ciscenja greske:", datetime.datetime.now())
+                # document = json.loads(json_format.MessageToJson(prediction), object_hook=json_util.object_hook)
                 # add values to submitted_on, type, competition_id, user_id
+                # print("Document type:", type(document))
+                print("3. Posle citanja poruke:", datetime.datetime.now())
                 submitted_on = datetime.datetime.now()
                 document['submitted_on'] = submitted_on
-                document['type'] = "PREDICT"
+                document['type'] = 'PREDICT'
                 document['competition_id'] = competition_id
                 document['user_id'] = user_id
                 # print(document)
                 # Send message to output_topic ???
+                print("4. Posle tagovanja:", datetime.datetime.now())
                 producer.send(output_topic, json.dumps(document, default=json_util.default))
+                print("5. Posle prvog slanja u Kafku:", datetime.datetime.now())
                 del document['submitted_on']
                 del document['type']
                 document['submitted_on'] = submitted_on.strftime("%Y-%m-%d %H:%M:%S")
+                print("6. Posle drugog tagovanja:", datetime.datetime.now())
                 kafka_producer.send(spark_topic, json.dumps(document, default=json_util.default).encode('utf-8'))
+                print("7. Posle slanja u spark:", datetime.datetime.now())
                 # send to Spark Streaming
             except Exception as e:
                 sys.stderr.write(str(e))
@@ -111,6 +125,7 @@ def consume_stream(consumer, producer, competition, output_topic, target, watche
         # print("Consume stream started!")
         target.insert(0, message)
         # print("Message in consumer:", message)
+        print("Length of wathcers: ", len(watchers))
         for watcher in watchers:
             watcher.insert(0, message)
         # read message.value
@@ -123,6 +138,8 @@ def consume_stream(consumer, producer, competition, output_topic, target, watche
         # add competition_id key-value pair to object_message
         object_message['competition_id'] = competition.competition_id
         # print("Object message: ", object_message)
+        # print("Object message type: ", type(object_message))
+
 
         # try :
         if 'tag' in object_message:
@@ -165,7 +182,7 @@ def consume_stream(consumer, producer, competition, output_topic, target, watche
                     train_batch = []
                     test_batch = []
             else:
-                print('unknown message tag ')
+                print('unknown message tag')
         else:
             print(object_message)
 
@@ -179,6 +196,7 @@ class DataStreamerServicer:
 
         self.consumer = KafkaConsumer(bootstrap_servers=server, auto_offset_reset='earliest', consumer_timeout_ms=competition.initial_training_time * 10000)  # 172.22.0.2:9092
         self.producer = ProducerToMongoSink(server)  # 172.22.0.2:9092
+        self.predictions_producer = ProducerToMongoSink(server)
         self.kafka_producer = KafkaProducer(bootstrap_servers=server)
 
         self.repo = MongoRepository(_MONGO_HOST)
@@ -188,7 +206,6 @@ class DataStreamerServicer:
         # data (competition name + data)
         self.input_topic = competition.name.lower().replace(" ", "")
         self.output_topic = competition.name.lower().replace(" ", "") + 'predictions'
-        self.data_topic = competition.name.lower().replace(" ", "") + 'data'
         self.spark_topic = competition.name.lower().replace(" ", "") + 'spark_predictions'
 
         self.watchers = []
@@ -223,9 +240,8 @@ class DataStreamerServicer:
 
         self.__bases__ = (self.DataStreamer,)  # ??
 
-        t = threading.Thread(target=consume_stream,
-                             args=(self.consumer, self.producer, self.competition, self.output_topic,
-                                   self.stream, self.watchers))
+        t = threading.Thread(target=consume_stream, args=(self.consumer, self.producer, self.competition,
+                                                          self.output_topic, self.stream, self.watchers))
         t.start()
 
     def sendData(self, request_iterator, context):
@@ -286,7 +302,6 @@ class DataStreamerServicer:
                                          'output_topic': self.output_topic, 'end_date': end_date,
                                          'kafka_producer': self.kafka_producer, 'spark_topic': self.spark_topic})
             # use default name
-
             t.start()
         except Exception as e:
             print(str(e))

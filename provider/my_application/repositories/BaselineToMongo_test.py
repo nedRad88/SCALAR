@@ -63,7 +63,7 @@ class BaselineToMongo:
                                                                        prediction_dict, num_records, sum_values)
             prediction_dict, target_dict = self.classification(message, target_dict, prediction_dict)
             if message['tag'] == 'TEST':
-                for i in range(0, 100):
+                for i in range(0, 2):
                     prediction_dict['user_id'] = i + 100
                     prediction_dict['Valeurs'] = prediction_dict['Valeurs'] + prediction_dict['user_id'] * 10
                     submitted_on = datetime.datetime.now()

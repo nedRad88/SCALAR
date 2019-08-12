@@ -5,6 +5,7 @@ import json
 import bson
 from bson import json_util
 import os
+
 with open('config.json') as json_data_file:
     config = json.load(json_data_file)
 
@@ -28,7 +29,7 @@ class ConsumerToMongo:
         # print (topic)
 
     # message must be in byte format
-    def write(self, dbname):
+    def write(self):
 
         db = self.mongo_repository.client['data']
         predictions = db['predictions_v2']
@@ -43,9 +44,10 @@ class ConsumerToMongo:
             # print(msg)
             # print(type(msg.value))
             message = json.loads(msg.value.decode('utf-8'), object_hook=json_util.object_hook)
+            # print(type(message), message)
             message = json.loads(str(message), object_hook=json_util.object_hook)
             # print(type(message))
-            # print(type(message) , message)
+            # print(type(message), message)
             # print('\n\n')
 
             if message['type'] == "PREDICT":

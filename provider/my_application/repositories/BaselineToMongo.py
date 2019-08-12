@@ -26,17 +26,16 @@ class BaselineToMongo:
                                       consumer_timeout_ms=competition.initial_training_time * 10000)
         self.consumer.subscribe(topic)
         self.client = SimpleClient(kafka_server)
-        self.mongo_repository = MongoRepository(_MONGO_HOST)
         self.config = competition_config
         self.targets = competition_config.keys()
         self.competition_id = competition.competition_id
         self.producer = KafkaProducer(bootstrap_servers=kafka_server)
         self.output_topic = competition.name.lower().replace(" ", "") + 'spark_predictions'
+        self.kafka_producer_to_Mongo = KafkaProducer(bootstrap_servers=kafka_server)
+        self.mongo_topic = competition.name.lower().replace(" ", "") + 'predictions'
 
     def write(self):
 
-        db = self.mongo_repository.client['data']
-        predictions = db['predictions_v2']
         regression_targets = []
         classification_targets = []
 
@@ -68,8 +67,11 @@ class BaselineToMongo:
                 submitted_on = datetime.datetime.now()
                 prediction_dict['submitted_on'] = submitted_on
                 prediction_dict['_id'] = ObjectId()
-                predictions.insert_one(prediction_dict)
+                prediction_dict['type'] = 'PREDICT'
+                self.kafka_producer_to_Mongo.send(self.mongo_topic, json.dumps(prediction_dict,
+                                                                               default=json_util.default).encode('utf-8'))
                 del prediction_dict['submitted_on']
+                del prediction_dict['type']
                 prediction_dict['submitted_on'] = submitted_on.strftime("%Y-%m-%d %H:%M:%S")
                 self.producer.send(self.output_topic, json.dumps(prediction_dict,
                                                                  default=json_util.default).encode('utf-8'))

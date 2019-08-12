@@ -14,6 +14,7 @@ import sqlalchemy
 from repositories.CompetitionRepository import CompetitionRepository, Competition, Datastream, DatastreamRepository
 from repositories.KafkaToMongo import ConsumerToMongo
 from repositories.BaselineToMongo import BaselineToMongo
+# from repositories.BaselineToMongo_test import BaselineToMongo
 from spark_evaluation import SparkEvaluator
 from evaluator import Evaluator
 from bson import json_util
@@ -25,6 +26,8 @@ from pyspark.sql import SparkSession
 from sparkToMongo import SparkToMongo
 from pyspark.conf import SparkConf
 from repository import MongoRepository
+from multiprocessing import Process
+
 
 # os.environ['PYSPARK_SUBMIT_ARGS'] = '--packages org.apache.spark:spark-sql-kafka-0-10_2.11:2.4.0 pyspark-shell'
 spark_master = "spark://" + os.environ['SPARK_HOST'] + ":7077"
@@ -37,6 +40,7 @@ spark = SparkSession\
     .config('spark.driver.host', os.environ['SPARK_DRIVER_HOST'])\
     .config('spark.driver.port', os.environ['SPARK_DRIVER_PORT'])\
     .config('spark.blockManager.port', os.environ['SPARK_BLOCKMANAGER_PORT'])\
+    .config('spark.executor.memory', '4g')\
     .config('spark.network.timeout', 800)\
     .getOrCreate()
 # from apscheduler.schedulders.background.BackgroundScheduler import remove_job
@@ -82,6 +86,15 @@ _gRPC_SERVER = StreamServer()
 
 def _create_competition(competition, competition_config):
     items, predictions, initial_batch, classes = read_csv_file(competition, competition_config)
+    Process(target=_create_competition_thread, args=(competition, items, predictions, initial_batch)).start()
+    threading.Thread(target=_create_consumer, args=(competition,)).start()
+    Process(target=_create_mongo_sink_consumer,
+            args=(competition.name.lower().replace(" ", "") + 'predictions', competition,)).start()
+    Process(target=_create_baseline, args=(competition, competition_config)).start()
+    time.sleep(2)
+    Process(target=_create_evaluation_spark, args=(spark, SERVER_HOST, competition, competition_config, classes)).start()
+    Process(target=_create_mongo_sink_evaluation, args=(SERVER_HOST, competition, competition_config)).start()
+    """
     threading.Thread(target=_create_competition_thread, args=(competition, items, predictions, initial_batch)).start()
     threading.Thread(target=_create_consumer, args=(competition,)).start()
     threading.Thread(target=_create_mongo_sink_consumer,
@@ -90,6 +103,7 @@ def _create_competition(competition, competition_config):
     time.sleep(2)
     threading.Thread(target=_create_evaluation_spark, args=(spark, SERVER_HOST, competition, competition_config, classes)).start()
     threading.Thread(target=_create_mongo_sink_evaluation, args=(SERVER_HOST, competition, competition_config)).start()
+    """
 
 
 def read_csv_file(competition, competition_config, data_format='csv'):
@@ -219,11 +233,10 @@ def _create_consumer(competition):
 
 def _create_mongo_sink_consumer(topic, competition):
     mongo_writer = ConsumerToMongo(SERVER_HOST, topic, competition)
-    mongo_writer.write('data')
+    mongo_writer.write()
 
 
 def _create_baseline(competition, competition_config):
-
     topic = competition.name.lower().replace(" ", "")
     baseline = BaselineToMongo(SERVER_HOST, topic, competition, competition_config)
     baseline.write()
@@ -278,37 +291,9 @@ class Producer:
         # Accessing each group in the list test_groups
         for group in test_groups:
 
-            train_released_at = datetime.datetime.now()
-            if i != -1:
                 # In parallel accessing the predictions
-                train_group = train_groups[i]
                 # Adding tag, deadline and released at to every item in train group / prediction
-                for item in train_group:
-                    item['tag'] = 'TRAIN'
-                    # deadline = deadline + datetime.timedelta(seconds=int(predictions_time_interval) * i+1)
-                    item['Deadline'] = train_released_at + datetime.timedelta(seconds=int(predictions_time_interval))
-                    item['Released'] = train_released_at
-                    # item
-                    try:
-                        self.send(topic, json.dumps(item, default=json_util.default).encode('utf-8'))
-                        # print("Train item:", item)
-                    except Exception as e:
-                        self.client.ensure_topic_exists(topic)
-                        self.producer.send(topic, json.dumps(item, default=json_util.default).encode('utf-8'))
-                    del item['Deadline']
-                    del item['Released']
-                    del item['tag']
-                    deadline = released_at + datetime.timedelta(seconds=int(predictions_time_interval))
-                    item['Deadline'] = deadline.strftime("%Y-%m-%d %H:%M:%S")
-                    item['Released'] = released_at.strftime("%Y-%m-%d %H:%M:%S")
-                    item['competition_id'] = competition_id
-                    try:
-                        self.send(spark_topic, json.dumps(item, default=json_util.default).encode('utf-8'))
-                    except Exception as e:
-                        self.client.ensure_topic_exists(spark_topic)
-                        self.send(spark_topic, json.dumps(item, default=json_util.default).encode('utf-8'))
 
-                        # print("Train item:", item)
             released_at = datetime.datetime.now()
             # for item in test group add tag, deadline and released
             for item in group:
@@ -323,11 +308,39 @@ class Producer:
                     self.client.ensure_topic_exists(topic)
                     self.producer.send(topic, json.dumps(item, default=json_util.default).encode('utf-8'))
                     # print("Test item:", item)
-
             i = i + 1
+
+            train_group = train_groups[i]
+            for item in train_group:
+                # deadline = deadline + datetime.timedelta(seconds=int(predictions_time_interval) * i+1)
+                deadline = released_at + datetime.timedelta(seconds=int(predictions_time_interval))
+                item['Deadline'] = deadline.strftime("%Y-%m-%d %H:%M:%S")
+                item['Released'] = released_at.strftime("%Y-%m-%d %H:%M:%S")
+                item['competition_id'] = competition_id
+                try:
+                    self.send(spark_topic, json.dumps(item, default=json_util.default).encode('utf-8'))
+                except Exception as e:
+                    self.client.ensure_topic_exists(spark_topic)
+                    self.send(spark_topic, json.dumps(item, default=json_util.default).encode('utf-8'))
 
             time.sleep(time_interval)
 
+            train_released_at = datetime.datetime.now()
+
+            for item in train_group:
+                item['tag'] = 'TRAIN'
+                # deadline = deadline + datetime.timedelta(seconds=int(predictions_time_interval) * i+1)
+                item['Deadline'] = train_released_at + datetime.timedelta(seconds=int(predictions_time_interval))
+                item['Released'] = train_released_at
+                # item
+                try:
+                    self.send(topic, json.dumps(item, default=json_util.default).encode('utf-8'))
+                    # print("Train item:", item)
+                except Exception as e:
+                    self.client.ensure_topic_exists(topic)
+                    self.producer.send(topic, json.dumps(item, default=json_util.default).encode('utf-8'))
+                    # print("Train item:", item)
+        """
         # Sending last train batch
         released_at = datetime.datetime.now()
         for prediction in train_groups[len(train_groups) - 1]:
@@ -355,7 +368,7 @@ class Producer:
                 self.producer.send(spark_topic, json.dumps(prediction, default=json_util.default).encode('utf-8'))
 
                 # print("Train item:", item)
-
+        """
         time.sleep(time_interval)
 
         self.producer.flush()
