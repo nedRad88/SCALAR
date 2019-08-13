@@ -1,9 +1,11 @@
-from kafka import KafkaConsumer, SimpleClient, KafkaProducer
+# from kafka import KafkaConsumer, SimpleClient, KafkaProducer
+from confluent_kafka import Consumer, Producer
 from repository import MongoRepository
 import json
 from bson import json_util
 import datetime
 import operator
+import orjson
 from bson.objectid import ObjectId
 import os
 
@@ -21,16 +23,22 @@ class BaselineToMongo:
     mongo_repository = None
 
     def __init__(self, kafka_server, topic, competition, competition_config):
+        conf = {'bootstrap.servers': kafka_server, 'group.id': 'baseline',
+                'session.timeout.ms': competition.initial_training_time * 10000,
+                'auto.offset.reset': 'earliest'}
+        self.consumer = Consumer(conf)
 
-        self.consumer = KafkaConsumer(bootstrap_servers=kafka_server, auto_offset_reset='earliest')
-        self.consumer.subscribe(topic)
-        self.client = SimpleClient(kafka_server)
+        # self.consumer = KafkaConsumer(bootstrap_servers=kafka_server, auto_offset_reset='earliest')
+        self.consumer.subscribe([topic])
+        # self.client = SimpleClient(kafka_server)
         self.mongo_repository = MongoRepository(_MONGO_HOST)
         self.config = competition_config
         self.targets = competition_config.keys()
         self.competition_id = competition.competition_id
-        self.producer = KafkaProducer(bootstrap_servers=kafka_server)
-        self.output_topic = competition.name.lower().replace(" ", "") + 'spark_predictions'
+        conf_producer = {'bootstrap.servers': kafka_server}
+        self.producer = Producer(conf_producer)
+        # self.producer = KafkaProducer(bootstrap_servers=kafka_server)
+        self.output_topic = competition.name.lower().replace(" ", "") + 'predictions'
 
     def write(self):
         db = self.mongo_repository.client['data']
@@ -53,34 +61,35 @@ class BaselineToMongo:
         for target in regression_targets:
             num_records[target] = 0
             sum_values[target] = 0
-
-        for msg in self.consumer:
-            message = json.loads(msg.value.decode('utf-8'), object_hook=json_util.object_hook)
+        while True:
+            msg = self.consumer.poll(timeout=0)
+            message = orjson.loads(msg.value())
             # message = json.loads(str(message), object_hook=json_util.object_hook)
-            prediction_dict = {'rowID': message['rowID'], 'competition_id': self.competition_id}
+            prediction_dict = {'prediction_rowID': message['rowID'], 'prediction_competition_id': self.competition_id,
+                               'prediction_Valeurs': 55555}
 
-            prediction_dict, num_records, sum_values = self.regression(message,
-                                                                       prediction_dict, num_records, sum_values)
-            prediction_dict, target_dict = self.classification(message, target_dict, prediction_dict)
+            # prediction_dict, num_records, sum_values = self.regression(message,
+            #                                                            prediction_dict, num_records, sum_values)
+            # prediction_dict, target_dict = self.classification(message, target_dict, prediction_dict)
             if message['tag'] == 'TEST':
-                for i in range(0, 2):
+                for i in range(0, 100):
                     prediction_dict['user_id'] = i + 100
-                    prediction_dict['Valeurs'] = prediction_dict['Valeurs'] + prediction_dict['user_id'] * 10
+                    prediction_dict['prediction_Valeurs'] = prediction_dict['prediction_Valeurs'] + prediction_dict['user_id'] * 10
                     submitted_on = datetime.datetime.now()
-                    prediction_dict['submitted_on'] = submitted_on
-                    prediction_dict['_id'] = ObjectId()
-                    predictions.insert_one(prediction_dict)
-                    del prediction_dict['submitted_on']
+                    # prediction_dict['submitted_on'] = submitted_on
+                    # prediction_dict['_id'] = ObjectId()
+                    # predictions.insert_one(prediction_dict)
+                    # del prediction_dict['submitted_on']
                     prediction_dict['submitted_on'] = submitted_on.strftime("%Y-%m-%d %H:%M:%S")
-                    self.producer.send(self.output_topic, json.dumps(prediction_dict,
-                                                                     default=json_util.default).encode('utf-8'))
+                    self.producer.produce(self.output_topic, orjson.dumps(prediction_dict))
+                    self.producer.poll(timeout=0)
 
     @staticmethod
     def regression(message, prediction_dict, num_records, sum_values):
 
         if message['tag'] == 'TEST':
             for key, value in sum_values.items():
-                prediction_dict[key] = float(sum_values[key]) / int(num_records[key])
+                prediction_dict['prediction_' + key] = float(sum_values[key]) / int(num_records[key])
         if message['tag'] == 'INIT' or message['tag'] == 'TRAIN':
             for target in sum_values.keys():
                 num_records[target] = num_records[target] + 1
@@ -93,7 +102,7 @@ class BaselineToMongo:
 
         if message['tag'] == 'TEST':
             for target, value in target_dict.items():
-                prediction_dict[target] = max(value.items(), key=operator.itemgetter(1))[0]
+                prediction_dict['prediction_' + target] = max(value.items(), key=operator.itemgetter(1))[0]
         if message['tag'] == 'INIT' or message['tag'] == 'TRAIN':
             for target in target_dict.keys():
                 if str(message[target]) in target_dict[target]:

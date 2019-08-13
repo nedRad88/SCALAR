@@ -1,27 +1,18 @@
 from __future__ import absolute_import
-from kafka import KafkaConsumer, KafkaProducer, SimpleClient
-import time
-import csv
+from confluent_kafka import Consumer, Producer
 import grpc
 import sys
 import os
-import datetime
-from importlib.machinery import SourceFileLoader
+import orjson
 from repository import MongoRepository
-import json
 import imp
 from google.protobuf import json_format
 import datetime
 from bson import json_util
 import json
-import bson
 import threading
-import multiprocessing
-import copy
-import itertools
 from subscription_auth import decode_subscription_token
-from repositories.CompetitionRepository import Subscription, SubscriptionRepository, User, UserRepository, Competition, \
-    CompetitionRepository
+from repositories.CompetitionRepository import SubscriptionRepository, UserRepository, CompetitionRepository
 
 with open('config.json') as json_data_file:
     config = json.load(json_data_file)
@@ -48,49 +39,36 @@ _USER_REPO = UserRepository(_SQL_HOST, _SQL_DBNAME)
 _COMPETITION_REPO = CompetitionRepository(_SQL_HOST, _SQL_DBNAME)
 
 
-def receive_predictions(producer, predictions, competition_id, user_id, output_topic, end_date, kafka_producer,
-                        spark_topic):
-    # print("Predictions type: ", type(predictions))
+def receive_predictions(predictions, competition_id, user_id, end_date, kafka_producer,
+                        spark_topic, targets):
     while True:
-        # for prediction in predictions:
         # print("Waiting for predictions")
         now = datetime.datetime.now()
-        print("1. Pocetak:", now)
-        document = {}
-        document['Valeurs'] = 55555
-
         if now > end_date:
             break
         predictions._state.rpc_errors = []
         try:
-            # prediction = predictions.next()
-            # print("Prediction", prediction)
-            document['rowID'] = 23
+            prediction = predictions.next()
             try:
-                # print(prediction)
                 # Load msg to json
-
-                print("2. Posle ciscenja greske:", datetime.datetime.now())
-                # document = json.loads(json_format.MessageToJson(prediction), object_hook=json_util.object_hook)
+                # print("2. Posle ciscenja greske:", datetime.datetime.now())
+                document = orjson.loads(json_format.MessageToJson(prediction))
                 # add values to submitted_on, type, competition_id, user_id
-                # print("Document type:", type(document))
-                print("3. Posle citanja poruke:", datetime.datetime.now())
+                # print("3. Posle citanja poruke:", datetime.datetime.now())
                 submitted_on = datetime.datetime.now()
-                document['submitted_on'] = submitted_on
-                document['type'] = 'PREDICT'
-                document['competition_id'] = competition_id
-                document['user_id'] = user_id
-                # print(document)
-                # Send message to output_topic ???
-                print("4. Posle tagovanja:", datetime.datetime.now())
-                producer.send(output_topic, json.dumps(document, default=json_util.default))
-                print("5. Posle prvog slanja u Kafku:", datetime.datetime.now())
-                del document['submitted_on']
-                del document['type']
                 document['submitted_on'] = submitted_on.strftime("%Y-%m-%d %H:%M:%S")
-                print("6. Posle drugog tagovanja:", datetime.datetime.now())
-                kafka_producer.send(spark_topic, json.dumps(document, default=json_util.default).encode('utf-8'))
-                print("7. Posle slanja u spark:", datetime.datetime.now())
+                document['prediction_competition_id'] = competition_id
+                document['user_id'] = user_id
+                document['prediction_rowID'] = document['rowID']
+                del document['rowID']
+                for target in targets:
+                    document['prediction_' + target] = document[target]
+                    del document[target]
+                # Send message to output_topic ???
+                # print("4. Posle tagovanja:", datetime.datetime.now())
+                kafka_producer.produce(spark_topic, orjson.dumps(document))
+                kafka_producer.poll(timeout=0)
+                # print("5. Posle slanja u spark:", datetime.datetime.now())
                 # send to Spark Streaming
             except Exception as e:
                 sys.stderr.write(str(e))
@@ -104,87 +82,91 @@ class ProducerToMongoSink:
     producer = None
 
     def __init__(self, kafka_server):
-        self.producer = KafkaProducer(bootstrap_servers=kafka_server)
-        self.client = SimpleClient(kafka_server)
+        conf = {'bootstrap.servers': kafka_server}
+        self.producer = Producer(conf)
+        # self.client = SimpleClient(kafka_server)
 
     # message must be in byte format
     def send(self, topic, prediction):
 
         try:
-            self.producer.send(topic, json.dumps(prediction, default=json_util.default).encode('utf-8'))
+            self.producer.produce(topic, orjson.dumps(prediction))
+            self.producer.poll(0)
         except Exception as e:
-            self.client.ensure_topic_exists(topic)
-            self.producer.send(topic, json.dumps(prediction, default=json_util.default).encode('utf-8'))
+            print(e)
+            # self.client.ensure_topic_exists(topic)
+            # self.producer.send(topic, orjson.dumps(prediction, default=json_util.default).encode('utf-8'))
 
 
 def consume_stream(consumer, producer, competition, output_topic, target, watchers):
     test_batch = []
     train_batch = []
-
-    for message in consumer:
-        # print("Consume stream started!")
-        target.insert(0, message)
-        # print("Message in consumer:", message)
-        print("Length of wathcers: ", len(watchers))
-        for watcher in watchers:
-            watcher.insert(0, message)
-        # read message.value
-        values = json.loads(message.value.decode('utf-8'), object_hook=json_util.object_hook)
-        # print(values)
-        # Create dictionary object_message from values
-        object_message = {}
-        for key, value in values.items():
-            object_message[key.replace(' ', '')] = value
-        # add competition_id key-value pair to object_message
-        object_message['competition_id'] = competition.competition_id
-        # print("Object message: ", object_message)
-        # print("Object message type: ", type(object_message))
-
-
-        # try :
-        if 'tag' in object_message:
-            if object_message['tag'] == 'INIT':
-                # If initial batch add type data
-                object_message['type'] = 'DATA'
-                # send to output_topic / to mongo collection data ?
-                producer.send(output_topic, json.dumps(object_message, default=json_util.default))
-                # print("Output topic", output_topic)
-
-            elif object_message['tag'] == 'TEST':
-                # If message from test batch - append to test_batch
-                # print ('test' , object_message)
-                test_batch.append(object_message)
-
-            elif object_message['tag'] == 'TRAIN':
-                # If message from train batch - append to train_batch
-                train_batch.append(object_message)
-                # If batch size has been reached
-                if len(train_batch) == competition.batch_size:
-
-                    for test, train in zip(test_batch, train_batch):
-
-                        for key, value in train.items():
-                            if key != 'rowID' and key != 'tag':
-                                # Everything that has key different from: rowID and tag, add to test
-                                test[key] = value
-                        # add type = data to test
-                        test['type'] = 'DATA'
-                        # send to output topic, mongo??
-                        producer.send(output_topic, json.dumps(test, default=json_util.default))
-                        # print('test', test)
-                        train['Deadline'] = test['Deadline']
-                        # add type golden to train - has true value
-                        train['type'] = 'GOLDEN'
-                        # send to output topic, mongo??
-                        producer.send(output_topic, json.dumps(train, default=json_util.default))
-                        # print('golden', train)
-
-                    train_batch = []
-                    test_batch = []
-            else:
-                print('unknown message tag')
+    while True:
+        message = consumer.poll(timeout=0)
+        if message is None:
+            continue
         else:
-            print(object_message)
+            # print("Consume stream started!")
+            target.insert(0, message)
+            # print("Message in consumer:", message)
+            # print("Length of wathcers: ", len(watchers))
+            for watcher in watchers:
+                watcher.insert(0, message)
+            # read message.value
+            values = orjson.loads(message.value())
+            # print(values)
+            # Create dictionary object_message from values
+            object_message = {}
+            for key, value in values.items():
+                object_message[key.replace(' ', '')] = value
+            # add competition_id key-value pair to object_message
+            object_message['competition_id'] = competition.competition_id
+            # print("Object message: ", object_message)
+            # print("Object message type: ", type(object_message))
+            # try :
+            if 'tag' in object_message:
+                if object_message['tag'] == 'INIT':
+                    # If initial batch add type data
+                    object_message['type'] = 'DATA'
+                    # send to output_topic / to mongo collection data ?
+                    producer.send(output_topic, object_message)
+                    # print("Output topic", output_topic)
+
+                elif object_message['tag'] == 'TEST':
+                    # If message from test batch - append to test_batch
+                    # print ('test' , object_message)
+                    test_batch.append(object_message)
+
+                elif object_message['tag'] == 'TRAIN':
+                    # If message from train batch - append to train_batch
+                    train_batch.append(object_message)
+                    # If batch size has been reached
+                    if len(train_batch) == competition.batch_size:
+
+                        for test, train in zip(test_batch, train_batch):
+
+                            for key, value in train.items():
+                                if key != 'rowID' and key != 'tag':
+                                    # Everything that has key different from: rowID and tag, add to test
+                                    test[key] = value
+                            # add type = data to test
+                            test['type'] = 'DATA'
+                            # send to output topic, mongo??
+                            producer.send(output_topic, test)
+                            # print('test', test)
+                            # train['Deadline'] = test['Deadline']
+                            # add type golden to train - has true value
+                            # train['type'] = 'GOLDEN'
+                            # send to output topic, mongo??
+                            # producer.send(output_topic, json.dumps(train, default=json_util.default))
+                            # print('golden', train)
+
+                        train_batch = []
+                        test_batch = []
+                else:
+                    print('unknown message tag')
+            else:
+                print(object_message)
 
 
 class DataStreamerServicer:
@@ -192,12 +174,15 @@ class DataStreamerServicer:
     consumer = None
     stream = []
 
-    def __init__(self, server, competition):
+    def __init__(self, server, competition, competition_config):
 
-        self.consumer = KafkaConsumer(bootstrap_servers=server, auto_offset_reset='earliest', consumer_timeout_ms=competition.initial_training_time * 10000)  # 172.22.0.2:9092
+        self.consumer = Consumer({'group.id': 'stream_consumer', 'bootstrap.servers': server,
+                                  'session.timeout.ms': competition.initial_training_time * 10000,
+                                  'auto.offset.reset': 'earliest'})  # 172.22.0.2:9092
         self.producer = ProducerToMongoSink(server)  # 172.22.0.2:9092
         self.predictions_producer = ProducerToMongoSink(server)
-        self.kafka_producer = KafkaProducer(bootstrap_servers=server)
+        conf_producer = {'bootstrap.servers': server}
+        self.kafka_producer = Producer(conf_producer)
 
         self.repo = MongoRepository(_MONGO_HOST)
         self.competition = competition
@@ -205,11 +190,11 @@ class DataStreamerServicer:
         # Defining three topics: input (competition name), output (competition name + predictions)
         # data (competition name + data)
         self.input_topic = competition.name.lower().replace(" ", "")
-        self.output_topic = competition.name.lower().replace(" ", "") + 'predictions'
-        self.spark_topic = competition.name.lower().replace(" ", "") + 'spark_predictions'
+        self.output_topic = competition.name.lower().replace(" ", "") + 'data'
+        self.spark_topic = competition.name.lower().replace(" ", "") + 'predictions'
 
         self.watchers = []
-        self.consumer.subscribe(self.input_topic)
+        self.consumer.subscribe([self.input_topic])
 
         try:
             # create data_object dictionary with following fields: competition_id, dataset
@@ -238,6 +223,12 @@ class DataStreamerServicer:
         self.Message = imp.load_source('file_pb2.Message', pb2_file_path)
         # print("Datastreamer: Imported: ", self.DataStreamer)
 
+        self.targets = []
+
+        for key in competition_config.keys():
+            y = str(key).replace(' ', '')  # Key
+            self.targets.append(y)
+
         self.__bases__ = (self.DataStreamer,)  # ??
 
         t = threading.Thread(target=consume_stream, args=(self.consumer, self.producer, self.competition,
@@ -250,10 +241,10 @@ class DataStreamerServicer:
         metadata = context.invocation_metadata()
 
         metadata = dict(metadata)
-        print("Metadata: ", metadata)
+        # print("Metadata: ", metadata)
 
         token = metadata['authorization']
-        print("Token:", token)
+        # print("Token:", token)
 
         user_id = metadata['user_id']
         competition_code = metadata['competition_id']
@@ -272,7 +263,7 @@ class DataStreamerServicer:
 
         # TODO : check secret token
         decoded_token = decode_subscription_token(token)
-        print("Decoded Token: ", decoded_token)
+        # print("Decoded Token: ", decoded_token)
         if decoded_token is None:
             print('Wrong token')
             # TODO : should close connection
@@ -297,10 +288,10 @@ class DataStreamerServicer:
 
         try:
             t = threading.Thread(target=receive_predictions,
-                                 kwargs={'producer': self.producer, 'predictions': request_iterator,
+                                 kwargs={'predictions': request_iterator,
                                          'competition_id': self.competition.competition_id, 'user_id': user.user_id,
-                                         'output_topic': self.output_topic, 'end_date': end_date,
-                                         'kafka_producer': self.kafka_producer, 'spark_topic': self.spark_topic})
+                                         'end_date': end_date, 'kafka_producer': self.kafka_producer,
+                                         'spark_topic': self.spark_topic, 'targets': self.targets})
             # use default name
             t.start()
         except Exception as e:
@@ -320,7 +311,7 @@ class DataStreamerServicer:
 
                 # try:
 
-                values = json.loads(msg.value.decode('utf-8'), object_hook=json_util.object_hook)
+                values = orjson.loads(msg.value())
 
                 message = self.file_pb2.Message()
 
