@@ -232,6 +232,9 @@ app.config(function($routeProvider) {
         templateUrl: "static/app/views/404.html"
     });
     
+    $routeProvider.when("/closed", {
+        templateUrl: "static/app/views/sorry.html"
+    });
    
     $routeProvider.otherwise({ redirectTo: "/404" });
 
@@ -242,13 +245,16 @@ app.config(function($routeProvider) {
     $rootScope.$on("$routeChangeStart", function (event, next, current) {
         
         console.log(oAuthService.authentication.isAuth)
-        
-        if (oAuthService.authentication.isAuth == false) {
+        // no logged user, we should be going to #login
+        if (next.templateUrl == "static/app/views/signup.html") {
+            $location.path("/closed");
+        }
+        else if (oAuthService.authentication.isAuth == false && next.templateUrl != "static/app/views/sorry.html" ) {
             
-            // no logged user, we should be going to #login
-            if (next.templateUrl != "static/app/views/login.html" && next.templateUrl != 'static/app/views/signup.html' ) {
+            if (next.templateUrl != "static/app/views/login.html") {
                 $location.path("/login");
             }
+            
         }
         Chart.defaults.global.animation = false;
         
