@@ -3,11 +3,13 @@ from pyspark.sql.functions import *
 from pyspark.sql.types import *
 import os
 from functools import reduce
-from skmultiflow.core.utils.data_structures import ConfusionMatrix
+
+
+# from skmultiflow.core.utils.data_structures import ConfusionMatrix
 # TODO deal with skmultiflow
 
-# bin/pyspark --packages org.apache.spark:spark-sql-kafka-0-10_2.11:2.3.1 # in container
-# os.environ['PYSPARK_SUBMIT_ARGS'] = '--packages org.apache.spark:spark-sql-kafka-0-10_2.11:2.3.1 pyspark-shell'
+# bin/pyspark --packages org.apache.spark:spark-sql-kafka-0-10_2.11:2.4.0 # in container
+# os.environ['PYSPARK_SUBMIT_ARGS'] = '--packages org.apache.spark:spark-sql-kafka-0-10_2.11:2.4.0 pyspark-shell'
 # spark = SparkSession.builder.appName("Kafka_structured_streaming").getOrCreate()
 
 
@@ -22,11 +24,10 @@ class SparkEvaluator:
         self.classes = classes
         self.regression_measures = regression_measures
         self.classification_measures = classification_measures
-        # os.environ['PYSPARK_SUBMIT_ARGS'] = '--packages org.apache.spark:spark-sql-kafka-0-10_2.11:2.3.1 pyspark-shell'
+        # os.environ['PYSPARK_SUBMIT_ARGS'] = '--packages org.apache.spark:spark-sql-kafka-0-10_2.11:2.4.0 pyspark-shell'
 
-    def main(self, window_duration, prediction_window_duration, train_schema, prediction_schema,
-             prediction_target_columns, measure_columns, target_columns, sum_columns,
-             columns_to_sum, checkpoints, targets, confusion_matrix):
+    def main(self, window_duration, prediction_window_duration, train_schema, prediction_schema, columns_to_sum,
+             checkpoints, targets):
         # Reading stream of records from Kafka
         golden = self.sc \
             .readStream \
@@ -34,9 +35,9 @@ class SparkEvaluator:
             .option("kafka.bootstrap.servers", self.broker) \
             .option("subscribe", self.competition.name.lower().replace(" ", "") + 'spark_train') \
             .option("kafkaConsumer.pollTimeoutMs", 1000) \
-            .load()\
-            .selectExpr("cast (value as string) as json")\
-            .select(from_json("json", train_schema).alias("data"))\
+            .load() \
+            .selectExpr("cast (value as string) as json") \
+            .select(from_json("json", train_schema).alias("data")) \
             .select("data.*") \
             .withColumn("timestamp_deadline",
                         unix_timestamp('Deadline', "yyyy-MM-dd HH:mm:ss").cast(TimestampType())) \
@@ -51,42 +52,40 @@ class SparkEvaluator:
             .readStream \
             .format("kafka") \
             .option("kafka.bootstrap.servers", self.broker) \
-            .option("subscribe", self.competition.name.lower().replace(" ", "") + 'spark_predictions') \
-            .option("kafkaConsumer.pollTimeoutMs", 300)\
-            .load()\
+            .option("subscribe", self.competition.name.lower().replace(" ", "") + 'predictions') \
+            .option("kafkaConsumer.pollTimeoutMs", 300) \
+            .load() \
             .selectExpr("cast (value as string) as json") \
             .select(from_json("json", prediction_schema).alias("data")) \
             .select("data.*") \
             .withColumn("timestamp_submitted", unix_timestamp('submitted_on',
                                                               "yyyy-MM-dd HH:mm:ss").cast(TimestampType())) \
             .drop("submitted_on") \
-            .withColumnRenamed("rowID", "prediction_rowID")\
-            .withColumnRenamed("competition_id", "prediction_competition_id")\
+            .withWatermark("timestamp_submitted", prediction_window_duration) \
             .dropDuplicates(["user_id", "prediction_competition_id", "prediction_rowID"])
 
-        predictions = reduce(lambda data, idx: data.withColumnRenamed(target_columns[idx],
-                                                                      prediction_target_columns[idx]),
-                             range(len(target_columns)), prediction_stream)
-        predictions = predictions \
-            .withWatermark("timestamp_submitted", prediction_window_duration)
+        # predictions = reduce(lambda data, idx: data.withColumnRenamed(target_columns[idx],
+        #                  prediction_target_columns[idx]),
+        # range(len(target_columns)), prediction_stream)
 
         # Joining two streams
-        join_result = predictions.join(
-           golden,
-           expr("""
+        join_result = prediction_stream.join(
+            golden,
+            expr("""
            rowID = prediction_rowID AND
            timestamp_deadline >= timestamp_submitted AND
            timestamp_submitted >= timestamp_deadline - interval {}
-           """.format(prediction_window_duration)), "leftOuter")\
-            .drop("prediction_rowID")\
-            .drop("prediction_competition_id")\
+           """.format(prediction_window_duration)), "leftOuter") \
+            .drop("prediction_rowID") \
+            .drop("prediction_competition_id") \
             .drop("competition_id") \
             .withColumn("total_num", lit(1)) \
             .withColumn("num_submissions",
                         when(col("timestamp_submitted") <= col("timestamp_deadline"), 1).otherwise(0)) \
             .withColumn("penalized", abs(col("num_submissions") - lit(1))) \
             .withColumn("latency", when(col("num_submissions") == 0, self.competition.predictions_time_interval)
-                        .otherwise(unix_timestamp(col("timestamp_submitted")) - unix_timestamp(col("timestamp_released")))) \
+                        .otherwise(
+            unix_timestamp(col("timestamp_submitted")) - unix_timestamp(col("timestamp_released")))) \
             .drop("rowID") \
             .drop("timestamp_released")
 
@@ -97,11 +96,11 @@ class SparkEvaluator:
 
         # Calculation on measures for individual predictions
 
-        join_table = reduce(lambda data, idx: data.withColumn(prediction_target_columns[idx],
-                                                              when(data["timestamp_submitted"] >
-                                                                   data["timestamp_deadline"], 0)
-                                                              .otherwise(data[prediction_target_columns[idx]])),
-                            range(len(prediction_target_columns)), join_result)
+        # join_table = reduce(lambda data, idx: data.withColumn(prediction_target_columns[idx],
+        #                                                      when(data["timestamp_submitted"] >
+        #                                                           data["timestamp_deadline"], 0)
+        #                                                      .otherwise(data[prediction_target_columns[idx]])),
+        #                    range(len(prediction_target_columns)), join_result)
         """
         join_table = reduce(lambda data, idx: data.withColumnRenamed(prediction_target_columns[idx] + '_tmp',
                                                                      prediction_target_columns[idx]),
@@ -112,35 +111,38 @@ class SparkEvaluator:
             prediction_target_col = "prediction_" + target.replace(" ", "")
             for measure in self.config[target]:
                 if measure == "MAPE":
-                    join_table = join_table.withColumn("MAPE" + "_" + target,
-                                                       when(join_table[target].isNotNull(),
-                                                            abs((join_table[target] - join_table[
-                                                                prediction_target_col]))
-                                                            / abs(join_table[target])).otherwise(1)) \
+                    join_result = join_result.withColumn("MAPE" + "_" + target,
+                                                         when(join_result[target].isNotNull(),
+                                                              abs((join_result[target] - join_result[
+                                                                  prediction_target_col])) / abs(
+                                                                  join_result[target])).otherwise(1)) \
                         .drop(target) \
                         .drop(prediction_target_col)
 
                 if measure == "MSE":
-                    join_table = join_table.withColumn("MSE" + "_" + target,
-                                                       when(join_table[target].isNotNull(),
-                                                            (join_table[target] - join_table[prediction_target_col]) *
-                                                            (join_table[target] - join_table[prediction_target_col]))
-                                                       .otherwise(1))\
-                        .drop(target)\
+                    join_result = join_result.withColumn("MSE" + "_" + target, when(join_result[target].isNotNull(),
+                                                                                    (join_result[target] - join_result[
+                                                                                        prediction_target_col]) * (
+                                                                                                join_result[target] -
+                                                                                                join_result[
+                                                                                                    prediction_target_col])).otherwise(
+                        1)) \
+                        .drop(target) \
                         .drop(prediction_target_col)
 
                 if measure == "MAE":
-                    join_table = join_table.withColumn("MAE" + "_" + target,
-                                                       when(join_table[target].isNotNull(),
-                                                            abs(join_table[target] - join_table[prediction_target_col]))
-                                                       .otherwise(1)) \
-                        .drop(target)\
+                    join_result = join_result.withColumn("MAE" + "_" + target, when(join_result[target].isNotNull(),
+                                                                                    abs(join_result[target] -
+                                                                                        join_result[
+                                                                                            prediction_target_col])).otherwise(
+                        1)) \
+                        .drop(target) \
                         .drop(prediction_target_col)
 
                 if measure == "ACC":
-                    join_table = join_table.withColumn("ACC" + "_" + target,
-                                                       when(join_table[target] == join_table[prediction_target_col],
-                                                            1).otherwise(0)) \
+                    join_result = join_result.withColumn("ACC" + "_" + target,
+                                                         when(join_result[target] == join_result[prediction_target_col],
+                                                              1).otherwise(0)) \
                         .drop(target) \
                         .drop(prediction_target_col)
             """
@@ -154,22 +156,21 @@ class SparkEvaluator:
                         confusion_matrix[row["user_id"]].update(i=true_label_idx, j=predicted_label_idx)
                     else:
                         confusion_matrix[row["user_id"]].update(i=true_label_idx, j=predicted_label_idx)
-    
+
                 for key, value in confusion_matrix.items():
                     kappa[key] = value.get_kappa()
-                    
-                    
+
             """
 
         # Dropping unnecessary columns
 
         exprs = {x: "sum" for x in columns_to_sum}
         # Grouping by user_id and aggregation
-        results = join_table\
-            .drop("timestamp_deadline")\
-            .drop("timestamp_submitted")\
-            .groupBy("user_id")\
-            .agg(exprs)\
+        results = join_result \
+            .drop("timestamp_deadline") \
+            .drop("timestamp_submitted") \
+            .groupBy("user_id") \
+            .agg(exprs) \
             .withColumn("competition_id", lit(self.competition.competition_id))
         # Calculating batch measures
 
@@ -178,26 +179,26 @@ class SparkEvaluator:
                 if measure == "MAPE":
                     results_final = results.withColumn("MAPE" + "_" + target,
                                                        100 * results["sum(MAPE" + "_" + target + ")"] /
-                                                       results["sum(total_num)"])\
-                                           .drop("sum(MAPE" + "_" + target + ")")
+                                                       results["sum(total_num)"]) \
+                        .drop("sum(MAPE" + "_" + target + ")")
 
                 if measure == "MSE":
                     results_final = results.withColumn("MSE" + "_" + target,
                                                        results["sum(MSE" + "_" + target + ")"] /
-                                                       results["sum(total_num)"])\
-                                           .drop("sum(MSE" + "_" + target + ")")
+                                                       results["sum(total_num)"]) \
+                        .drop("sum(MSE" + "_" + target + ")")
 
                 if measure == "MAE":
                     results_final = results.withColumn("MAE" + "_" + target,
                                                        results["sum(MAE" + "_" + target + ")"] /
-                                                       results["sum(total_num)"])\
-                                           .drop("sum(MAE" + "_" + target + ")")
+                                                       results["sum(total_num)"]) \
+                        .drop("sum(MAE" + "_" + target + ")")
 
                 if measure == "ACC":
                     results_final = results.withColumn("ACC" + "_" + target,
                                                        results["sum(ACC" + "_" + target + ")"] /
-                                                       results["sum(total_num)"])\
-                                           .drop("sum(ACC" + "_" + target + ")")
+                                                       results["sum(total_num)"]) \
+                        .drop("sum(ACC" + "_" + target + ")")
 
         # Preparing to send to Kafka
         # Renaming and dropping columns
@@ -216,14 +217,13 @@ class SparkEvaluator:
         """
 
         # .selectExpr("to_json(struct(*)) AS value") \
-        pred = predictions \
+        pred = prediction_stream \
             .selectExpr("to_json(struct(*)) AS value") \
             .writeStream \
             .queryName(self.competition.name.lower().replace(" ", "") + 'prediction_stream') \
-            .trigger(processingTime=prediction_window_duration) \
-            .format("kafka")\
+            .format("kafka") \
             .option("kafka.bootstrap.servers", self.broker) \
-            .option("topic", self.competition.name.lower().replace(" ", "") + 'dead_end') \
+            .option("topic", self.competition.name.lower().replace(" ", "") + 'spark_predictions') \
             .option("checkpointLocation", checkpoints[0]) \
             .outputMode("append") \
             .start()
@@ -232,17 +232,16 @@ class SparkEvaluator:
             .selectExpr("to_json(struct(*)) AS value") \
             .writeStream \
             .queryName(self.competition.name.lower().replace(" ", "") + 'training_stream') \
-            .trigger(processingTime=prediction_window_duration) \
-            .format("kafka")\
+            .format("kafka") \
             .option("kafka.bootstrap.servers", self.broker) \
-            .option("topic", self.competition.name.lower().replace(" ", "") + 'dead_end2') \
+            .option("topic", self.competition.name.lower().replace(" ", "") + 'spark_golden') \
             .option("checkpointLocation", checkpoints[1]) \
             .outputMode("append") \
             .start()
 
         output_stream = results_final \
             .withColumn("latency", results_final["sum(latency)"] / (
-                    results_final["sum(total_num)"])) \
+            results_final["sum(total_num)"])) \
             .withColumnRenamed("sum(penalized)", "penalized") \
             .withColumnRenamed("sum(num_submissions)", "num_submissions") \
             .drop("sum(latency)") \
@@ -254,13 +253,14 @@ class SparkEvaluator:
             .format("kafka") \
             .option("kafka.bootstrap.servers", self.broker) \
             .option("topic", self.competition.name.lower().replace(" ", "") + 'spark_measures') \
-            .option("checkpointLocation", "/tmp/checkpoint") \
+            .option("checkpointLocation", checkpoints[2]) \
             .outputMode("update") \
             .start()
 
+        self.sc.streams.awaitAnyTermination()
         # pred.awaitTermination()
-        # gold.awaitTermination()
-        output_stream.awaitTermination()
+        #  gold.awaitTermination()
+        # output_stream.awaitTermination()
 
     def run(self):
 
@@ -301,7 +301,7 @@ class SparkEvaluator:
 
         # return train_schema, prediction_schema, targets  # , test_schema, init_schema
         # Time window duration for watermarking
-        window_duration = str(5 * self.competition.predictions_time_interval) + " " + "seconds"
+        window_duration = str(2 * self.competition.predictions_time_interval) + " " + "seconds"
         prediction_window_duration = str(self.competition.predictions_time_interval) + " " + "seconds"
 
         # Creating lists of column names which wiil be used later during calculations and transformations
@@ -333,17 +333,12 @@ class SparkEvaluator:
                                 "/tmp/" + self.competition.name.lower().replace(" ", "") + "training_checkpoint",
                                 "/tmp/" + self.competition.name.lower().replace(" ", "") + "measure_checkpoint"]
 
-        confusion_matrix_dict = {}
+        # confusion_matrix_dict = {}
 
         self.main(window_duration=window_duration,
                   prediction_window_duration=prediction_window_duration,
                   train_schema=train_schema,
                   prediction_schema=prediction_schema,
-                  prediction_target_columns=prediction_target_columns,
-                  target_columns=target_columns,
-                  sum_columns=sum_columns,
-                  measure_columns=measure_columns,
                   columns_to_sum=columns_to_sum,
                   checkpoints=checkpoint_locations,
-                  targets=targets,
-                  confusion_matrix=confusion_matrix_dict)
+                  targets=targets)

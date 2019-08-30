@@ -16,6 +16,7 @@ spec:
       labels:
         app: provider
     spec:
+      hostname: provider
       containers:
       - name: provider
         image: nedeljkoradulovic88/provider
@@ -26,6 +27,8 @@ spec:
           name: "provider5005"
         - containerPort: 50051
           name: "provider50051"
+        - containerPort: 13666
+          name: "provider13666" 
         env:
         - name: TZ
           value: Europe/Paris
@@ -40,7 +43,13 @@ spec:
         - name: MONGO_HOST
           value: "mongodb"
         - name: SPARK_HOST
-          value: "spark"
+          value: "spark-master"
+        - name: SPARK_DRIVER_HOST
+          value: "provider"
+        - name: SPARK_DRIVER_PORT
+          value: "5005"
+        - name: SPARK_BLOCKMANAGER_PORT
+          value: "13666"
         imagePullPolicy: Always
         volumeMounts:
         - name: provider-data
@@ -72,6 +81,9 @@ spec:
   - name: "50051"
     port: 50051
     targetPort: 50051
+  - name: "13666"
+    port: 13666
+    targetPort: 13666
   selector:
     app: provider
   type: LoadBalancer

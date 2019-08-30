@@ -6,7 +6,7 @@ import os
 spark = SparkSession.builder.appName("Kafka_structured_streaming").getOrCreate()
 # from baseline_client import baselineClient
 # from apscheduler.schedulders.background.BackgroundScheduler import remove_job
-os.environ['PYSPARK_SUBMIT_ARGS'] = '--packages org.apache.spark:spark-streaming-kafka-0-8_2.11:2.3.1 pyspark-shell'
+os.environ['PYSPARK_SUBMIT_ARGS'] = '--packages org.apache.spark:spark-sql-kafka-0-10_2.12:2.4.1 pyspark-shell'
 
 
 # bin/pyspark --packages org.apache.spark:spark-streaming-kafka_2.10:1.5.2 # in container
