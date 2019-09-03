@@ -251,7 +251,7 @@ app.config(function($routeProvider) {
             $location.path("/closed");
         }**/
         
-	if (oAuthService.authentication.isAuth == false && next.templateUrl != "static/app/views/sorry.html" ) {
+	if (oAuthService.authentication.isAuth == false && next.templateUrl != "static/app/views/signup.html" ) {
             
             if (next.templateUrl != "static/app/views/login.html") {
                 $location.path("/login");
