@@ -247,6 +247,7 @@ app.config(function($routeProvider) {
         console.log(oAuthService.authentication.isAuth)
         // no logged user, we should be going to #login
         if (next.templateUrl == "static/app/views/signup.html") {
+            //closed registration
             $location.path("/closed");
         }
         else if (oAuthService.authentication.isAuth == false && next.templateUrl != "static/app/views/sorry.html" ) {
