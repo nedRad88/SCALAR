@@ -669,7 +669,7 @@ def get_messages(competition_id, field, measure):
                     time.sleep(evaluation_time_interval)
 
         else:
-            # Ended
+            # Ended competition
             logging.debug("Competition finished!")
             results = _MONGO_REPO.get_results_by_user(competition_id, field, measure)
             data = 'retry: 100000000\n'

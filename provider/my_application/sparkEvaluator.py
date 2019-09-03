@@ -42,7 +42,7 @@ def evaluate(spark_context, broker, competition, competition_config, window_dura
         .withWatermark("timestamp_submitted", prediction_window_duration)\
         .dropDuplicates(["user_id", "prediction_competition_id", "prediction_rowID"])
 
-    # Joining two streams
+    # Joining two streams, new conditions
     join_result = prediction_stream\
         .join(golden, expr("""rowID = prediction_rowID AND timestamp_submitted >= timestamp_released AND timestamp_submitted <= timestamp_released + interval {}""".format(window_duration)), "leftOuter")\
         .withColumn("total_num", lit(1))\
