@@ -1,21 +1,13 @@
 import datetime
 import json
 from bson import json_util
+from werkzeug.security import generate_password_hash, check_password_hash
 
+password = "Mht3mPp4sS"
 
-now = datetime.datetime.now()
-print(now)
-now_dt = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S.%f')
+hashed = generate_password_hash(password)
 
-print(now_dt)
-dict = {"Vreme": now_dt}
-print(dict)
+hashed_old = "pbkdf2:sha256:50000$GskN1kar$9ae718826ed6e0af650ba0180838d97e6b7946f996f3264e5695cc077dc35721"
+print(hashed)
 
-json1 = json.dumps(dict, default=json_util.default).encode('utf-8')
-print(json1)
-
-
-hello_list = []
-
-for item in hello_list:
-    print("Hello")
+print(check_password_hash(hashed_old, password))
