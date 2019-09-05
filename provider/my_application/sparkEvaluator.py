@@ -13,7 +13,7 @@ def evaluate(spark_context, broker, competition, competition_config, window_dura
         .format("kafka")\
         .option("kafka.bootstrap.servers", broker)\
         .option("subscribe", competition.name.lower().replace(" ", "") + 'spark_train')\
-        .option("kafkaConsumer.pollTimeoutMs", 1000)\
+        .option("kafkaConsumer.pollTimeoutMs", 5000)\
         .load()\
         .selectExpr("cast (value as string) as json")\
         .select(from_json("json", train_schema).alias("data"))\
@@ -23,7 +23,7 @@ def evaluate(spark_context, broker, competition, competition_config, window_dura
         .withColumn("timestamp_released",
                     unix_timestamp('Released', "yyyy-MM-dd HH:mm:ss").cast(TimestampType()))\
         .drop("Deadline", "Released")\
-        .withWatermark("timestamp_deadline", window_duration)
+        .withWatermark("timestamp_released", window_duration)
 
     # Reading stream of predictions from Kafka
     prediction_stream = spark_context\
@@ -31,7 +31,7 @@ def evaluate(spark_context, broker, competition, competition_config, window_dura
         .format("kafka")\
         .option("kafka.bootstrap.servers", broker)\
         .option("subscribe", competition.name.lower().replace(" ", "") + 'predictions')\
-        .option("kafkaConsumer.pollTimeoutMs", 300)\
+        .option("kafkaConsumer.pollTimeoutMs", 1000)\
         .load()\
         .selectExpr("cast (value as string) as json")\
         .select(from_json("json", prediction_schema).alias("data"))\
@@ -42,9 +42,9 @@ def evaluate(spark_context, broker, competition, competition_config, window_dura
         .withWatermark("timestamp_submitted", prediction_window_duration)\
         .dropDuplicates(["user_id", "prediction_competition_id", "prediction_rowID"])
 
-    # Joining two streams
+    # Joining two streams, new conditions
     join_result = prediction_stream\
-        .join(golden, expr("""rowID = prediction_rowID AND timestamp_deadline >= timestamp_submitted AND timestamp_submitted >= timestamp_deadline - interval {}""".format(prediction_window_duration)), "leftOuter")\
+        .join(golden, expr("""rowID = prediction_rowID AND timestamp_submitted >= timestamp_released AND timestamp_submitted <= timestamp_released + interval {}""".format(window_duration)), "leftOuter")\
         .withColumn("total_num", lit(1))\
         .withColumn("num_submissions", when(col("timestamp_submitted") <= col("timestamp_deadline"), 1).otherwise(0))\
         .withColumn("penalized", abs(col("num_submissions") - lit(1)))\
@@ -130,15 +130,13 @@ def evaluate(spark_context, broker, competition, competition_config, window_dura
         .start()
 
     output_stream = results_final \
-        .withColumn("latency", results_final["sum(latency)"] / (
-        results_final["sum(total_num)"])) \
+        .withColumn("latency", results_final["sum(latency)"] / (results_final["sum(total_num)"])) \
         .withColumnRenamed("sum(penalized)", "penalized") \
         .withColumnRenamed("sum(num_submissions)", "num_submissions") \
         .drop("sum(latency)", "sum(total_num)") \
         .selectExpr("to_json(struct(*)) AS value") \
         .writeStream \
         .queryName(competition.name.lower().replace(" ", "") + 'measure_stream') \
-        .trigger(processingTime=prediction_window_duration) \
         .format("kafka") \
         .option("kafka.bootstrap.servers", broker) \
         .option("topic", competition.name.lower().replace(" ", "") + 'spark_measures') \

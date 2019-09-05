@@ -233,9 +233,9 @@ def _create_evaluation_spark(spark_context, kafka_server, competition, competiti
                     prediction_schema.add("prediction_" + target, StringType(), False)
 
     # return train_schema, prediction_schema, targets  # , test_schema, init_schema
-    # Time window duration for watermarking, change to 3 times
-    window_duration = str(2 * competition.predictions_time_interval) + " " + "seconds"
-    prediction_window_duration = str(competition.predictions_time_interval) + " " + "seconds"
+    # Time window duration for watermarking
+    window_duration = str(competition.predictions_time_interval) + " " + "seconds"
+    prediction_window_duration = str(3 * competition.predictions_time_interval) + " " + "seconds"
 
     # Creating lists of column names which wiil be used later during calculations and transformations
     target_columns = []  # Target column names

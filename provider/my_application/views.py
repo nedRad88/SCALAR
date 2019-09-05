@@ -648,56 +648,6 @@ def get_messages(competition_id, field, measure):
                                                      minute=int(last_interval["Minute"]), second=int(last_interval["Second"]))
 
                     pause.until(last_interval_date + dt.timedelta(days=0, seconds=evaluation_time_interval))
-                    """
-                    if int(last_interval['Year']) % 4 != 0:
-                        leap_year = False
-                    elif int(last_interval['Year']) % 100 != 0:
-                        leap_year = True
-                    elif int(last_interval['Year']) % 400 != 0:
-                        leap_year = False
-                    else:
-                        leap_year = True
-
-                    pause_second = int(last_interval['Second']) + evaluation_time_interval
-                    pause_minute = int(last_interval['Minute'])
-                    pause_hour = int(last_interval['Hour'])
-                    pause_day = int(last_interval['Day'])
-                    pause_month = int(last_interval['Month'])
-                    pause_year = int(last_interval['Year'])
-                    if pause_second > 59:
-                        pause_minute = pause_minute + 1
-                        pause_second = pause_second - 60
-                        if pause_minute > 59:
-                            pause_hour = pause_hour + 1
-                            pause_minute = pause_minute - 60
-                            if pause_hour > 23:
-                                pause_day = pause_day + 1
-                                pause_hour = pause_hour - 24
-                                if pause_month in [1, 3, 5, 7, 8, 10, 12] and pause_day > 31:
-                                    pause_day = pause_day - 31
-                                    pause_month = pause_month + 1
-                                if pause_month in [4, 6, 9, 11] and pause_day > 30:
-                                    pause_day = pause_day - 30
-                                    pause_month = pause_month + 1
-                                if pause_month == 2 and pause_day > 28 and not leap_year:
-                                    pause_day = pause_day - 28
-                                    pause_month = pause_month + 1
-                                if pause_month == 2 and pause_day > 29 and leap_year:
-                                    pause_day = pause_day - 29
-                                    pause_month = pause_month + 1
-                                if pause_month > 12:
-                                    pause_month = pause_month - 12
-                                    pause_year = pause_year + 1
-
-                    pause.until(datetime(
-                        year=pause_year,
-                        month=pause_month,
-                        day=pause_day,
-                        hour=pause_hour,
-                        minute=pause_minute,
-                        second=pause_second
-                    ))
-                    """
 
             continue_loop = True
 
@@ -719,7 +669,7 @@ def get_messages(competition_id, field, measure):
                     time.sleep(evaluation_time_interval)
 
         else:
-            # Ended
+            # Ended competition
             logging.debug("Competition finished!")
             results = _MONGO_REPO.get_results_by_user(competition_id, field, measure)
             data = 'retry: 100000000\n'
@@ -734,7 +684,6 @@ def get_messages(competition_id, field, measure):
             Response.content_type = 'text/event-stream'
             # Response.cache_control = 'no-cache'
             # Response.headers['Cache-Control'] = 'no-cache'
-
 
             return Response(stream_results(competition), mimetype="text/event-stream")
         else:
