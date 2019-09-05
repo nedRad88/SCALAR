@@ -507,6 +507,7 @@ def get_secret_key():
     user_id = request.args.get('user')
     competition_id = request.args.get('competition')
 
+
     user_secret_key = ''
 
     try:
