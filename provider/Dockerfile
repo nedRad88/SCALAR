@@ -37,6 +37,7 @@ RUN pip3 install -U orjson
 RUN pip3 install -U .
 RUN pip3 install flask gunicorn
 
+
 WORKDIR /my_application
 
 # Set the default command to execute    

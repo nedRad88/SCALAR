@@ -1,4 +1,4 @@
-#! /usr/bin/env bash# Max File Uplaod
+#! /usr/bin/env bash# Max File Upload
 set -e
 echo "client_max_body_size 0;" > /etc/nginx/conf.d/upload.conf# Static Files Setup
 USE_STATIC_URL=${STATIC_URL:-'/static'}
