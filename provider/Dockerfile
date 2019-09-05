@@ -44,7 +44,7 @@ WORKDIR /my_application
 # when creating a new container
 # i.e. using CherryPy to serve the application
 
-CMD ["gunicorn", "--bind", "0.0.0.0:8000", "wsgi"]
+CMD ["gunicorn", "--bind", "0.0.0.0:8000" , "--limit-request-line", "0", "wsgi"]
 
 
 #COPY nginx.conf /etc/nginx
