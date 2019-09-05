@@ -29,7 +29,7 @@ import logging
 logging.basicConfig(level='DEBUG')
 from itsdangerous import URLSafeTimedSerializer
 import csv
-from io import BytesIO
+from io import StringIO, BytesIO
 from flask import Flask, stream_with_context
 from werkzeug.datastructures import Headers
 import math
@@ -698,7 +698,7 @@ def get_messages(competition_id, field, measure):
 @app.route('/download/data/<competition_id>')
 def download_data(competition_id):
     def generate():
-        data = BytesIO()
+        data = StringIO()
         w = csv.writer(data)
         # Getting the dataset
         results = _MONGO_REPO.get_competition_data_records(competition_id)
@@ -752,7 +752,7 @@ def download_proto_file(competition_id):
 
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port='80', debug=True)
+    # app.run(host='0.0.0.0', port='5000', debug=True)
     # http_server = WSGIServer(('', 5000), app)
     # http_server.serve_forever()
-    # wsgi.server(eventlet.listen(('', 5000)), app)
+    wsgi.server(eventlet.listen(('', 5000)), app)

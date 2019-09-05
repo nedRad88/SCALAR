@@ -21,8 +21,8 @@ spec:
       - name: provider
         image: nedeljkoradulovic88/provider
         ports:
-        - containerPort: 8000
-          name: "provider8000"
+        - containerPort: 5000
+          name: "provider5000"
         - containerPort: 5005
           name: "provider5005"
         - containerPort: 50051
@@ -69,12 +69,12 @@ metadata:
     app: provider
 spec:
   ports:
-  # - name: "8000"
-  #   port: 8000
-  #   targetPort: 8000
+  # - name: "5000"
+  #   port: 5000
+  #   targetPort: 5000
   - name: "web"
     port: 80
-    targetPort: 8000
+    targetPort: 5000
   - name: "5005"
     port: 5005
     targetPort: 5005

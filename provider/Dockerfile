@@ -22,7 +22,7 @@ EXPOSE 50051
 EXPOSE 9092
 EXPOSE 27017
 EXPOSE 5005
-EXPOSE 8000
+# EXPOSE 8000
 
 # Set the default directory where CMD will execute
 WORKDIR /my_application/Multiflow/scikit-multiflow-master
@@ -44,7 +44,7 @@ WORKDIR /my_application
 # when creating a new container
 # i.e. using CherryPy to serve the application
 
-CMD ["gunicorn", "--bind", "0.0.0.0:8000" , "--limit-request-line", "0", "wsgi"]
+# CMD ["gunicorn", "--bind", "0.0.0.0:8000" , "--limit-request-line", "0", "--log-level", "DEBUG", "wsgi"]
 
 
 #COPY nginx.conf /etc/nginx
@@ -52,5 +52,5 @@ CMD ["gunicorn", "--bind", "0.0.0.0:8000" , "--limit-request-line", "0", "wsgi"]
 #CMD ["./start.sh"]
 
 #CMD python producer.py 
-#ENTRYPOINT ["python3"]
-#CMD ["views.py"]
+ENTRYPOINT ["python3"]
+CMD ["views.py"]
