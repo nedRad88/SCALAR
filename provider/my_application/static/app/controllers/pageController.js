@@ -1,4 +1,4 @@
-﻿'use strict'
+'use strict'
 
 app.controller('pageController',
 [
@@ -57,47 +57,33 @@ app.controller('pageController',
         };
         
         $scope.evaluationMeasures = []
-        
-        evaluationService.getEvaluation( $rootScope.competition_id).then(
+
+        evaluationService.getEvaluation($rootScope.competition_id).then(
                     function successCallback(response) {
                         
                         
                         var measures = response['data']['measures']
                         for (var m in measures){
-                        
-                            
+
                             $scope.evaluationMeasures.push({'field' : m, 'measures' : measures[m]})
                         }
                         $scope.selectedField = $scope.evaluationMeasures[0]
-                        console.log($scope.selectedField)
+                        $scope.page.endpoint = "/topic/" + $rootScope.competition_id+ '/' + $scope.selectedField.field + '/' + $scope.selectedField.measures[0];
+                        $rootScope.endpoint = "/topic/" + $rootScope.competition_id+ '/' + $scope.selectedField.field + '/' + $scope.selectedField.measures[0];
+                        console.log('endoint', $rootScope.endpoint)
+                        for(var i = 0; i < $scope.evaluationMeasures.length; i++) {
+                            $scope.fields.push({'name':$scope.evaluationMeasures[i].field, 'measures':$scope.evaluationMeasures[i].measures})
+                        }
+                        $scope.measures = $scope.selectedField.measures
                         
-                        //$scope.field = $scope.selectedField.field
-                        //$scope.selectedMeasure = $scope.selectedField.measures[0]
-                        console.log($scope.field, $scope.selectedMeasure)
+                        console.log('Fields', $scope.fields)
 
-                        
+
                     }, function errorCallback(err) {
                         $scope.message = err.data;
                         $mdToast.show($mdToast.simple().textContent(err.data));
                     });
-
         
-        /**
-        resultsService.getResults($rootScope.competition_id,$scope.field,$scope.selectedMeasure).then(
-            function successCallback(response) {
-                users = response.data;
-                console.log(users)
-                
-                
-                $scope.getUsers();
-                $scope.loading = false;
-                
-            }, function errorCallback(err) {
-                $scope.message = err.data;
-                $mdToast.show($mdToast.simple().textContent(err.data));
-            });
-            **/
-         
         $scope.loadField = function(){
             var t  = JSON.parse($scope.selectedField);
             $scope.measures =t.measures;
@@ -251,12 +237,15 @@ app.controller('pageController',
         $scope.topic = true;
         $scope.period = true;
         
-        $rootScope.endpoint = "/topic/" + $rootScope.competition_id+"/Valeurs/MAPE";
+        // TODO continue here
+        //$rootScope.endpoint = "/topic/" + $rootScope.competition_id+ '/'+ $scope.selectedField.field + '/' + $scope.selectedField.measures[0];
+        // $rootScope.endpoint = "/topic/" + $rootScope.competition_id+ '/target/MAPE';
+        $rootScope.endpoint=""
         $scope.selected_field='';
         $scope.selected_measure = '';
-        $scope.fields = [{'name' : 'Valeurs', 'measures' : ['MAPE' , 'TEST']}, {'name' : 'Test','measures' : ['MAPE']}];
-        $scope.measures = [];
-        //initPage($scope, $rootScope, $routeParams, dataService, $mdMedia, $mdDialog, $timeout);
+        // TODO rename this 
+        $scope.fields = []
+        $scope.measures = []
 
         $scope.page = {
                 title: ['Results'],
@@ -280,11 +269,11 @@ app.controller('pageController',
                     }
                 
                 ],
-               endpoint : $rootScope.endpoint,
-               fields : $scope.fields,
-               competition : $rootScope.competition_id 
+                endpoint : $rootScope.endpoint,
+                fields : $scope.fields,
+                competition : $rootScope.competition_id 
             };
-
+       
         
         $scope.selectField = function () {
         
@@ -324,9 +313,9 @@ app.controller('pageController',
                 console.log('order: ', order);
             };
         
-        
 
 
 
     }
 ]);
+

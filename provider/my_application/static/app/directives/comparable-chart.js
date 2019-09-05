@@ -1,4 +1,4 @@
-﻿app.directive('comparableChart', ['dataService', 'ooredooAppSettings', '$mdToast', '$q', function (dataService, ooredooAppSettings, $mdToast, $q) {
+app.directive('comparableChart', ['dataService', 'ooredooAppSettings', '$mdToast', '$q', function (dataService, ooredooAppSettings, $mdToast, $q) {
     var serviceBase = ooredooAppSettings.ressourceServerBaseUri;
     var legendTemplate = ooredooAppSettings.legendTemplateWithSeries;
     return {
@@ -20,12 +20,7 @@
         },
         templateUrl: 'static/app/views/templates/comparable-chart.html',
         link: function (scope) {
-            
-           
-                    
-            
-            
-         
+
             var config;
             var init;
             if (scope.config) {
@@ -211,26 +206,6 @@
                 scope.loading = true;
                 var series = [];
 
-                /**
-                if (scope.endpoints) {
-                    series = scope.endpoints;
-                }
-                var queryParam = "?until=" + scope.until.format('YYYY-MM-DD') + "&since=" + scope.since.format('YYYY-MM-DD') + '&by=' + intervalle;
-
-
-                if (scope.topic && scope.topic.length) {
-
-                    for (var i = 0; i < scope.topic.length; i++) {
-                        queryParam = queryParam + "&" + "topics=" + scope.topic[i].id;
-                    }
-                }
-                if (scope.params) {
-                    queryParam = queryParam + "&" + scope.params;
-
-                }
-                **/
-                
-                
                 scope.data = [];
                 scope.avgs = [];
                 scope.series = [];
@@ -241,7 +216,6 @@
                 copy.avgs = [];
                 copy.series = [];
                 
-                //var source = new EventSource("/topic/" + scope.competition+"/Valeurs/MAPE");
                 scope.source = new EventSource(scope.endpoint);
                 var series=[]
                 var labels = []
@@ -296,37 +270,6 @@
                                     
                                 } else {
 
-
-                                            /**
-                                            if(user_results[i].label.Second != user_results[i-1].label.Second){
-                                                l = m.format('ss') + 's ' + l;
-                                            }
-                                            
-                                            if(user_results[i].label.Minute != user_results[i-1].label.Minute){
-                                            
-                                                l = m.format('mm') + 'm ' + l;
-                                            }
-                                            if (user_results[i].label.Hour != user_results[i - 1].label.Hour) {
-                                                l = m.format('mm') + 'm ' + l;
-                                                l = m.format('HH') + ':' + l;
-                                            }
-                                            
-                                            if (user_results[i].label.Day != user_results[i - 1].label.Day) {
-                                                l = m.format('mm') + 'm ' + l;
-                                                l = m.format('HH') + ': ' + l;
-                                                l = m.format('DD ') + l;
-                                                l = m.format('MM ') +'/'+ l;
-                                            }
-                                            if (user_results[i].label.Month != user_results[i - 1].label.Month) {
-                                                
-                                                l = m.format('MM') + ((intervalle == 'month') ? "" : ("/" + l));
-                                            }
-                                        
-                                        
-                                        
-                                            if (user_results[i].label.Year != user_results[i - 1].label.Year) {
-                                                l = m.format('YYYY') + "/" + l;
-                                            }**/
                                             l = m.format('YYYY/MM/DD HH:mm:ss');
                                 
 
@@ -468,7 +411,7 @@
             });
             scope.$watch('endpoint', function () {
                 console.log(scope.endpoint)
-                scope.source.close();
+                
                 
                 scope.data = [];
                 scope.avgs = [];
@@ -480,8 +423,9 @@
                 copy.avgs = [];
                 copy.series = [];
                 
-                //var source = new EventSource("/topic/" + scope.competition+"/Valeurs/MAPE");
-                scope.source = new EventSource(scope.endpoint);
+                if (scope.endpoint){
+                    scope.source = new EventSource(scope.endpoint);
+                
                 var series=[]
                 var labels = []
                 
@@ -535,55 +479,11 @@
                                     
                                 } else {
 
-
-                                            /**
-                                            if(user_results[i].label.Second != user_results[i-1].label.Second){
-                                                l = m.format('ss') + 's ' + l;
-                                            }
-                                            
-                                            if(user_results[i].label.Minute != user_results[i-1].label.Minute){
-                                            
-                                                l = m.format('mm') + 'm ' + l;
-                                            }
-                                            if (user_results[i].label.Hour != user_results[i - 1].label.Hour) {
-                                                l = m.format('mm') + 'm ' + l;
-                                                l = m.format('HH') + ':' + l;
-                                            }
-                                            
-                                            if (user_results[i].label.Day != user_results[i - 1].label.Day) {
-                                                l = m.format('mm') + 'm ' + l;
-                                                l = m.format('HH') + ': ' + l;
-                                                l = m.format('DD ') + l;
-                                                l = m.format('MM ') +'/'+ l;
-                                            }
-                                            if (user_results[i].label.Month != user_results[i - 1].label.Month) {
-                                                
-                                                l = m.format('MM') + ((intervalle == 'month') ? "" : ("/" + l));
-                                            }
-                                        
-                                        
-                                        
-                                            if (user_results[i].label.Year != user_results[i - 1].label.Year) {
-                                                l = m.format('YYYY') + "/" + l;
-                                            }**/
                                             l = m.format('YYYY/MM/DD HH:mm:ss');
                                 
 
                                     
                                 }
-                                
-                                /**
-                                switch (intervalle) {
-                                    
-                                    case "day":
-                                        var t = m.add(1, "days");
-                                        break;
-                                    case "hour":
-                                        var t = m.add(1, "hours");
-                                        break;
-                                    
-                                    default:
-                                }**/
                                 
                                 
                                 if(labels.indexOf(l) == -1){
@@ -655,7 +555,7 @@
                     
                     
                     
-                    
+                }
                 }
             
 
