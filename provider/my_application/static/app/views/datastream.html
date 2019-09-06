@@ -7,7 +7,7 @@
         <div layout-gt-xs="row"  >
             
             <div flex="5"></div>
-            <div layout="row">
+            <div layout="row" ng-if="isInRole('ADMIN')" >
                 <md-button class="md-button md-ink-ripple md-primary" type="button"  ng-click="addDatastream()">Add Datastream</md-button>
                 <md-icon style="font-size: 24px;" md-font-set="material-icons">add_circle</md-icon>
             </div>
