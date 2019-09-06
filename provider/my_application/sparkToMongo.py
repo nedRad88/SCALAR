@@ -49,9 +49,9 @@ class SparkToMongo:
                                 'latency': message['latency'], 'penalized': message['penalized'], 'measures': {},
                                 'batch_measures': {},
                                 'start_date':
-                                    now - datetime.timedelta(seconds=self.competition.predictions_time_interval)}
+                                    now - datetime.timedelta(seconds=self.competition.predictions_time_interval), 'total_number_of_messages' : message['total_number_of_messages']}
 
-        fields_to_skip = ['user_id', 'competition_id', 'num_submissions', 'start_date', 'latency', 'penalized']
+        fields_to_skip = ['user_id', 'competition_id', 'num_submissions', 'start_date', 'latency', 'penalized', 'total_number_of_messages']
 
         for key, value in message.items():
 

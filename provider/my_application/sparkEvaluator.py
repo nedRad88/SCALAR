@@ -1,5 +1,6 @@
 from pyspark.sql.functions import *
 from pyspark.sql.types import *
+from pyspark.sql import functions as F
 
 # bin/pyspark --packages org.apache.spark:spark-sql-kafka-0-10_2.11:2.4.0 # in container
 # os.environ['PYSPARK_SUBMIT_ARGS'] = '--packages org.apache.spark:spark-sql-kafka-0-10_2.11:2.4.0 pyspark-shell'
@@ -45,11 +46,11 @@ def evaluate(spark_context, broker, competition, competition_config, window_dura
     # Joining two streams, new conditions
     join_result = prediction_stream\
         .join(golden, expr("""rowID = prediction_rowID AND timestamp_submitted >= timestamp_released AND timestamp_submitted <= timestamp_released + interval {}""".format(window_duration)), "leftOuter")\
-        .withColumn("total_num", lit(1))\
-        .withColumn("num_submissions", when(col("timestamp_submitted") <= col("timestamp_deadline"), 1).otherwise(0))\
-        .withColumn("penalized", abs(col("num_submissions") - lit(1)))\
-        .withColumn("latency", when(col("num_submissions") == 0, competition.predictions_time_interval).otherwise(unix_timestamp(col("timestamp_submitted")) - unix_timestamp(col("timestamp_released"))))\
-        .drop("rowID", "timestamp_released", "prediction_rowID", "competition_id", "prediction_competition_id")
+        .withColumn("total_num", F.lit(1))\
+        .withColumn("num_submissions", when(F.col("timestamp_submitted") <= F.col("timestamp_deadline"), 1).otherwise(0))\
+        .withColumn("penalized", abs(F.col("num_submissions") - F.lit(1)))\
+        .withColumn("latency", when(F.col("num_submissions") == 0, competition.predictions_time_interval).otherwise(unix_timestamp(F.col("timestamp_submitted")) - unix_timestamp(F.col("timestamp_released"))))\
+        .drop("timestamp_released", "prediction_rowID", "competition_id", "prediction_competition_id")
 
     for target in targets:
         prediction_target_col = "prediction_" + target.replace(" ", "")
@@ -61,12 +62,12 @@ def evaluate(spark_context, broker, competition, competition_config, window_dura
 
             if measure == "MSE":
                 join_result = join_result\
-                    .withColumn("MSE" + "_" + target, when(join_result[target].isNotNull(), (join_result[target] - join_result[prediction_target_col]) * (join_result[target] - join_result[prediction_target_col])).otherwise(1))\
+                    .withColumn("MSE" + "_" + target, when(join_result[target].isNotNull(), (join_result[target] - join_result[prediction_target_col]) * (join_result[target] - join_result[prediction_target_col])).otherwise(0))\
                     .drop(target, prediction_target_col)
 
             if measure == "MAE":
                 join_result = join_result\
-                    .withColumn("MAE" + "_" + target, when(join_result[target].isNotNull(), abs(join_result[target] - join_result[prediction_target_col])).otherwise(1))\
+                    .withColumn("MAE" + "_" + target, when(join_result[target].isNotNull(), abs(join_result[target] - join_result[prediction_target_col])).otherwise(0))\
                     .drop(target, prediction_target_col)
 
             if measure == "ACC":
@@ -76,35 +77,38 @@ def evaluate(spark_context, broker, competition, competition_config, window_dura
 
 # Dropping unnecessary columns
 
-    exprs = {x: "sum" for x in columns_to_sum}
+    # exprs = {x: "sum" for x in columns_to_sum}
+    agg_exp = [F.expr('sum(`{0}`)'.format(col)) for col in columns_to_sum] + [F.expr('max(rowID) as max_rowID')]
     # Grouping by user_id and aggregation
     results = join_result\
         .drop("timestamp_deadline", "timestamp_submitted")\
         .groupBy("user_id")\
-        .agg(exprs)\
-        .withColumn("competition_id", lit(competition.competition_id))
+        .agg(*agg_exp)\
+        .withColumn("competition_id", F.lit(competition.competition_id))\
+        .withColumn("total_number_of_messages", F.col("max_rowID") - F.lit(competition.initial_batch_size))\
+        .drop("max_rowID")
     # Calculating batch measures
 
     for target in targets:
         for measure in competition_config[target]:
             if measure == "MAPE":
                 results_final = results\
-                    .withColumn("MAPE" + "_" + target, 100 * results["sum(MAPE" + "_" + target + ")"] / results["sum(total_num)"])\
+                    .withColumn("MAPE" + "_" + target, 100 * ((results["sum(MAPE" + "_" + target + ")"] + (results["total_number_of_messages"] - results["sum(total_num)"])) / results["total_number_of_messages"])) \
                     .drop("sum(MAPE" + "_" + target + ")")
 
             if measure == "MSE":
                 results_final = results\
-                    .withColumn("MSE" + "_" + target, results["sum(MSE" + "_" + target + ")"] / results["sum(total_num)"])\
+                    .withColumn("MSE" + "_" + target, results["sum(MSE" + "_" + target + ")"] / results["total_number_of_messages"] + (results["total_number_of_messages"] - results["sum(num_submissions)"])) \
                     .drop("sum(MSE" + "_" + target + ")")
 
             if measure == "MAE":
                 results_final = results\
-                    .withColumn("MAE" + "_" + target, results["sum(MAE" + "_" + target + ")"] / results["sum(total_num)"])\
+                    .withColumn("MAE" + "_" + target, results["sum(MAE" + "_" + target + ")"] / results["total_number_of_messages"] + (results["total_number_of_messages"] - results["sum(num_submissions)"])) \
                     .drop("sum(MAE" + "_" + target + ")")
 
             if measure == "ACC":
                 results_final = results\
-                    .withColumn("ACC" + "_" + target, results["sum(ACC" + "_" + target + ")"] / results["sum(total_num)"])\
+                    .withColumn("ACC" + "_" + target, results["sum(ACC" + "_" + target + ")"] / results["total_number_of_messages"]) \
                     .drop("sum(ACC" + "_" + target + ")")
 
     pred = prediction_stream \
