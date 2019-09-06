@@ -8,6 +8,7 @@ from repository import MongoRepository
 import imp
 from google.protobuf import json_format
 import datetime
+import time
 from bson import json_util
 import json
 import threading
@@ -169,6 +170,24 @@ def consume_stream(consumer, producer, competition, output_topic, target, watche
                 print(object_message)
 
 
+def filter_stream(stream, competition):
+
+    while True:
+        for message in list(stream):
+            values1 = orjson.loads(message.value())
+            object_message1 = {}
+
+            for key, value in values1.items():
+                object_message1[key.replace(' ', '')] = value
+            if 'Deadline' in object_message1:
+                # print(type(object_message1['Deadline']))
+                deadline = datetime.datetime.strptime(object_message1['Deadline'], "%Y-%m-%dT%H:%M:%S.%f")
+                if deadline < (datetime.datetime.now() - datetime.timedelta(days=0,
+                                                                            seconds=competition.predictions_time_interval)):
+                    stream.remove(message)
+        time.sleep(competition.predictions_time_interval)
+
+
 class DataStreamerServicer:
     daemon = True
     consumer = None
@@ -234,6 +253,9 @@ class DataStreamerServicer:
         t = threading.Thread(target=consume_stream, args=(self.consumer, self.producer, self.competition,
                                                           self.output_topic, self.stream, self.watchers))
         t.start()
+
+        t1 = threading.Thread(target=filter_stream, args=[self.stream, self.competition])
+        t1.start()
 
     def sendData(self, request_iterator, context):
         # print("Send data invoked")

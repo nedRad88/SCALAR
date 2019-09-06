@@ -29,7 +29,7 @@ import logging
 logging.basicConfig(level='DEBUG')
 from itsdangerous import URLSafeTimedSerializer
 import csv
-from io import BytesIO
+from io import StringIO, BytesIO
 from flask import Flask, stream_with_context
 from werkzeug.datastructures import Headers
 import math
@@ -507,6 +507,7 @@ def get_secret_key():
     user_id = request.args.get('user')
     competition_id = request.args.get('competition')
 
+
     user_secret_key = ''
 
     try:
@@ -697,7 +698,7 @@ def get_messages(competition_id, field, measure):
 @app.route('/download/data/<competition_id>')
 def download_data(competition_id):
     def generate():
-        data = BytesIO()
+        data = StringIO()
         w = csv.writer(data)
         # Getting the dataset
         results = _MONGO_REPO.get_competition_data_records(competition_id)
