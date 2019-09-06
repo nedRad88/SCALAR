@@ -87,6 +87,7 @@ def evaluate(spark_context, broker, competition, competition_config, window_dura
         .withColumn("competition_id", F.lit(competition.competition_id))\
         .withColumn("total_number_of_messages", F.col("max_rowID") - F.lit(competition.initial_batch_size))\
         .drop("max_rowID")
+
     # Calculating batch measures
 
     for target in targets:

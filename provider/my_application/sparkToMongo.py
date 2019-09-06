@@ -68,7 +68,6 @@ class SparkToMongo:
 
     def process_predictions(self, mess):
         predictions = self.db_data['predictions_v2']
-
         prediction = orjson.loads(mess.value())
         # print(type(message), message)
         # message = json.loads(str(message), object_hook=json_util.object_hook)
