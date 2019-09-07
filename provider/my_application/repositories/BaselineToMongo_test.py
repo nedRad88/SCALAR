@@ -1,6 +1,6 @@
 # from kafka import KafkaConsumer, SimpleClient, KafkaProducer
 from confluent_kafka import Consumer, Producer
-from repository import MongoRepository
+# from repository import MongoRepository
 import json
 from bson import json_util
 import datetime
@@ -27,11 +27,9 @@ class BaselineToMongo:
                 'session.timeout.ms': competition.initial_training_time * 10000,
                 'auto.offset.reset': 'earliest'}
         self.consumer = Consumer(conf)
-
-        # self.consumer = KafkaConsumer(bootstrap_servers=kafka_server, auto_offset_reset='earliest')
         self.consumer.subscribe([topic])
-        # self.client = SimpleClient(kafka_server)
-        self.mongo_repository = MongoRepository(_MONGO_HOST)
+
+        #self.client = SimpleClient(kafka_server)
         self.config = competition_config
         self.targets = competition_config.keys()
         self.competition_id = competition.competition_id
@@ -41,8 +39,6 @@ class BaselineToMongo:
         self.output_topic = competition.name.lower().replace(" ", "") + 'predictions'
 
     def write(self):
-        db = self.mongo_repository.client['data']
-        predictions = db['predictions_v2']
         regression_targets = []
         classification_targets = []
 
@@ -61,28 +57,32 @@ class BaselineToMongo:
         for target in regression_targets:
             num_records[target] = 0
             sum_values[target] = 0
+
         while True:
-            msg = self.consumer.poll(timeout=0)
-            message = orjson.loads(msg.value())
-            # message = json.loads(str(message), object_hook=json_util.object_hook)
-            prediction_dict = {'prediction_rowID': message['rowID'], 'prediction_competition_id': self.competition_id,
-                               'prediction_Valeurs': 55555}
+            try:
+                msg = self.consumer.poll(timeout=0)
+                message = orjson.loads(msg.value())
+                # message = json.loads(str(message), object_hook=json_util.object_hook)
+                prediction_dict = {'prediction_rowID': message['rowID'], 'prediction_competition_id': self.competition_id,
+                                   'prediction_Valeurs': 55555}
 
             # prediction_dict, num_records, sum_values = self.regression(message,
             #                                                            prediction_dict, num_records, sum_values)
             # prediction_dict, target_dict = self.classification(message, target_dict, prediction_dict)
-            if message['tag'] == 'TEST':
-                for i in range(0, 100):
-                    prediction_dict['user_id'] = i + 100
-                    prediction_dict['prediction_Valeurs'] = prediction_dict['prediction_Valeurs'] + prediction_dict['user_id'] * 10
-                    submitted_on = datetime.datetime.now()
-                    # prediction_dict['submitted_on'] = submitted_on
-                    # prediction_dict['_id'] = ObjectId()
-                    # predictions.insert_one(prediction_dict)
-                    # del prediction_dict['submitted_on']
-                    prediction_dict['submitted_on'] = submitted_on.strftime("%Y-%m-%d %H:%M:%S")
-                    self.producer.produce(self.output_topic, orjson.dumps(prediction_dict))
-                    self.producer.poll(timeout=0)
+                if message['tag'] == 'TEST':
+                    for i in range(0, 100):
+                        prediction_dict['user_id'] = i + 100
+                        prediction_dict['prediction_Valeurs'] = prediction_dict['prediction_Valeurs'] + prediction_dict['user_id'] * 10
+                        submitted_on = datetime.datetime.now()
+                        # prediction_dict['submitted_on'] = submitted_on
+                        # prediction_dict['_id'] = ObjectId()
+                        # predictions.insert_one(prediction_dict)
+                        # del prediction_dict['submitted_on']
+                        prediction_dict['submitted_on'] = submitted_on.strftime("%Y-%m-%d %H:%M:%S")
+                        self.producer.produce(self.output_topic, orjson.dumps(prediction_dict))
+                        self.producer.poll(timeout=0)
+            except Exception as e:
+                continue
 
     @staticmethod
     def regression(message, prediction_dict, num_records, sum_values):

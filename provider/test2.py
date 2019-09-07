@@ -1,10 +1,13 @@
 import datetime
 import json
 from bson import json_util
+from werkzeug.security import generate_password_hash, check_password_hash
+
+password = "5eIWqOotMopq"
+
+hashed = generate_password_hash(password)
 
 
-now = str(datetime.datetime.now().isoformat())
-print(now)
-now_dt = datetime.datetime.strptime(now, '%Y-%m-%dT%H:%M:%S.%f')
-print(now_dt)
+print(hashed)
 
+#print(check_password_hash(hashed_old, password))

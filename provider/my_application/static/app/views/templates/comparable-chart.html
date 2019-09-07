@@ -22,7 +22,7 @@
                     <md-icon style="font-size: 24px;" md-font-set="material-icons">filter_list</md-icon>
                     <md-select ng-model="selected_field" aria-label="competiton Field" ng-change="selectField()">
                         
-                            <md-option ng-repeat="field in fields" value="{{field}}">
+                            <md-option ng-repeat="field in fields" value="{{field}}" ng-selected="$index == 0">
                                 {{field.name}}
                             </md-option>
                         
@@ -35,7 +35,7 @@
                     <md-select ng-model="selected_measure" aria-label="Time"
                             ng-change="selectMeasure(selected_measure)">
                             
-                            <md-option ng-repeat="measure in measures" value="{{measure}}">
+                            <md-option ng-repeat="measure in measures" value="{{measure}}" ng-selected="$index == 0">
                                 {{measure}}
                             </md-option>
                         

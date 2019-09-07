@@ -129,11 +129,11 @@ app.constant('dashboardSections', {
     ]
 });
 
-var oAuthServiceBase = 'http://localhost:80/auth/';
-var ressourceServerBaseUri = 'http://localhost:80/';
+//var oAuthServiceBase = 'http://localhost:80/auth/';
+//var ressourceServerBaseUri = 'http://localhost:80/';
 
-//var ressourceServerBaseUri = 'http://app.streaming-challenge.com:80/';
-//var oAuthServiceBase = 'http://app.streaming-challenge.com:80/auth/';
+var ressourceServerBaseUri = 'http://app.streaming-challenge.com:80/';
+var oAuthServiceBase = 'http://app.streaming-challenge.com:80/auth/';
 
 
 //var oAuthServiceBase = 'http://streamingcompetition.francecentral.cloudapp.azure.com:5000/auth/';
@@ -232,6 +232,9 @@ app.config(function($routeProvider) {
         templateUrl: "static/app/views/404.html"
     });
     
+    $routeProvider.when("/closed", {
+        templateUrl: "static/app/views/sorry.html"
+    });
    
     $routeProvider.otherwise({ redirectTo: "/404" });
 
@@ -242,13 +245,17 @@ app.config(function($routeProvider) {
     $rootScope.$on("$routeChangeStart", function (event, next, current) {
         
         console.log(oAuthService.authentication.isAuth)
-        
-        if (oAuthService.authentication.isAuth == false) {
-            
-            // no logged user, we should be going to #login
-            if (next.templateUrl != "static/app/views/login.html" && next.templateUrl != 'static/app/views/signup.html' ) {
+        // no logged user, we should be going to #login
+        if (next.templateUrl == "static/app/views/signup.html") {
+            //closed registrations
+            $location.path("/closed");
+        }
+        else if (oAuthService.authentication.isAuth == false && next.templateUrl != "static/app/views/sorry.html" ) {
+
+            if (next.templateUrl != "static/app/views/login.html") {
                 $location.path("/login");
             }
+            
         }
         Chart.defaults.global.animation = false;
         
@@ -263,7 +270,6 @@ app.run(['oAuthService', function (authService) {
 app.config(function ($httpProvider) {
     $httpProvider.interceptors.push('authInterceptorService');
 });
-
 
 
 

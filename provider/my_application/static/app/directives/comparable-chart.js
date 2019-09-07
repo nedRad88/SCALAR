@@ -111,7 +111,7 @@ app.directive('comparableChart', ['dataService','oAuthService', 'ooredooAppSetti
                 }
             };
 
-            scope.colors = []//['#46BFBD', '#FDB45C', '#949FB1', '#4D5360'];
+            scope.colors = ['#46BFBD', '#FDB45C', '#949FB1', '#4D5360'];
             /**
             for (var j = 0; j < scope.endpoints.length; j++) {
 
@@ -320,13 +320,13 @@ app.directive('comparableChart', ['dataService','oAuthService', 'ooredooAppSetti
                         if(response_data.status == "INIT"){
                             
                             scope.data.push(data);
-                            //console.log(scope.data)
+                            console.log(scope.data)
                         }
                         else{
                             
                             if(scope.data[u] != undefined){
                                 scope.data[u].push(data[0])
-                                //console.log(scope.data)
+                                console.log(scope.data)
                             }
                             
                             

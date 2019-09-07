@@ -35,13 +35,15 @@ class SparkToMongo:
         self.measures_topic = measures_topic
         self.db_data = self.mongo_repository.client['data']
 
-    def process_measures(self, mess):
+    def process_measures(self, mess, previous_batch, now):
 
         db = self.mongo_repository.client['evaluation_measures']
         measures_coll = db['measures']
         message = orjson.loads(mess.value())
         # message = json.loads(str(message), object_hook=json_util.object_hook)
-        now = datetime.datetime.now()
+        if previous_batch < message['total_number_of_messages']:
+            now = datetime.datetime.now()
+            previous_batch = message['total_number_of_messages']
         # logging.debug("here4: {}".format(message))
 
         time_series_instance = {'nb_submissions': message['num_submissions'], 'user_id': int(message['user_id']),
@@ -49,9 +51,9 @@ class SparkToMongo:
                                 'latency': message['latency'], 'penalized': message['penalized'], 'measures': {},
                                 'batch_measures': {},
                                 'start_date':
-                                    now - datetime.timedelta(seconds=self.competition.predictions_time_interval)}
+                                    now - datetime.timedelta(seconds=self.competition.predictions_time_interval), 'total_number_of_messages' : message['total_number_of_messages']}
 
-        fields_to_skip = ['user_id', 'competition_id', 'num_submissions', 'start_date', 'latency', 'penalized']
+        fields_to_skip = ['user_id', 'competition_id', 'num_submissions', 'start_date', 'latency', 'penalized', 'total_number_of_messages']
 
         for key, value in message.items():
 
@@ -65,10 +67,10 @@ class SparkToMongo:
                 time_series_instance['batch_measures'][new_fields[1]][new_fields[0]] = message[key]
 
         measures_coll.insert_one(time_series_instance)
+        return previous_batch, now
 
     def process_predictions(self, mess):
         predictions = self.db_data['predictions_v2']
-
         prediction = orjson.loads(mess.value())
         # print(type(message), message)
         # message = json.loads(str(message), object_hook=json_util.object_hook)
@@ -80,12 +82,14 @@ class SparkToMongo:
         golden.insert_one(message)
 
     def run(self):
+        previous = 0
+        date = datetime.datetime.now()
         while True:
             msg = self.consumer.poll(timeout=0)
             if msg is None:
                 continue
             if msg.topic() == self.measures_topic:
-                self.process_measures(msg)
+                previous, date = self.process_measures(msg, previous_batch=previous, now=date)
             elif msg.topic() == self.golden_topic:
                 self.process_golden(msg)
             elif msg.topic() == self.prediction_topic:

@@ -15,7 +15,7 @@ import os
 from os import path
 import os.path
 from werkzeug.utils import secure_filename
-from grpc_tools import protocstream
+from grpc_tools import protoc
 from flask import jsonify
 from bson import json_util
 from werkzeug.datastructures import ImmutableMultiDict
@@ -610,6 +610,11 @@ def get_file_extension(filename):
 
 @app.route('/topic/<competition_id>/<field>/<measure>/<user_id>')
 def get_messages(competition_id, field, measure, user_id):
+    # print("Get messages parameters: ", competition_id, field, measure, user_id)
+    # logging.debug("Competition_id: {}".format(competition_id))
+    # logging.debug("field: {}".format(field))
+    # logging.debug("measure: {}".format(measure))
+    # logging.debug("user_id: {}".format(user_id))
     def stream_results(competition):
         # Getting competition from Database
 
@@ -618,10 +623,7 @@ def get_messages(competition_id, field, measure, user_id):
 
         if competition.end_date > now:
             logging.debug("Competition not over yet!")
-            if competition.predictions_time_interval < 5:
-                evaluation_time_interval = 5
-            else:
-                evaluation_time_interval = competition.predictions_time_interval
+            evaluation_time_interval = 30
 
             if competition.start_date > now:
                 # Competition hasn't started yet
@@ -667,7 +669,7 @@ def get_messages(competition_id, field, measure, user_id):
                     # print(data)
                     yield data
 
-                    time.sleep(evaluation_time_interval)
+                    time.sleep(30)
 
         else:
             # Ended competition
@@ -752,7 +754,7 @@ def download_proto_file(competition_id):
 
 
 if __name__ == '__main__':
-    # app.run(host='0.0.0.0', port='5000', debug=True)
+    # app.run(host='0.0.0.0', port='80', debug=True)
     # http_server = WSGIServer(('', 5000), app)
     # http_server.serve_forever()
     wsgi.server(eventlet.listen(('', 5000)), app)

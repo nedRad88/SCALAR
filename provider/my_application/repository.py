@@ -1,7 +1,10 @@
 import pymongo
 import sys
 from pymongo import MongoClient
-import datetime
+from datetime import datetime, timedelta
+import logging
+logging.basicConfig(level='DEBUG')
+
 
 
 class MongoRepository:
@@ -73,7 +76,7 @@ class MongoRepository:
             {"$match": {"$and":
                 [
                     {"competition_id": int(competition_id)},
-                    {'user_id': { "$in": [0, user_id] }}
+                    {'user_id': {"$in": [0, int(user_id)]}}
 
                 ]}
             },
@@ -118,11 +121,33 @@ class MongoRepository:
                        "data": m['measures'][str(field)][str(measure)]}
 
                 stats['results'].append(row)
+            # stats['results'] = sorted(stats['results'], key=lambda i: str(i['label']))
+            stats['results'] = sorted(stats['results'],
+                                      key=lambda i: datetime(**{k.lower(): int(v) for k, v in i['label'].items()}))
             final_stats.append(stats)
 
+        if len(final_stats) > 1:
+            # get baseline results (x-axis)
+            base_line_results = [r for r in final_stats if r['user_id'] == 0][0]
+            user_results = [r for r in final_stats if r['user_id'] != 0][0]
+
+            base_line_dates = [r['label'] for r in base_line_results['results']]
+            user_line_dates = [r['label'] for r in user_results['results']]
+            # Filling missing dates with zeros
+            for i in range(len(base_line_dates)):
+                if base_line_dates[i] not in user_line_dates:
+                    # add this missing date at this index
+                    user_results['results'].insert(i, {'label': base_line_dates[i], 'data': str(0)})
+            final_stats = [base_line_results, user_results]
+
+        for r in final_stats:
+            r['user_id'] = 'Baseline' if r['user_id'] == 0 else 'You'
+
+        print(final_stats)
+        # logging.debug("Decorator: {}".format(final_stats))
         return final_stats
 
-    def get_last_predictions_by_user(self, competition_id, now, field, measure,user_id, evaluation_time_interval):
+    def get_last_predictions_by_user(self, competition_id, now, field, measure, user_id, evaluation_time_interval):
         db = self.client['evaluation_measures']
         collection = db['measures']
         # print('#######################################')
@@ -136,13 +161,15 @@ class MongoRepository:
             #print('\n')
             {"start_date" : {"gte" : start_date}}
         """
-        date = now - datetime.timedelta(seconds=evaluation_time_interval)
+        date = now - timedelta(seconds=35)
+        # logging.debug("Now: {}".format(now))
+        # logging.debug("Decorator: {}".format(date))
         results = collection.aggregate([
             {"$match": {"$and":
                 [
                     {"competition_id": int(competition_id)},
                     {"start_date": {"$gte": date, "$lt": now}},
-                     {'user_id': { "$in": [0, user_id] }}
+                    {'user_id': {"$in": [0, int(user_id)]}}
 
                 ]}
             },
@@ -166,6 +193,8 @@ class MongoRepository:
 
         final_stats = []
         for r in results:
+            # logging.debug("Decorator: {}".format(r))
+            print(r)
             stats = {'user_id': r['_id'], 'results': []}
             measures = r['measures']
             for m in measures:
@@ -186,14 +215,30 @@ class MongoRepository:
                        "data": m['measures'][str(field)][str(measure)]}
 
                 stats['results'].append(row)
+            # stats['results'] = sorted(stats['results'], key=lambda i: str(i['label']))
+            stats['results'] = sorted(stats['results'],
+                                      key=lambda i: datetime(**{k.lower(): int(v) for k, v in i['label'].items()}))
             final_stats.append(stats)
-        """
-        print('repo',final_stats)
-        final_stats = [
 
-                {"user_id":1,"results":[{'data': 0.020, 'label': {'Hour': '13', 'Month': '10', 'Second': '25', 'Year': '2017', 'Day': '13', 'Minute': '55'}}]}
-                ]
-        #print('final_stats' , len(final_stats))"""
+        if len(final_stats) > 1:
+            # get baseline results (x-axis)
+            base_line_results = [r for r in final_stats if r['user_id'] == 0][0]
+            user_results = [r for r in final_stats if r['user_id'] != 0][0]
+
+            base_line_dates = [r['label'] for r in base_line_results['results']]
+            user_line_dates = [r['label'] for r in user_results['results']]
+            # Filling missing dates with zeros
+            for i in range(len(base_line_dates)):
+                if base_line_dates[i] not in user_line_dates:
+                    # add this missing date at this index
+                    user_results['results'].insert(i, {'label': base_line_dates[i], 'data': str(0)})
+            final_stats = [base_line_results, user_results]
+
+        for r in final_stats:
+            r['user_id'] = 'Baseline' if r['user_id'] == 0 else 'You'
+
+        print(final_stats)
+        # logging.debug("Decorator: {}".format(final_stats))
         return final_stats
 
     def get_users_ranking_by_field_by_measure(self, competition_id, field, measure):
@@ -229,7 +274,7 @@ class MongoRepository:
 
         data = []
         for r in results:
-            #print (r)
+            # print (r)
             item = {}
             item['id'] = r['_id']
             item['measures'] = r['measures'][field][measure]
