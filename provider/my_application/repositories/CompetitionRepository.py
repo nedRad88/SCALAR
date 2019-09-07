@@ -175,7 +175,8 @@ class BaseRepository():
             self.session.add(row)
             self.session.flush()
             self.session.commit()
-        except Exception:
+        except Exception as e:
+            print(e)
             self.session.rollback()
 
     def insert_many(self, rows):
@@ -185,7 +186,8 @@ class BaseRepository():
                 self.session.add(row)
                 self.session.flush()
             self.session.commit()
-        except Exception:
+        except Exception as e:
+            print(e)
             self.session.rollback()
 
     def delete_one(self, row):
@@ -193,7 +195,8 @@ class BaseRepository():
         try:
             self.session.delete(row)
             self.session.commit()
-        except Exception:
+        except Exception as e:
+            print(e)
             self.session.rollback()
 
 
