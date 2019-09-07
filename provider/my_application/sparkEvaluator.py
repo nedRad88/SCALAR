@@ -41,7 +41,7 @@ def evaluate(spark_context, broker, competition, competition_config, window_dura
                                                           "yyyy-MM-dd HH:mm:ss").cast(TimestampType()))\
         .drop("submitted_on")\
         .withWatermark("timestamp_submitted", prediction_window_duration)\
-        .dropDuplicates(["user_id", "prediction_competition_id", "prediction_rowID"])
+        .dropDuplicates(["user_id", "prediction_competition_id", "prediction_rowID", "timestamp_submitted"])
 
     # Joining two streams, new conditions
     join_result = prediction_stream\
