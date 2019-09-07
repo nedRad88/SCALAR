@@ -15,7 +15,7 @@ import os
 from os import path
 import os.path
 from werkzeug.utils import secure_filename
-from grpc_tools import protoc
+from grpc_tools import protocstream
 from flask import jsonify
 from bson import json_util
 from werkzeug.datastructures import ImmutableMultiDict
@@ -29,7 +29,7 @@ import logging
 logging.basicConfig(level='DEBUG')
 from itsdangerous import URLSafeTimedSerializer
 import csv
-from io import BytesIO
+from io import StringIO, BytesIO
 from flask import Flask, stream_with_context
 from werkzeug.datastructures import Headers
 import math
@@ -246,6 +246,7 @@ def register():
                   recipients=[email])
     # msg.body = "Hello  " + first_name + ' ' + last_name + "\n\n Welcome to Streaming Data Challenge platform \n\n Cheers, \n\n The team \n Please confirm \n" "http://streamigchallenge.cloudapp.net:5000/auth/api/account/confirm/"+ token
     msg.body = "Hello " + first_name + ' ' + last_name + ", \n\nWelcome to Streaming Data Challenge platform! \n\nCheers, \nThe team \n\nPlease click on the link below to confirm your e-mail.\n" "http://app.streaming-challenge.com:80/auth/api/account/confirm/" + token
+    # msg.body = "Hello " + first_name + ' ' + last_name + ", \n\nUnfortunately, the registration deadline has passed. Hopefully you will have another chance to try our platform.  \n\nCheers, \nThe team \n\n"
     # http: // streamingcompetition.francecentral.cloudapp.azure.com
     # Was localhost:5000/auth...
     mail.send(msg)
@@ -506,6 +507,7 @@ def get_secret_key():
     user_id = request.args.get('user')
     competition_id = request.args.get('competition')
 
+
     user_secret_key = ''
 
     try:
@@ -606,8 +608,8 @@ def get_file_extension(filename):
     return extension
 
 
-@app.route('/topic/<competition_id>/<field>/<measure>')
-def get_messages(competition_id, field, measure):
+@app.route('/topic/<competition_id>/<field>/<measure>/<user_id>')
+def get_messages(competition_id, field, measure, user_id):
     def stream_results(competition):
         # Getting competition from Database
 
@@ -633,7 +635,7 @@ def get_messages(competition_id, field, measure):
 
             else:
                 # Get Initial Measures
-                results = _MONGO_REPO.get_results_by_user(competition.competition_id, field, measure)
+                results = _MONGO_REPO.get_results_by_user(competition.competition_id, field, measure, user_id)
                 data = 'retry: 100000000\n'
                 data = data + 'data: {0}\n\n'.format(json.dumps({"status": 'INIT', "results": results}))
 
@@ -647,56 +649,6 @@ def get_messages(competition_id, field, measure):
                                                      minute=int(last_interval["Minute"]), second=int(last_interval["Second"]))
 
                     pause.until(last_interval_date + dt.timedelta(days=0, seconds=evaluation_time_interval))
-                    """
-                    if int(last_interval['Year']) % 4 != 0:
-                        leap_year = False
-                    elif int(last_interval['Year']) % 100 != 0:
-                        leap_year = True
-                    elif int(last_interval['Year']) % 400 != 0:
-                        leap_year = False
-                    else:
-                        leap_year = True
-
-                    pause_second = int(last_interval['Second']) + evaluation_time_interval
-                    pause_minute = int(last_interval['Minute'])
-                    pause_hour = int(last_interval['Hour'])
-                    pause_day = int(last_interval['Day'])
-                    pause_month = int(last_interval['Month'])
-                    pause_year = int(last_interval['Year'])
-                    if pause_second > 59:
-                        pause_minute = pause_minute + 1
-                        pause_second = pause_second - 60
-                        if pause_minute > 59:
-                            pause_hour = pause_hour + 1
-                            pause_minute = pause_minute - 60
-                            if pause_hour > 23:
-                                pause_day = pause_day + 1
-                                pause_hour = pause_hour - 24
-                                if pause_month in [1, 3, 5, 7, 8, 10, 12] and pause_day > 31:
-                                    pause_day = pause_day - 31
-                                    pause_month = pause_month + 1
-                                if pause_month in [4, 6, 9, 11] and pause_day > 30:
-                                    pause_day = pause_day - 30
-                                    pause_month = pause_month + 1
-                                if pause_month == 2 and pause_day > 28 and not leap_year:
-                                    pause_day = pause_day - 28
-                                    pause_month = pause_month + 1
-                                if pause_month == 2 and pause_day > 29 and leap_year:
-                                    pause_day = pause_day - 29
-                                    pause_month = pause_month + 1
-                                if pause_month > 12:
-                                    pause_month = pause_month - 12
-                                    pause_year = pause_year + 1
-
-                    pause.until(datetime(
-                        year=pause_year,
-                        month=pause_month,
-                        day=pause_day,
-                        hour=pause_hour,
-                        minute=pause_minute,
-                        second=pause_second
-                    ))
-                    """
 
             continue_loop = True
 
@@ -708,7 +660,7 @@ def get_messages(competition_id, field, measure):
 
                 else:
                     results_by_user = _MONGO_REPO.get_last_predictions_by_user(competition_id, now, field, measure,
-                                                                               evaluation_time_interval)
+                                                                               user_id, evaluation_time_interval)
                     data = 'retry: 100000000\n'
                     data = data + 'data: {0}\n\n'.format(
                         json.dumps({"status": 'INCREMENT', "results": results_by_user}))
@@ -718,9 +670,9 @@ def get_messages(competition_id, field, measure):
                     time.sleep(evaluation_time_interval)
 
         else:
-            # Ended
+            # Ended competition
             logging.debug("Competition finished!")
-            results = _MONGO_REPO.get_results_by_user(competition_id, field, measure)
+            results = _MONGO_REPO.get_results_by_user(competition_id, field, measure, user_id)
             data = 'retry: 100000000\n'
             data = data + 'data: {0}\n\n'.format(json.dumps({"status": 'INIT', "results": results}))
             yield data
@@ -734,7 +686,6 @@ def get_messages(competition_id, field, measure):
             # Response.cache_control = 'no-cache'
             # Response.headers['Cache-Control'] = 'no-cache'
 
-
             return Response(stream_results(competition), mimetype="text/event-stream")
         else:
             return json.dumps('Competition not found !, please check'), 404, {'ContentType': 'application/json'}
@@ -747,7 +698,7 @@ def get_messages(competition_id, field, measure):
 @app.route('/download/data/<competition_id>')
 def download_data(competition_id):
     def generate():
-        data = BytesIO()
+        data = StringIO()
         w = csv.writer(data)
         # Getting the dataset
         results = _MONGO_REPO.get_competition_data_records(competition_id)

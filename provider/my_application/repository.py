@@ -60,7 +60,7 @@ class MongoRepository:
 
         return data
 
-    def get_results_by_user(self, competition_id, field, measure):
+    def get_results_by_user(self, competition_id, field, measure, user_id):
 
         db = self.client['evaluation_measures']
         collection = db['measures']
@@ -72,7 +72,8 @@ class MongoRepository:
         results = collection.aggregate([
             {"$match": {"$and":
                 [
-                    {"competition_id": int(competition_id)}
+                    {"competition_id": int(competition_id)},
+                    {'user_id': { "$in": [0, user_id] }}
 
                 ]}
             },
@@ -121,7 +122,7 @@ class MongoRepository:
 
         return final_stats
 
-    def get_last_predictions_by_user(self, competition_id, now, field, measure, evaluation_time_interval):
+    def get_last_predictions_by_user(self, competition_id, now, field, measure,user_id, evaluation_time_interval):
         db = self.client['evaluation_measures']
         collection = db['measures']
         # print('#######################################')
@@ -140,7 +141,8 @@ class MongoRepository:
             {"$match": {"$and":
                 [
                     {"competition_id": int(competition_id)},
-                    {"start_date": {"$gte": date, "$lt": now}}
+                    {"start_date": {"$gte": date, "$lt": now}},
+                     {'user_id': { "$in": [0, user_id] }}
 
                 ]}
             },
