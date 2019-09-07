@@ -237,7 +237,6 @@ class MongoRepository:
         for r in final_stats:
             r['user_id'] = 'Baseline' if r['user_id'] == 0 else 'You'
 
-        # print(final_stats)
         # logging.debug("Decorator: {}".format(final_stats))
         return final_stats
 
