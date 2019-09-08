@@ -55,7 +55,7 @@ app.controller('pageController',
             console.log($scope.query);
             $scope.users = users.slice(($scope.query.page - 1) * $scope.query.limit, ($scope.query.page) * ($scope.query.limit));
             console.log($scope.users);
-            $scope.apply();
+            $scope.$apply();
             $scope.selected = [];
         };
         
