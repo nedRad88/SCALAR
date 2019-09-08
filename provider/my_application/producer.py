@@ -36,6 +36,7 @@ spark = SparkSession\
     .config('spark.network.timeout', 800)\
     .config('spark.cleaner.referenceTracking.cleanCheckpoints', "true")\
     .getOrCreate()
+
 # from apscheduler.schedulders.background.BackgroundScheduler import remove_job
 
 _ONE_DAY_IN_SECONDS = 60 * 60 * 24
