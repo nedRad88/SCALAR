@@ -15,6 +15,7 @@ def evaluate(spark_context, broker, competition, competition_config, window_dura
         .option("kafka.bootstrap.servers", broker)\
         .option("subscribe", competition.name.lower().replace(" ", "") + 'spark_train')\
         .option("kafkaConsumer.pollTimeoutMs", 5000)\
+        .option("failOnDataLoss", "false")\
         .load()\
         .selectExpr("cast (value as string) as json")\
         .select(from_json("json", train_schema).alias("data"))\
@@ -32,7 +33,8 @@ def evaluate(spark_context, broker, competition, competition_config, window_dura
         .format("kafka")\
         .option("kafka.bootstrap.servers", broker)\
         .option("subscribe", competition.name.lower().replace(" ", "") + 'predictions')\
-        .option("kafkaConsumer.pollTimeoutMs", 1000)\
+        .option("kafkaConsumer.pollTimeoutMs", 1000) \
+        .option("failOnDataLoss", "false") \
         .load()\
         .selectExpr("cast (value as string) as json")\
         .select(from_json("json", prediction_schema).alias("data"))\
@@ -40,8 +42,9 @@ def evaluate(spark_context, broker, competition, competition_config, window_dura
         .withColumn("timestamp_submitted", unix_timestamp('submitted_on',
                                                           "yyyy-MM-dd HH:mm:ss").cast(TimestampType()))\
         .drop("submitted_on")\
-        .withWatermark("timestamp_submitted", prediction_window_duration)\
-        .dropDuplicates(["user_id", "prediction_competition_id", "prediction_rowID"])
+        .withWatermark("timestamp_submitted", prediction_window_duration)
+        # .dropDuplicates(["user_id", "prediction_competition_id", "prediction_rowID", "timestamp_submitted"])
+
 
     # Joining two streams, new conditions
     join_result = prediction_stream\
@@ -142,6 +145,7 @@ def evaluate(spark_context, broker, competition, competition_config, window_dura
         .selectExpr("to_json(struct(*)) AS value") \
         .writeStream \
         .queryName(competition.name.lower().replace(" ", "") + 'measure_stream') \
+        .trigger(processingTime='30 seconds') \
         .format("kafka") \
         .option("kafka.bootstrap.servers", broker) \
         .option("topic", competition.name.lower().replace(" ", "") + 'spark_measures') \

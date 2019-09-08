@@ -143,7 +143,7 @@ class MongoRepository:
         for r in final_stats:
             r['user_id'] = 'Baseline' if r['user_id'] == 0 else 'You'
 
-        print(final_stats)
+        # print(final_stats)
         # logging.debug("Decorator: {}".format(final_stats))
         return final_stats
 
@@ -194,7 +194,7 @@ class MongoRepository:
         final_stats = []
         for r in results:
             # logging.debug("Decorator: {}".format(r))
-            print(r)
+            # print(r)
             stats = {'user_id': r['_id'], 'results': []}
             measures = r['measures']
             for m in measures:
@@ -237,7 +237,6 @@ class MongoRepository:
         for r in final_stats:
             r['user_id'] = 'Baseline' if r['user_id'] == 0 else 'You'
 
-        print(final_stats)
         # logging.debug("Decorator: {}".format(final_stats))
         return final_stats
 
