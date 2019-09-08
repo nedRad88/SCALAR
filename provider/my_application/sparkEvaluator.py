@@ -15,6 +15,7 @@ def evaluate(spark_context, broker, competition, competition_config, window_dura
         .option("kafka.bootstrap.servers", broker)\
         .option("subscribe", competition.name.lower().replace(" ", "") + 'spark_train')\
         .option("kafkaConsumer.pollTimeoutMs", 5000)\
+        .option("failOnDataLoss", "false")\
         .load()\
         .selectExpr("cast (value as string) as json")\
         .select(from_json("json", train_schema).alias("data"))\
@@ -32,7 +33,8 @@ def evaluate(spark_context, broker, competition, competition_config, window_dura
         .format("kafka")\
         .option("kafka.bootstrap.servers", broker)\
         .option("subscribe", competition.name.lower().replace(" ", "") + 'predictions')\
-        .option("kafkaConsumer.pollTimeoutMs", 1000)\
+        .option("kafkaConsumer.pollTimeoutMs", 1000) \
+        .option("failOnDataLoss", "false") \
         .load()\
         .selectExpr("cast (value as string) as json")\
         .select(from_json("json", prediction_schema).alias("data"))\
