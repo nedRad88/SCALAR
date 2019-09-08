@@ -37,9 +37,9 @@ spec:
         - name: SPARK_CONF_DIR
           value: /conf
         - name: SPARK_WORKER_CORES
-          value: "2"
+          value: "8"
         - name: SPARK_WORKER_MEMORY
-          value: 4g
+          value: 32g
         - name: SPARK_WORKER_PORT
           value: "8881"
         - name: SPARK_WORKER_WEBUI_PORT
