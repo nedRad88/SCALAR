@@ -8,8 +8,6 @@ from apscheduler.jobstores.mongodb import MongoDBJobStore
 from repositories.CompetitionRepository import CompetitionRepository, Competition, Datastream, DatastreamRepository
 from repositories.KafkaToMongo import ConsumerToMongo
 from repositories.BaselineToMongo import BaselineToMongo
-# from repositories.BaselineToMongo_test import BaselineToMongo
-# from spark_evaluation import SparkEvaluator
 import sparkEvaluator
 # from evaluator import Evaluator
 from bson import json_util
@@ -34,7 +32,7 @@ spark = SparkSession\
     .config('spark.driver.host', os.environ['SPARK_DRIVER_HOST'])\
     .config('spark.driver.port', os.environ['SPARK_DRIVER_PORT'])\
     .config('spark.blockManager.port', os.environ['SPARK_BLOCKMANAGER_PORT'])\
-    .config('spark.executor.memory', '14g')\
+    .config('spark.executor.memory', '30g')\
     .config('spark.network.timeout', 800)\
     .config('spark.cleaner.referenceTracking.cleanCheckpoints', "true")\
     .getOrCreate()
