@@ -36,6 +36,7 @@ spark = SparkSession\
     .config('spark.blockManager.port', os.environ['SPARK_BLOCKMANAGER_PORT'])\
     .config('spark.executor.memory', '4g')\
     .config('spark.network.timeout', 800)\
+    .config('spark.cleaner.referenceTracking.cleanCheckpoints', "true")\
     .getOrCreate()
 # from apscheduler.schedulders.background.BackgroundScheduler import remove_job
 
