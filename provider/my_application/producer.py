@@ -32,7 +32,7 @@ spark = SparkSession\
     .config('spark.driver.host', os.environ['SPARK_DRIVER_HOST'])\
     .config('spark.driver.port', os.environ['SPARK_DRIVER_PORT'])\
     .config('spark.blockManager.port', os.environ['SPARK_BLOCKMANAGER_PORT'])\
-    .config('spark.executor.memory', '18g')\
+    .config('spark.executor.memory', '8g')\
     .config('spark.network.timeout', 800)\
     .config('spark.cleaner.referenceTracking.cleanCheckpoints', "true")\
     .getOrCreate()
@@ -81,8 +81,8 @@ def _create_competition(competition, competition_config):
     items, predictions, initial_batch, classes = read_csv_file(competition, competition_config)
     Process(target=_create_competition_thread, args=(competition, items, predictions, initial_batch)).start()
     threading.Thread(target=_create_consumer, args=(competition, competition_config,)).start()
-    Process(target=_create_mongo_sink_consumer,
-            args=(competition.name.lower().replace(" ", "") + 'data', competition,)).start()
+    # Process(target=_create_mongo_sink_consumer,
+      #       args=(competition.name.lower().replace(" ", "") + 'data', competition,)).start()
     Process(target=_create_baseline, args=(competition, competition_config)).start()
     time.sleep(2)
     Process(target=_create_evaluation_spark, args=(spark, SERVER_HOST, competition, competition_config,)).start()
@@ -284,10 +284,12 @@ def _create_mongo_sink_evaluation(kafka_server, competition, competition_config)
                                   competition_config)
     spark_to_mongo.run()
 
+
 """
 def _create_evaluation_engine(competition_id, config, evaluation_time_interval):
     threading.Thread(target=_create_evaluation_job, args=(competition_id, config, evaluation_time_interval)).start()
 """
+
 
 def _create_competition_thread(competition, items, predictions, initial_batch):
     # print(competition, datetime.datetime.now())
@@ -313,12 +315,14 @@ def _create_baseline(competition, competition_config):
     baseline = BaselineToMongo(SERVER_HOST, topic, competition, competition_config)
     baseline.write()
 
+
 """
 def _create_evaluation_job(competition_id, config, evaluation_time_interval):
     # print(competition_id, datetime.datetime.now())
     # print("Started evaluation", threading.active_count())
     Evaluator.evaluate(competition_id, config, evaluation_time_interval)
 """
+
 
 class CompetitionProducer:
     daemon = True
@@ -336,7 +340,7 @@ class CompetitionProducer:
         self.producer.poll(timeout=0)
 
     def main(self, topic, initial_batch, items, predictions, initial_training_time, batch_size, time_interval,
-             predictions_time_interval, spark_topic, competition_id, with_timestamp=False, data_format='csv'):
+             predictions_time_interval, spark_topic, competition_id):
 
         for item in initial_batch:
             try:
@@ -374,8 +378,9 @@ class CompetitionProducer:
             # for item in test group add tag, deadline and released
             for item in group:
                 item['tag'] = 'TEST'
-                item['Deadline'] = released_at + datetime.timedelta(seconds=int(predictions_time_interval))
-                item['Released'] = released_at
+                item['Deadline'] = str(released_at + datetime.timedelta(seconds=int(predictions_time_interval)))
+                item['Released'] = str(released_at)
+                item['competition_id'] = str(competition_id)
                 # Sending testing items
                 try:
                     self.send(topic, orjson.dumps(item))
@@ -384,7 +389,7 @@ class CompetitionProducer:
                     print(e)
                     # self.client.ensure_topic_exists(topic)
                     # self.producer.produce(topic, json.dumps(item, default=json_util.default).encode('utf-8'))
-                    #self.producer.poll(timeout=0)
+                    # self.producer.poll(timeout=0)
                     # print("Test item:", item)
             i = i + 1
 
@@ -421,35 +426,7 @@ class CompetitionProducer:
                     # self.producer.produce(topic, json.dumps(item, default=json_util.default).encode('utf-8'))
                     # self.producer.poll(timeout=0)
                     # print("Train item:", item)
-        """
-        # Sending last train batch
-        released_at = datetime.datetime.now()
-        for prediction in train_groups[len(train_groups) - 1]:
-            prediction['tag'] = 'TRAIN'
-            deadline = released_at + datetime.timedelta(seconds=int(predictions_time_interval))
-            prediction['Deadline'] = deadline
-            prediction['Released'] = released_at
-            try:
-                self.send(topic, json.dumps(prediction, default=json_util.default).encode('utf-8'))
-                # print("Train item:", item)
-            except Exception as e:
-                self.client.ensure_topic_exists(topic)
-                self.producer.send(topic, json.dumps(prediction, default=json_util.default).encode('utf-8'))
-            del prediction['Deadline']
-            del prediction['Released']
-            del prediction['tag']
-            prediction['Deadline'] = deadline.strftime("%Y-%m-%d %H:%M:%S")
-            prediction['Released'] = released_at.strftime("%Y-%m-%d %H:%M:%S")
-            prediction['competition_id'] = competition_id
-            try:
-                self.send(spark_topic, json.dumps(prediction, default=json_util.default).encode('utf-8'))
-                # print("Train item:", item)
-            except Exception as e:
-                self.client.ensure_topic_exists(topic)
-                self.producer.send(spark_topic, json.dumps(prediction, default=json_util.default).encode('utf-8'))
 
-                # print("Train item:", item)
-        """
         time.sleep(time_interval)
 
         self.producer.flush()
@@ -502,26 +479,6 @@ class Scheduler:
                                              args=[competition, competition_config], id=competition.name)
 
         job_id_to_remove = publish_job.id
-
-        if competition.predictions_time_interval < 5:
-            evaluation_time_interval = 5
-        else:
-            evaluation_time_interval = competition.predictions_time_interval
-
-        start_date = competition.start_date + datetime.timedelta(
-            seconds=competition.initial_training_time + competition.time_interval + evaluation_time_interval + 2)
-        # print("Start date: ", start_date)
-
-        # config = {'Valeurs': ['MAPE']}
-        # evaluation_job = self.scheduler.add_job(_create_evaluation_engine, trigger='interval',
-        #                                         seconds=evaluation_time_interval, start_date=start_date,
-        #                                         end_date=competition.end_date,
-        #                                         args=(competition.competition_id, competition_config,
-        #                                               evaluation_time_interval),
-        #                                         id=str(competition.name + 'evaluation'))
-
-        # print("Created evaulation job")
-        # jobs = self.scheduler.get_jobs()
 
     def start(self):
         # print("Scheduler started!")

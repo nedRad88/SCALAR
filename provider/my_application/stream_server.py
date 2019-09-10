@@ -24,8 +24,6 @@ class StreamServer:
         if self.server is None:
             self.server = grpc.server(futures.ThreadPoolExecutor(max_workers=100))
             # print("Initializing stream server: 1")
-            # self.server.add_insecure_port('http://streamigchallenge.cloudapp.net:50051')
-            # self.server.add_insecure_port('http://streamingcompetition.francecentral.cloudapp.azure.com:50051')
             # print("***********Adding server***********")
             self.server.add_insecure_port('0.0.0.0:50051')
             # print("added port to stream server: 2")
