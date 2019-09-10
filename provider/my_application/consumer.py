@@ -14,6 +14,8 @@ import json
 import threading
 from subscription_auth import decode_subscription_token
 from repositories.CompetitionRepository import SubscriptionRepository, UserRepository, CompetitionRepository
+import multiprocessing
+from multiprocessing import Queue
 
 with open('config.json') as json_data_file:
     config = json.load(json_data_file)
@@ -191,7 +193,7 @@ def filter_stream(stream, competition):
 class DataStreamerServicer:
     daemon = True
     consumer = None
-    stream = []
+    stream = Queue()
 
     def __init__(self, server, competition, competition_config):
 
@@ -318,8 +320,13 @@ class DataStreamerServicer:
             t.start()
         except Exception as e:
             print(str(e))
+        s = self.stream
+        messages = []
 
-        messages = list(self.stream)
+        for i in iter(self.stream.get(), 'STOP'):
+            messages.append(i)
+
+        # messages = list(self.stream)
         # print("Messages length: ", len(messages))
         self.watchers.append(messages)
 
