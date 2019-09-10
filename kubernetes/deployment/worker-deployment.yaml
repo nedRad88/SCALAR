@@ -39,12 +39,19 @@ spec:
         - name: SPARK_WORKER_CORES
           value: "8"
         - name: SPARK_WORKER_MEMORY
-          value: 32g
+          value: 20g
         - name: SPARK_WORKER_PORT
           value: "8881"
         - name: SPARK_WORKER_WEBUI_PORT
           value: "8082"
         imagePullPolicy: Always
+        volumeMounts:
+        - name: worker-data
+          mountPath: /tmp
+      volumes:
+      - name: worker-data
+        persistentVolumeClaim:
+          claimName: worker-pvc
       imagePullSecrets:
       - name: dockerhub-auth
 ---
