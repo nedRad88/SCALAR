@@ -108,7 +108,6 @@ class DataStreamerServicer:
         conf_producer = {'bootstrap.servers': server}
         self.kafka_producer = Producer(conf_producer)
         self.consumers_dict = {}
-        self.idx = 0
 
         self.repo = MongoRepository(_MONGO_HOST)
         self.competition = competition
@@ -205,37 +204,40 @@ class DataStreamerServicer:
 
         end_date = self.competition.end_date + 5 * datetime.timedelta(seconds=self.competition.predictions_time_interval)
 
-        if self.idx in self.consumers_dict:
-            consumer = self.consumers_dict[self.idx]
+        if user_id in self.consumers_dict:
+            consumer = self.consumers_dict[user_id]
         else:
-            consumer = Consumer({'group.id': str(self.idx), 'bootstrap.servers': self.server,
+            consumer = Consumer({'group.id': user_id, 'bootstrap.servers': self.server,
                                  'session.timeout.ms': competition.initial_training_time * 10000,
                                  'auto.offset.reset': 'latest'})  # 172.22.0.2:9092
             consumer.subscribe([self.input_topic])
             self.consumers_dict[user_id] = consumer
-            try:
-                t = threading.Thread(target=receive_predictions,
-                                     kwargs={'predictions': request_iterator,
-                                             'competition_id': self.competition.competition_id, 'user_id': user.user_id,
-                                             'end_date': end_date, 'kafka_producer': self.kafka_producer,
-                                             'spark_topic': self.spark_topic, 'targets': self.targets})
-                # use default name
-                t.start()
-            except Exception as e:
-                print(str(e))
-        self.idx += 1
+
+        try:
+            t = threading.Thread(target=receive_predictions,
+                                 kwargs={'predictions': request_iterator,
+                                         'competition_id': self.competition.competition_id, 'user_id': user.user_id,
+                                         'end_date': end_date, 'kafka_producer': self.kafka_producer,
+                                         'spark_topic': self.spark_topic, 'targets': self.targets})
+            # use default name
+            t.start()
+        except Exception as e:
+            print(str(e))
+
         while True:
             message = consumer.poll(timeout=0)
             if message is None:
                 continue
             else:
+                try:
+                    values = orjson.loads(message.value())
+                    json_string = json.dumps(values, default=json_util.default)
+                    message = self.file_pb2.Message()
+                    final_message = json_format.Parse(json_string, message, ignore_unknown_fields=True)
 
-                values = orjson.loads(message.value())
-                json_string = json.dumps(values, default=json_util.default)
-                message = self.file_pb2.Message()
-                final_message = json_format.Parse(json_string, message, ignore_unknown_fields=True)
-
-                yield message
+                    yield message
+                except Exception as e:
+                    pass
 
             if datetime.datetime.now() > end_date:
                 break

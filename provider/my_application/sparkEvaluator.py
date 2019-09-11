@@ -119,6 +119,7 @@ def evaluate(spark_context, broker, competition, competition_config, window_dura
         .selectExpr("to_json(struct(*)) AS value") \
         .writeStream \
         .queryName(competition.name.lower().replace(" ", "") + 'prediction_stream') \
+        .trigger(processingTime='30 seconds') \
         .format("kafka") \
         .option("kafka.bootstrap.servers", broker) \
         .option("topic", competition.name.lower().replace(" ", "") + 'spark_predictions') \

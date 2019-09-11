@@ -35,6 +35,9 @@ spark = SparkSession\
     .config('spark.executor.memory', '18g')\
     .config('spark.network.timeout', 800)\
     .config('spark.cleaner.referenceTracking.cleanCheckpoints', "true")\
+    .config('spark.shuffle.compress', 'true')\
+    .config('spark.checkpoint.compress', 'true')\
+    .config('spark.sql.shuffle.partitions', 60)\
     .getOrCreate()
 
 # from apscheduler.schedulders.background.BackgroundScheduler import remove_job
