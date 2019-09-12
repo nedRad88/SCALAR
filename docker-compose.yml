@@ -162,7 +162,7 @@ services:
       SPARK_WORKER_MEMORY: 10g
       SPARK_WORKER_PORT: 8881
       SPARK_WORKER_WEBUI_PORT: 8082
-      SPARK_WORKER_OPTS: "-Dpark.cleaner.referenceTracking.cleanCheckpoints=true"
+      SPARK_WORKER_OPTS: "-Dspark.cleaner.referenceTracking.cleanCheckpoints=true"
       PACKAGES: 'org.apache.spark:spark-sql-kafka-0-10_2.11:2.4.0'
     links:
       - spark-master
