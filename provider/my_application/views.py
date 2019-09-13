@@ -610,11 +610,6 @@ def get_file_extension(filename):
 
 @app.route('/topic/<competition_id>/<field>/<measure>/<user_id>')
 def get_messages(competition_id, field, measure, user_id):
-    # print("Get messages parameters: ", competition_id, field, measure, user_id)
-    # logging.debug("Competition_id: {}".format(competition_id))
-    # logging.debug("field: {}".format(field))
-    # logging.debug("measure: {}".format(measure))
-    # logging.debug("user_id: {}".format(user_id))
     def stream_results(competition):
         # Getting competition from Database
 
@@ -643,33 +638,6 @@ def get_messages(competition_id, field, measure, user_id):
 
                 yield data
 
-                if len(results) > 0:
-                    random_user_results = results[0]['results']
-                    last_interval = random_user_results[len(random_user_results) - 1]['label']
-                    last_interval_date = dt.datetime(year=int(last_interval["Year"]), month=int(last_interval["Month"]),
-                                                     day=int(last_interval["Day"]), hour=int(last_interval["Hour"]),
-                                                     minute=int(last_interval["Minute"]), second=int(last_interval["Second"]))
-
-                    pause.until(last_interval_date + dt.timedelta(days=0, seconds=evaluation_time_interval))
-
-            continue_loop = True
-
-            while continue_loop:
-                now = datetime.now()
-
-                if now > competition.end_date + dt.timedelta(days=0, seconds=evaluation_time_interval):
-                    continue_loop = False
-
-                else:
-                    results_by_user = _MONGO_REPO.get_last_predictions_by_user(competition_id, now, field, measure,
-                                                                               user_id, evaluation_time_interval)
-                    data = 'retry: 100000000\n'
-                    data = data + 'data: {0}\n\n'.format(
-                        json.dumps({"status": 'INCREMENT', "results": results_by_user}))
-                    # print(data)
-                    yield data
-
-                    time.sleep(30)
 
         else:
             # Ended competition

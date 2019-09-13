@@ -99,109 +99,15 @@ class ProducerToMongoSink:
             # self.producer.send(topic, orjson.dumps(prediction, default=json_util.default).encode('utf-8'))
 
 
-def consume_stream(consumer, producer, competition, output_topic, target, watchers):
-    test_batch = []
-    train_batch = []
-    while True:
-        message = consumer.poll(timeout=0)
-        if message is None:
-            continue
-        else:
-            # print("Consume stream started!")
-            target.insert(0, message)
-            # print("Message in consumer:", message)
-            # print("Length of wathcers: ", len(watchers))
-            for watcher in watchers:
-                watcher.insert(0, message)
-            # read message.value
-            values = orjson.loads(message.value())
-            # print(values)
-            # Create dictionary object_message from values
-            object_message = {}
-            for key, value in values.items():
-                object_message[key.replace(' ', '')] = value
-            # add competition_id key-value pair to object_message
-            object_message['competition_id'] = competition.competition_id
-            # print("Object message: ", object_message)
-            # print("Object message type: ", type(object_message))
-            # try :
-            if 'tag' in object_message:
-                if object_message['tag'] == 'INIT':
-                    # If initial batch add type data
-                    object_message['type'] = 'DATA'
-                    # send to output_topic / to mongo collection data ?
-                    producer.send(output_topic, object_message)
-                    # print("Output topic", output_topic)
-
-                elif object_message['tag'] == 'TEST':
-                    # If message from test batch - append to test_batch
-                    # print ('test' , object_message)
-                    test_batch.append(object_message)
-
-                elif object_message['tag'] == 'TRAIN':
-                    # If message from train batch - append to train_batch
-                    train_batch.append(object_message)
-                    # If batch size has been reached
-                    if len(train_batch) == competition.batch_size:
-
-                        for test, train in zip(test_batch, train_batch):
-
-                            for key, value in train.items():
-                                if key != 'rowID' and key != 'tag':
-                                    # Everything that has key different from: rowID and tag, add to test
-                                    test[key] = value
-                            # add type = data to test
-                            test['type'] = 'DATA'
-                            # send to output topic, mongo??
-                            producer.send(output_topic, test)
-                            # print('test', test)
-                            # train['Deadline'] = test['Deadline']
-                            # add type golden to train - has true value
-                            # train['type'] = 'GOLDEN'
-                            # send to output topic, mongo??
-                            # producer.send(output_topic, json.dumps(train, default=json_util.default))
-                            # print('golden', train)
-
-                        train_batch = []
-                        test_batch = []
-                else:
-                    print('unknown message tag')
-            else:
-                print(object_message)
-
-
-def filter_stream(stream, competition):
-
-    while True:
-        for message in list(stream):
-            values1 = orjson.loads(message.value())
-            object_message1 = {}
-
-            for key, value in values1.items():
-                object_message1[key.replace(' ', '')] = value
-            if 'Deadline' in object_message1:
-                # print(type(object_message1['Deadline']))
-                deadline = datetime.datetime.strptime(object_message1['Deadline'], "%Y-%m-%dT%H:%M:%S.%f")
-                if deadline < (datetime.datetime.now() - datetime.timedelta(days=0,
-                                                                            seconds=competition.predictions_time_interval)):
-                    stream.remove(message)
-        time.sleep(competition.predictions_time_interval)
-
-
 class DataStreamerServicer:
-    daemon = True
-    consumer = None
-    stream = []
 
     def __init__(self, server, competition, competition_config):
-
-        self.consumer = Consumer({'group.id': 'stream_consumer', 'bootstrap.servers': server,
-                                  'session.timeout.ms': competition.initial_training_time * 10000,
-                                  'auto.offset.reset': 'earliest'})  # 172.22.0.2:9092
+        self.server = server
         self.producer = ProducerToMongoSink(server)  # 172.22.0.2:9092
         self.predictions_producer = ProducerToMongoSink(server)
         conf_producer = {'bootstrap.servers': server}
         self.kafka_producer = Producer(conf_producer)
+        self.consumers_dict = {}
 
         self.repo = MongoRepository(_MONGO_HOST)
         self.competition = competition
@@ -211,9 +117,6 @@ class DataStreamerServicer:
         self.input_topic = competition.name.lower().replace(" ", "")
         self.output_topic = competition.name.lower().replace(" ", "") + 'data'
         self.spark_topic = competition.name.lower().replace(" ", "") + 'predictions'
-
-        self.watchers = []
-        self.consumer.subscribe([self.input_topic])
 
         try:
             # create data_object dictionary with following fields: competition_id, dataset
@@ -249,13 +152,6 @@ class DataStreamerServicer:
             self.targets.append(y)
 
         self.__bases__ = (self.DataStreamer,)  # ??
-
-        t = threading.Thread(target=consume_stream, args=(self.consumer, self.producer, self.competition,
-                                                          self.output_topic, self.stream, self.watchers))
-        t.start()
-
-        t1 = threading.Thread(target=filter_stream, args=[self.stream, self.competition])
-        t1.start()
 
     def sendData(self, request_iterator, context):
         # print("Send data invoked")
@@ -308,6 +204,15 @@ class DataStreamerServicer:
 
         end_date = self.competition.end_date + 5 * datetime.timedelta(seconds=self.competition.predictions_time_interval)
 
+        if user_id in self.consumers_dict:
+            consumer = self.consumers_dict[user_id]
+        else:
+            consumer = Consumer({'group.id': user_id, 'bootstrap.servers': self.server,
+                                 'session.timeout.ms': competition.initial_training_time * 10000,
+                                 'auto.offset.reset': 'latest'})  # 172.22.0.2:9092
+            consumer.subscribe([self.input_topic])
+            self.consumers_dict[user_id] = consumer
+
         try:
             t = threading.Thread(target=receive_predictions,
                                  kwargs={'predictions': request_iterator,
@@ -319,50 +224,20 @@ class DataStreamerServicer:
         except Exception as e:
             print(str(e))
 
-        messages = list(self.stream)
-        # print("Messages length: ", len(messages))
-        self.watchers.append(messages)
-
         while True:
-            # print("Messages:", messages)
-            now = datetime.datetime.now()
-            if now > end_date:
+            message = consumer.poll(timeout=0)
+            if message is None:
+                continue
+            else:
+                try:
+                    values = orjson.loads(message.value())
+                    json_string = json.dumps(values, default=json_util.default)
+                    message = self.file_pb2.Message()
+                    final_message = json_format.Parse(json_string, message, ignore_unknown_fields=True)
+
+                    yield message
+                except Exception as e:
+                    pass
+
+            if datetime.datetime.now() > end_date:
                 break
-            try:
-                msg = messages.pop()
-
-                # try:
-
-                values = orjson.loads(msg.value())
-
-                message = self.file_pb2.Message()
-
-                object_message = {}
-
-                for key, value in values.items():
-                    object_message[key.replace(' ', '')] = value
-
-                object_message['competition_id'] = str(self.competition.competition_id)
-                object_message['user_id'] = str(user_id)
-
-                if 'Deadline' in object_message:
-                    object_message['Deadline'] = str(object_message['Deadline'])
-                if 'Released' in object_message:
-                    object_message['Released'] = str(object_message['Released'])
-
-                json_string = json.dumps(object_message, default=json_util.default)
-
-                final_message = json_format.Parse(json_string, message, ignore_unknown_fields=True)
-
-                # print('Message', message)
-
-                yield message
-
-                """except Exception as e:
-
-                    print(str(e))"""
-
-            except Exception as e:
-                if str(e) != 'pop from empty list':
-                    print(str(e))
-                pass

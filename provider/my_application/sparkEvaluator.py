@@ -43,7 +43,7 @@ def evaluate(spark_context, broker, competition, competition_config, window_dura
                                                           "yyyy-MM-dd HH:mm:ss").cast(TimestampType()))\
         .drop("submitted_on")\
         .withWatermark("timestamp_submitted", prediction_window_duration)\
-        .dropDuplicates(["user_id", "prediction_competition_id", "prediction_rowID", "timestamp_submitted"])
+        .dropDuplicates(["user_id", "prediction_competition_id", "prediction_rowID"])
 
 
     # Joining two streams, new conditions
@@ -119,6 +119,7 @@ def evaluate(spark_context, broker, competition, competition_config, window_dura
         .selectExpr("to_json(struct(*)) AS value") \
         .writeStream \
         .queryName(competition.name.lower().replace(" ", "") + 'prediction_stream') \
+        .trigger(processingTime='30 seconds') \
         .format("kafka") \
         .option("kafka.bootstrap.servers", broker) \
         .option("topic", competition.name.lower().replace(" ", "") + 'spark_predictions') \
