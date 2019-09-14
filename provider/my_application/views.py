@@ -624,11 +624,7 @@ def get_messages(competition_id, field, measure, user_id):
                 # Competition hasn't started yet
                 data = 'retry: 100000000\n'
                 data = data + 'data: {0}\n\n'.format(json.dumps({"Error": 'Competition not started Yet'}))
-                yield data
-                # Wait until competition starts and first
-                pause.until(competition.start_date + dt.timedelta(seconds=competition.initial_training_time +
-                                                                          competition.time_interval +
-                                                                          evaluation_time_interval + 2))
+                return data
 
             else:
                 # Get Initial Measures
@@ -636,8 +632,7 @@ def get_messages(competition_id, field, measure, user_id):
                 data = 'retry: 100000000\n'
                 data = data + 'data: {0}\n\n'.format(json.dumps({"status": 'INIT', "results": results}))
 
-                yield data
-
+                return data
 
         else:
             # Ended competition
@@ -645,7 +640,7 @@ def get_messages(competition_id, field, measure, user_id):
             results = _MONGO_REPO.get_results_by_user(competition_id, field, measure, user_id)
             data = 'retry: 100000000\n'
             data = data + 'data: {0}\n\n'.format(json.dumps({"status": 'INIT', "results": results}))
-            yield data
+            return data
 
     try:
         competition = _COMPETITION_REPO.get_competition_by_id(competition_id)
@@ -723,6 +718,6 @@ def download_proto_file(competition_id):
 
 if __name__ == '__main__':
     # app.run(host='0.0.0.0', port='80', debug=True)
-    # http_server = WSGIServer(('', 5000), app)
-    # http_server.serve_forever()
-    wsgi.server(eventlet.listen(('', 5000)), app)
+    http_server = WSGIServer(('', 5000), app)
+    http_server.serve_forever()
+    # wsgi.server(eventlet.listen(('', 5000)), app)

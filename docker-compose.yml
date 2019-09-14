@@ -36,7 +36,7 @@ services:
       - zookeeper
 
   mongo_db:
-    image: mongo
+    image: mongo:3.6
     networks:
       - new_network
     environment:
@@ -159,7 +159,7 @@ services:
     environment:
       SPARK_CONF_DIR: /conf
       SPARK_WORKER_CORES: 4
-      SPARK_WORKER_MEMORY: 10g
+      SPARK_WORKER_MEMORY: 6g
       SPARK_WORKER_PORT: 8881
       SPARK_WORKER_WEBUI_PORT: 8082
       PACKAGES: 'org.apache.spark:spark-sql-kafka-0-10_2.11:2.4.0'
@@ -178,6 +178,7 @@ services:
     volumes:
       - /etc/localtime:/etc/localtime:ro
       - /home/nedeljko/spark_checkpoints:/tmp
+
 
 networks:
   new_network:

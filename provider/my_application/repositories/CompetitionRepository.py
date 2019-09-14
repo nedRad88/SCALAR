@@ -9,6 +9,7 @@ from datetime import datetime
 from sqlalchemy.types import Integer, String, Boolean
 from datetime import datetime
 from sqlalchemy import and_
+import os
 
 _BASE = declarative_base()
 
@@ -157,18 +158,16 @@ class BaseRepository():
     instance = None
 
     def __init__(self, host, dbname):
-
+        self.instance = None
         self.engine = create_engine(host + dbname)
         self.sessionmaker = sessionmaker()
         # self.sessionmaker = SingletonSession().instance
         self.sessionmaker.configure(bind=self.engine)
         self.Base = _BASE
         self.Base.metadata.create_all(self.engine)
-        if not BaseRepository.instance:
-            BaseRepository.instance = self.sessionmaker()
-            self.session = BaseRepository.instance
-        else:
-            self.session = BaseRepository.instance
+
+        if not self.instance:
+            self.session = self.sessionmaker()
 
     def insert_one(self, row):
         try:
@@ -198,6 +197,10 @@ class BaseRepository():
         except Exception as e:
             print(e)
             self.session.rollback()
+
+    def cleanup(self):
+        self.session.close()
+        self.engine.dispose()
 
 
 class CompetitionRepository(BaseRepository):

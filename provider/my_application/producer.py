@@ -1,6 +1,7 @@
 import threading
 import datetime
 import time
+import pause
 from confluent_kafka import Producer
 import csv
 from apscheduler.schedulers.background import BackgroundScheduler
@@ -21,24 +22,13 @@ from sparkToMongo import SparkToMongo
 from repository import MongoRepository
 from multiprocessing import Process
 from pyspark.sql.types import *
+import logging
+
+logging.basicConfig(level='DEBUG')
 # os.environ['PYSPARK_SUBMIT_ARGS'] = '--packages org.apache.spark:spark-sql-kafka-0-10_2.11:2.4.0 pyspark-shell'
 spark_master = "spark://" + os.environ['SPARK_HOST'] + ":7077"
 
-spark = SparkSession\
-    .builder\
-    .appName("Kafka_structured_streaming")\
-    .master(spark_master)\
-    .config('spark.jars.packages', 'org.apache.spark:spark-sql-kafka-0-10_2.11:2.4.0')\
-    .config('spark.driver.host', os.environ['SPARK_DRIVER_HOST'])\
-    .config('spark.driver.port', os.environ['SPARK_DRIVER_PORT'])\
-    .config('spark.blockManager.port', os.environ['SPARK_BLOCKMANAGER_PORT'])\
-    .config('spark.executor.memory', '18g')\
-    .config('spark.network.timeout', 800)\
-    .config('spark.cleaner.referenceTracking.cleanCheckpoints', "true")\
-    .config('spark.shuffle.compress', 'true')\
-    .config('spark.checkpoint.compress', 'true')\
-    .config('spark.sql.shuffle.partitions', 60)\
-    .getOrCreate()
+#_gRPC_SERVER = StreamServer('0.0.0.0:33333')
 
 # from apscheduler.schedulders.background.BackgroundScheduler import remove_job
 
@@ -76,30 +66,34 @@ _STREAM_REPO = config['STREAM_DATA_FILE']
 
 _COMPETITION_REPO = CompetitionRepository(_SQL_HOST, _SQL_DBNAME)
 _DATASTREAM_REPO = DatastreamRepository(_SQL_HOST, _SQL_DBNAME)
-
-_gRPC_SERVER = StreamServer()
+_COMPETITION_GENERATED_CODE = config['COMPETITION_GENERATED_CODE']
 
 
 def _create_competition(competition, competition_config):
     items, predictions, initial_batch, classes = read_csv_file(competition, competition_config)
-    Process(target=_create_competition_thread, args=(competition, items, predictions, initial_batch)).start()
-    threading.Thread(target=_create_consumer, args=(competition, competition_config,)).start()
-    # Process(target=_create_mongo_sink_consumer,
-      #       args=(competition.name.lower().replace(" ", "") + 'data', competition,)).start()
-    Process(target=_create_baseline, args=(competition, competition_config)).start()
+    processes = []
+    producer_process = Process(target=_create_competition_thread, args=(competition, items, predictions, initial_batch))
+    producer_process.start()
+    processes.append(producer_process)
+    try:
+        consumer_process = Process(target=_create_consumer, args=(competition, competition_config))
+        consumer_process.start()
+    except Exception as e:
+        print(e)
+        logging.debug("Consumer process exception: {}".format(e))
+    baseline_process = Process(target=_create_baseline, args=(competition, competition_config))
+    baseline_process.start()
+    processes.append(baseline_process)
     time.sleep(2)
-    Process(target=_create_evaluation_spark, args=(spark, SERVER_HOST, competition, competition_config,)).start()
-    Process(target=_create_mongo_sink_evaluation, args=(SERVER_HOST, competition, competition_config)).start()
-    """
-    threading.Thread(target=_create_competition_thread, args=(competition, items, predictions, initial_batch)).start()
-    threading.Thread(target=_create_consumer, args=(competition,)).start()
-    threading.Thread(target=_create_mongo_sink_consumer,
-                     args=(competition.name.lower().replace(" ", "") + 'predictions', competition,)).start()
-    threading.Thread(target=_create_baseline, args=(competition, competition_config)).start()
-    time.sleep(2)
-    threading.Thread(target=_create_evaluation_spark, args=(spark, SERVER_HOST, competition, competition_config, classes)).start()
-    threading.Thread(target=_create_mongo_sink_evaluation, args=(SERVER_HOST, competition, competition_config)).start()
-    """
+    spark_process = Process(target=_create_evaluation_spark, args=(SERVER_HOST, competition, competition_config))
+    spark_process.start()
+    # processes.append(spark_process)
+    mongo_sink_process = Process(target=_create_mongo_sink_evaluation, args=(SERVER_HOST, competition, competition_config))
+    mongo_sink_process.start()
+    processes.append(mongo_sink_process)
+
+    p6 = Process(target=_end_competition, args=(competition, processes))
+    p6.start()
 
 
 def read_csv_file(competition, competition_config, data_format='csv'):
@@ -186,7 +180,23 @@ def read_csv_file(competition, competition_config, data_format='csv'):
     return items, predictions, initial_batch, classes
 
 
-def _create_evaluation_spark(spark_context, kafka_server, competition, competition_config):
+def _create_evaluation_spark(kafka_server, competition, competition_config):
+    spark_context = SparkSession \
+        .builder \
+        .appName("Kafka_structured_streaming") \
+        .master(spark_master) \
+        .config('spark.jars.packages', 'org.apache.spark:spark-sql-kafka-0-10_2.11:2.4.0') \
+        .config('spark.driver.host', os.environ['SPARK_DRIVER_HOST']) \
+        .config('spark.driver.port', os.environ['SPARK_DRIVER_PORT']) \
+        .config('spark.blockManager.port', os.environ['SPARK_BLOCKMANAGER_PORT']) \
+        .config('spark.executor.memory', '18g') \
+        .config('spark.network.timeout', 800) \
+        .config('spark.cleaner.referenceTracking.cleanCheckpoints', "true") \
+        .config('spark.shuffle.compress', 'true') \
+        .config('spark.checkpoint.compress', 'true') \
+        .config('spark.sql.shuffle.partitions', 60) \
+        .getOrCreate()
+
     mongo = MongoRepository(_MONGO_HOST)
 
     db = mongo.client['evaluation_measures']
@@ -214,7 +224,7 @@ def _create_evaluation_spark(spark_context, kafka_server, competition, competiti
         .add("rowID", IntegerType(), False)
     # Fields for prediction
     prediction_schema = StructType() \
-        .add("prediction_rowID", IntegerType(), False) \
+        .add("rowID", IntegerType(), False) \
         .add("submitted_on", StringType(), False) \
         .add("prediction_competition_id", IntegerType(), False) \
         .add("user_id", IntegerType(), False)
@@ -279,6 +289,8 @@ def _create_evaluation_spark(spark_context, kafka_server, competition, competiti
                                     # regression_measures, classification_measures)
     #spark_evaluator.run()
 
+    spark_context.stop()
+
 
 def _create_mongo_sink_evaluation(kafka_server, competition, competition_config):
     spark_to_mongo = SparkToMongo(kafka_server, competition.name.lower().replace(" ", "") + 'spark_predictions',
@@ -304,8 +316,18 @@ def _create_competition_thread(competition, items, predictions, initial_batch):
 
 
 def _create_consumer(competition, competition_config):
-    streamer = DataStreamerServicer(SERVER_HOST, competition, competition_config)  # 172.22.0.2:9092
-    _gRPC_SERVER.add_server(streamer, competition)
+    print("Creating consumer")
+    logging.debug("Creating consumer")
+    options = (('grpc.so_reuseport', 1),)
+    grpc_server = StreamServer('0.0.0.0:50051', options=options)
+    try:
+        streamer = DataStreamerServicer(SERVER_HOST, competition, competition_config)  # 172.22.0.2:9092
+        grpc_server.add_server(streamer, competition)
+        grpc_server.start_server()
+        grpc_server._wait_forever()
+    except Exception as e:
+        print("Inside consumer process: ", e)
+        logging.debug("Inside consumer process: {}".format(e))
 
 
 def _create_mongo_sink_consumer(topic, competition):
@@ -317,6 +339,17 @@ def _create_baseline(competition, competition_config):
     topic = competition.name.lower().replace(" ", "")
     baseline = BaselineToMongo(SERVER_HOST, topic, competition, competition_config)
     baseline.write()
+
+
+def _end_competition(competition, processes):
+    pause.until(competition.end_date + datetime.timedelta(seconds=62))
+    if datetime.datetime.now() > competition.end_date + datetime.timedelta(seconds=60):
+        terminate(processes)
+
+
+def terminate(processes):
+    for process in processes:
+        process.terminate()
 
 
 """

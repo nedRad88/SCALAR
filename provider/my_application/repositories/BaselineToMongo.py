@@ -65,7 +65,7 @@ class BaselineToMongo:
                 msg = self.consumer.poll(timeout=0)
                 message = orjson.loads(msg.value())
                 # message = json.loads(str(message), object_hook=json_util.object_hook)
-                prediction_dict = {'prediction_rowID': message['rowID'],
+                prediction_dict = {'rowID': message['rowID'],
                                    'prediction_competition_id': self.competition_id, 'user_id': 0}
 
                 prediction_dict, num_records, sum_values = self.regression(message, prediction_dict, num_records,

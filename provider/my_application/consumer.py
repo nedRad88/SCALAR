@@ -35,10 +35,6 @@ except Exception:
 _UPLOAD_REPO = config['UPLOAD_REPO']
 _COMPETITION_GENERATED_CODE = config['COMPETITION_GENERATED_CODE']
 
-_SUBSCRIPTION_REPO = SubscriptionRepository(_SQL_HOST, _SQL_DBNAME)
-_USER_REPO = UserRepository(_SQL_HOST, _SQL_DBNAME)
-_COMPETITION_REPO = CompetitionRepository(_SQL_HOST, _SQL_DBNAME)
-
 
 def receive_predictions(predictions, competition_id, user_id, end_date, kafka_producer,
                         spark_topic, targets):
@@ -50,30 +46,16 @@ def receive_predictions(predictions, competition_id, user_id, end_date, kafka_pr
         predictions._state.rpc_errors = []
         try:
             prediction = predictions.next()
-            try:
-                # Load msg to json
-                # print("2. Posle ciscenja greske:", datetime.datetime.now())
-                document = orjson.loads(json_format.MessageToJson(prediction))
-                # add values to submitted_on, type, competition_id, user_id
-                # print("3. Posle citanja poruke:", datetime.datetime.now())
-                submitted_on = datetime.datetime.now()
-                document['submitted_on'] = submitted_on.strftime("%Y-%m-%d %H:%M:%S")
-                document['prediction_competition_id'] = competition_id
-                document['user_id'] = user_id
-                document['prediction_rowID'] = document['rowID']
-                del document['rowID']
-                for target in targets:
-                    document['prediction_' + target] = document[target]
-                    del document[target]
-                # Send message to output_topic ???
-                # print("4. Posle tagovanja:", datetime.datetime.now())
-                kafka_producer.produce(spark_topic, orjson.dumps(document))
-                kafka_producer.poll(timeout=0)
-                # print("5. Posle slanja u spark:", datetime.datetime.now())
-                # send to Spark Streaming
-            except Exception as e:
-                sys.stderr.write(str(e))
-                pass
+            document = orjson.loads(json_format.MessageToJson(prediction))
+            submitted_on = datetime.datetime.now()
+            document['submitted_on'] = submitted_on.strftime("%Y-%m-%d %H:%M:%S")
+            document['prediction_competition_id'] = competition_id
+            document['user_id'] = user_id
+            for target in targets:
+                document['prediction_' + target] = document[target]
+                del document[target]
+            kafka_producer.produce(spark_topic, orjson.dumps(document))
+            kafka_producer.poll(timeout=0)
         except Exception as e:
             pass
 
@@ -108,6 +90,7 @@ class DataStreamerServicer:
         conf_producer = {'bootstrap.servers': server}
         self.kafka_producer = Producer(conf_producer)
         self.consumers_dict = {}
+        self.idx = 0
 
         self.repo = MongoRepository(_MONGO_HOST)
         self.competition = competition
@@ -156,28 +139,35 @@ class DataStreamerServicer:
     def sendData(self, request_iterator, context):
         # print("Send data invoked")
         # print("Version: ", sys.version)
+        _SUBSCRIPTION_REPO = SubscriptionRepository(_SQL_HOST, _SQL_DBNAME)
+        _USER_REPO = UserRepository(_SQL_HOST, _SQL_DBNAME)
+        _COMPETITION_REPO = CompetitionRepository(_SQL_HOST, _SQL_DBNAME)
         metadata = context.invocation_metadata()
-
         metadata = dict(metadata)
-        # print("Metadata: ", metadata)
-
         token = metadata['authorization']
-        # print("Token:", token)
 
         user_id = metadata['user_id']
         competition_code = metadata['competition_id']
-        # token = metadata['secret']
-
-        # print('infos', competition_code, user_id, token)
 
         user = _USER_REPO.get_user_by_email(user_id)
+        if user is None:
+            context.set_code(grpc.StatusCode.PERMISSION_DENIED)
+            context.set_details('You are not registered, please register on the website')
+            return self.file_pb2.Message()
 
         competition = _COMPETITION_REPO.get_competition_by_code(competition_code)
+        if competition is None:
+            context.set_code(grpc.StatusCode.INVALID_ARGUMENT)
+            context.set_details('Unknown competition, please refer to the website')
+            return self.file_pb2.Message()
+
         # TODO : for Subscription Data
         subscription = _SUBSCRIPTION_REPO.get_subscription(competition.competition_id, user.user_id)
         if subscription is None:
-            print('Wrong subscription')
             # TODO : Should close connection
+            context.set_code(grpc.StatusCode.PERMISSION_DENIED)
+            context.set_details('You are not allowed to participate, please subscribe to the competition on website')
+            return self.file_pb2.Message()
 
         # TODO : check secret token
         decoded_token = decode_subscription_token(token)
@@ -186,8 +176,8 @@ class DataStreamerServicer:
             print('Wrong token')
             # TODO : should close connection
             context.set_code(grpc.StatusCode.UNAUTHENTICATED)
-            context.set_details('Please check your authentication credentials, Wrong Token !')
-            yield self.file_pb2.Message()
+            context.set_details('Please check your authentication credentials, Wrong Token!')
+            return self.file_pb2.Message()
 
         decoded_token = decoded_token[1]
         # print("Token", decoded_token)
@@ -197,21 +187,22 @@ class DataStreamerServicer:
 
         if int(token_competition_id) != int(competition.competition_id) or token_user_id != user_id:
             # TODO : should close channel
-            print('using wrong token for this competition')
+            print('Using wrong token for this competition')
             context.set_code(grpc.StatusCode.UNAUTHENTICATED)
-            context.set_details('Please check your authentication token, the secret does not match')
-            yield self.file_pb2.Message()
+            context.set_details('Please check your authentication token, the secret key does not match')
+            return self.file_pb2.Message()
 
         end_date = self.competition.end_date + 5 * datetime.timedelta(seconds=self.competition.predictions_time_interval)
 
-        if user_id in self.consumers_dict:
-            consumer = self.consumers_dict[user_id]
+        if self.idx in self.consumers_dict:
+            consumer = self.consumers_dict[self.idx]
         else:
-            consumer = Consumer({'group.id': user_id, 'bootstrap.servers': self.server,
+            consumer = Consumer({'group.id': self.idx, 'bootstrap.servers': self.server,
                                  'session.timeout.ms': competition.initial_training_time * 10000,
                                  'auto.offset.reset': 'latest'})  # 172.22.0.2:9092
             consumer.subscribe([self.input_topic])
-            self.consumers_dict[user_id] = consumer
+            self.consumers_dict[self.idx] = consumer
+            self.idx += 1
 
         try:
             t = threading.Thread(target=receive_predictions,
@@ -223,6 +214,12 @@ class DataStreamerServicer:
             t.start()
         except Exception as e:
             print(str(e))
+
+
+
+        _USER_REPO.cleanup()
+        _COMPETITION_REPO.cleanup()
+        _SUBSCRIPTION_REPO.cleanup()
 
         while True:
             message = consumer.poll(timeout=0)
