@@ -15,6 +15,10 @@ import threading
 from subscription_auth import decode_subscription_token
 from repositories.CompetitionRepository import SubscriptionRepository, UserRepository, CompetitionRepository
 
+import logging
+
+logging.basicConfig(level='DEBUG')
+
 with open('config.json') as json_data_file:
     config = json.load(json_data_file)
 try:
@@ -37,7 +41,7 @@ _COMPETITION_GENERATED_CODE = config['COMPETITION_GENERATED_CODE']
 
 
 def receive_predictions(predictions, competition_id, user_id, end_date, kafka_producer,
-                        spark_topic, targets):
+                        spark_topic, targets, stop):
     while True:
         # print("Waiting for predictions")
         now = datetime.datetime.now()
@@ -58,6 +62,11 @@ def receive_predictions(predictions, competition_id, user_id, end_date, kafka_pr
             kafka_producer.poll(timeout=0)
         except Exception as e:
             pass
+
+        if stop():
+            logging.debug("Gasi Thread")
+            print("gasi thread")
+            break
 
 
 class ProducerToMongoSink:
@@ -205,11 +214,13 @@ class DataStreamerServicer:
             self.idx += 1
 
         try:
+            stop_thread = False
+            # args=(request_iterator, self.competition.competition_id, user.user_id, end_date, self.kafka_producer, self.spark_topic, self.targets, lambda: stop_threads)
             t = threading.Thread(target=receive_predictions,
                                  kwargs={'predictions': request_iterator,
                                          'competition_id': self.competition.competition_id, 'user_id': user.user_id,
                                          'end_date': end_date, 'kafka_producer': self.kafka_producer,
-                                         'spark_topic': self.spark_topic, 'targets': self.targets})
+                                         'spark_topic': self.spark_topic, 'targets': self.targets, 'stop': lambda: stop_thread})
             # use default name
             t.start()
         except Exception as e:
@@ -221,7 +232,7 @@ class DataStreamerServicer:
         _COMPETITION_REPO.cleanup()
         _SUBSCRIPTION_REPO.cleanup()
 
-        while True:
+        while context.is_active():
             message = consumer.poll(timeout=0)
             if message is None:
                 continue
@@ -231,10 +242,16 @@ class DataStreamerServicer:
                     json_string = json.dumps(values, default=json_util.default)
                     message = self.file_pb2.Message()
                     final_message = json_format.Parse(json_string, message, ignore_unknown_fields=True)
-
-                    yield message
+                    if context.is_active():
+                        yield message
+                    else:
+                        break
                 except Exception as e:
                     pass
 
             if datetime.datetime.now() > end_date:
                 break
+        print("disconnect")
+        logging.debug("disconnect")
+        stop_thread = True
+        t.join()
