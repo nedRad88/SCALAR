@@ -72,7 +72,7 @@ def receive_predictions(predictions, competition_id, user_id, end_date, kafka_pr
             break
 
         if stop():
-            logging.debug("Gasi Thread")
+            logging.debug("Kill Thread")
             # print("gasi thread")
             break
 
