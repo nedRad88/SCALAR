@@ -42,11 +42,10 @@ _COMPETITION_GENERATED_CODE = config['COMPETITION_GENERATED_CODE']
 
 def receive_predictions(predictions, competition_id, user_id, end_date, kafka_producer,
                         spark_topic, targets, stop):
+
+    last_sent_message = datetime.datetime.now()
     while True:
         # print("Waiting for predictions")
-        now = datetime.datetime.now()
-        if now > end_date:
-            break
         predictions._state.rpc_errors = []
         try:
             prediction = predictions.next()
@@ -60,12 +59,25 @@ def receive_predictions(predictions, competition_id, user_id, end_date, kafka_pr
                 del document[target]
             kafka_producer.produce(spark_topic, orjson.dumps(document))
             kafka_producer.poll(timeout=0)
+            last_sent_message = datetime.datetime.now()
         except Exception as e:
+            # logging.debug("Receive predictions Exception: {}".format(e))
             pass
+
+        seconds_since_last_prediction = (datetime.datetime.now() - last_sent_message).total_seconds()
+        # logging.debug("Seconds: {}".format(seconds_since_last_prediction))
+        if seconds_since_last_prediction > 30:
+            logging.debug("Stop receiving")
+            # logging.debug("Seconds: {}".format(seconds_since_last_prediction))
+            break
 
         if stop():
             logging.debug("Gasi Thread")
-            print("gasi thread")
+            # print("gasi thread")
+            break
+
+        now = datetime.datetime.now()
+        if now > end_date:
             break
 
 
@@ -154,6 +166,7 @@ class DataStreamerServicer:
         metadata = context.invocation_metadata()
         metadata = dict(metadata)
         token = metadata['authorization']
+        # logging.debug("Context: {}".format(type(context)))
 
         user_id = metadata['user_id']
         competition_code = metadata['competition_id']
@@ -242,6 +255,7 @@ class DataStreamerServicer:
                     json_string = json.dumps(values, default=json_util.default)
                     message = self.file_pb2.Message()
                     final_message = json_format.Parse(json_string, message, ignore_unknown_fields=True)
+                    time.sleep(0.01)
                     if context.is_active():
                         yield message
                     else:
@@ -251,7 +265,7 @@ class DataStreamerServicer:
 
             if datetime.datetime.now() > end_date:
                 break
-        print("disconnect")
+        # print("disconnect")
         logging.debug("disconnect")
         stop_thread = True
         t.join()
