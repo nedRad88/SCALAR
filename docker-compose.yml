@@ -36,7 +36,7 @@ services:
       - zookeeper
 
   mongo_db:
-    image: mongo:3.6
+    image: mongo
     networks:
       - new_network
     environment:

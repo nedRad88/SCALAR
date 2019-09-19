@@ -1,10 +1,11 @@
 from pyspark.sql.functions import *
 from pyspark.sql.types import *
 from pyspark.sql import functions as F
+#from pyspark.sql import SparkSession
 
 # bin/pyspark --packages org.apache.spark:spark-sql-kafka-0-10_2.11:2.4.0 # in container
 # os.environ['PYSPARK_SUBMIT_ARGS'] = '--packages org.apache.spark:spark-sql-kafka-0-10_2.11:2.4.0 pyspark-shell'
-# spark = SparkSession.builder.appName("Kafka_structured_streaming").getOrCreate()
+#spark_context = SparkSession.builder.appName("Kafka_structured_streaming").getOrCreate()
 
 
 def evaluate(spark_context, broker, competition, competition_config, window_duration, prediction_window_duration,
@@ -53,7 +54,7 @@ def evaluate(spark_context, broker, competition, competition_config, window_dura
         .withColumn("num_submissions", when(F.col("timestamp_submitted") <= F.col("timestamp_deadline"), 1).otherwise(0))\
         .withColumn("penalized", abs(F.col("num_submissions") - F.lit(1)))\
         .withColumn("latency", when(F.col("num_submissions") == 0, competition.predictions_time_interval).otherwise(unix_timestamp(F.col("timestamp_submitted")) - unix_timestamp(F.col("timestamp_released"))))\
-        .drop("timestamp_released", "prediction_rowID", "competition_id", "prediction_competition_id")
+        .drop("timestamp_released", "competition_id", "prediction_competition_id", "prediction_rowID")
 
     for target in targets:
         prediction_target_col = "prediction_" + target.replace(" ", "")
@@ -90,6 +91,9 @@ def evaluate(spark_context, broker, competition, competition_config, window_dura
         .withColumn("competition_id", F.lit(competition.competition_id))\
         .withColumn("total_number_of_messages", F.col("max_rowID") - F.lit(competition.initial_batch_size))\
         .drop("max_rowID")
+
+    results = results\
+        .withColumn("total_number_of_messages", when(results["total_number_of_messages"].isNotNull(), results["total_number_of_messages"]).otherwise(results["sum(total_num)"]))
 
     # Calculating batch measures
 

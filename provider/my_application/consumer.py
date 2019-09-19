@@ -42,11 +42,10 @@ _COMPETITION_GENERATED_CODE = config['COMPETITION_GENERATED_CODE']
 
 def receive_predictions(predictions, competition_id, user_id, end_date, kafka_producer,
                         spark_topic, targets, stop):
+
+    last_sent_message = datetime.datetime.now()
     while True:
         # print("Waiting for predictions")
-        now = datetime.datetime.now()
-        if now > end_date:
-            break
         predictions._state.rpc_errors = []
         try:
             prediction = predictions.next()
@@ -60,12 +59,25 @@ def receive_predictions(predictions, competition_id, user_id, end_date, kafka_pr
                 del document[target]
             kafka_producer.produce(spark_topic, orjson.dumps(document))
             kafka_producer.poll(timeout=0)
+            last_sent_message = datetime.datetime.now()
         except Exception as e:
+            # logging.debug("Receive predictions Exception: {}".format(e))
             pass
 
+        seconds_since_last_prediction = (datetime.datetime.now() - last_sent_message).total_seconds()
+        # logging.debug("Seconds: {}".format(seconds_since_last_prediction))
+        if seconds_since_last_prediction > 30:
+            logging.debug("Stop receiving")
+            # logging.debug("Seconds: {}".format(seconds_since_last_prediction))
+            break
+
         if stop():
-            logging.debug("Gasi Thread")
-            print("gasi thread")
+            logging.debug("Kill Thread")
+            # print("gasi thread")
+            break
+
+        now = datetime.datetime.now()
+        if now > end_date:
             break
 
 
@@ -99,7 +111,6 @@ class DataStreamerServicer:
         conf_producer = {'bootstrap.servers': server}
         self.kafka_producer = Producer(conf_producer)
         self.consumers_dict = {}
-        self.idx = 0
 
         self.repo = MongoRepository(_MONGO_HOST)
         self.competition = competition
@@ -148,13 +159,13 @@ class DataStreamerServicer:
     def sendData(self, request_iterator, context):
         # print("Send data invoked")
         # print("Version: ", sys.version)
-        logging.debug("Invoking SendData: {}".format(datetime.datetime.now()))
         _SUBSCRIPTION_REPO = SubscriptionRepository(_SQL_HOST, _SQL_DBNAME)
         _USER_REPO = UserRepository(_SQL_HOST, _SQL_DBNAME)
         _COMPETITION_REPO = CompetitionRepository(_SQL_HOST, _SQL_DBNAME)
         metadata = context.invocation_metadata()
         metadata = dict(metadata)
         token = metadata['authorization']
+        # logging.debug("Context: {}".format(type(context)))
 
         user_id = metadata['user_id']
         competition_code = metadata['competition_id']
@@ -204,15 +215,14 @@ class DataStreamerServicer:
 
         end_date = self.competition.end_date + 5 * datetime.timedelta(seconds=self.competition.predictions_time_interval)
 
-        if self.idx in self.consumers_dict:
-            consumer = self.consumers_dict[self.idx]
+        if user_id in self.consumers_dict:
+            consumer = self.consumers_dict[user_id]
         else:
-            consumer = Consumer({'group.id': self.idx, 'bootstrap.servers': self.server,
+            consumer = Consumer({'group.id': user_id, 'bootstrap.servers': self.server,
                                  'session.timeout.ms': competition.initial_training_time * 10000,
                                  'auto.offset.reset': 'latest'})  # 172.22.0.2:9092
             consumer.subscribe([self.input_topic])
-            self.consumers_dict[self.idx] = consumer
-            self.idx += 1
+            self.consumers_dict[user_id] = consumer
 
         try:
             stop_thread = False
@@ -234,7 +244,7 @@ class DataStreamerServicer:
         _SUBSCRIPTION_REPO.cleanup()
 
         while context.is_active():
-            message = consumer.poll(timeout=0.01)
+            message = consumer.poll(timeout=0)
             if message is None:
                 continue
             else:
@@ -243,10 +253,9 @@ class DataStreamerServicer:
                     json_string = json.dumps(values, default=json_util.default)
                     message = self.file_pb2.Message()
                     final_message = json_format.Parse(json_string, message, ignore_unknown_fields=True)
-                    logging.debug("Message: {}".format(message))
+                    time.sleep(0.01)
                     if context.is_active():
                         yield message
-                        logging.debug("Sending message: {}".format(datetime.datetime.now()))
                     else:
                         break
                 except Exception as e:
@@ -254,6 +263,7 @@ class DataStreamerServicer:
 
             if datetime.datetime.now() > end_date:
                 break
+        # print("disconnect")
         logging.debug("disconnect")
         stop_thread = True
         t.join()

@@ -443,13 +443,13 @@ class CompetitionProducer:
 
             time.sleep(time_interval)
 
-            train_released_at = datetime.datetime.now()
+            # train_released_at = datetime.datetime.now()
 
             for item in train_group:
                 item['tag'] = 'TRAIN'
                 # deadline = deadline + datetime.timedelta(seconds=int(predictions_time_interval) * i+1)
-                item['Deadline'] = train_released_at + datetime.timedelta(seconds=int(predictions_time_interval))
-                item['Released'] = train_released_at
+                item['Deadline'] = released_at + datetime.timedelta(seconds=int(predictions_time_interval))
+                item['Released'] = released_at
                 # item
                 try:
                     self.send(topic, orjson.dumps(item, default=json_util.default))
