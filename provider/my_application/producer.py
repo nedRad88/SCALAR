@@ -189,7 +189,7 @@ def _create_evaluation_spark(kafka_server, competition, competition_config):
         .config('spark.driver.host', os.environ['SPARK_DRIVER_HOST']) \
         .config('spark.driver.port', os.environ['SPARK_DRIVER_PORT']) \
         .config('spark.blockManager.port', os.environ['SPARK_BLOCKMANAGER_PORT']) \
-        .config('spark.executor.memory', '18g') \
+        .config('spark.executor.memory', '4g') \
         .config('spark.network.timeout', 800) \
         .config('spark.cleaner.referenceTracking.cleanCheckpoints', "true") \
         .config('spark.shuffle.compress', 'true') \
@@ -316,7 +316,6 @@ def _create_competition_thread(competition, items, predictions, initial_batch):
 
 
 def _create_consumer(competition, competition_config):
-    print("Creating consumer")
     logging.debug("Creating consumer")
     options = (('grpc.so_reuseport', 1),)
     grpc_server = StreamServer('0.0.0.0:50051', options=options)
@@ -326,7 +325,6 @@ def _create_consumer(competition, competition_config):
         grpc_server.start_server()
         grpc_server._wait_forever()
     except Exception as e:
-        print("Inside consumer process: ", e)
         logging.debug("Inside consumer process: {}".format(e))
 
 

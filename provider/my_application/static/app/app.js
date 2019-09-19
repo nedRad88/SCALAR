@@ -129,11 +129,11 @@ app.constant('dashboardSections', {
     ]
 });
 
-//var oAuthServiceBase = 'http://localhost:80/auth/';
-//var ressourceServerBaseUri = 'http://localhost:80/';
+var oAuthServiceBase = 'http://localhost:80/auth/';
+var ressourceServerBaseUri = 'http://localhost:80/';
 
-var ressourceServerBaseUri = 'http://app.streaming-challenge.com:80/';
-var oAuthServiceBase = 'http://app.streaming-challenge.com:80/auth/';
+//var ressourceServerBaseUri = 'http://app.streaming-challenge.com:80/';
+//var oAuthServiceBase = 'http://app.streaming-challenge.com:80/auth/';
 
 
 //var oAuthServiceBase = 'http://streamingcompetition.francecentral.cloudapp.azure.com:5000/auth/';

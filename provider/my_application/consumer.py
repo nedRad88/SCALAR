@@ -148,6 +148,7 @@ class DataStreamerServicer:
     def sendData(self, request_iterator, context):
         # print("Send data invoked")
         # print("Version: ", sys.version)
+        logging.debug("Invoking SendData: {}".format(datetime.datetime.now()))
         _SUBSCRIPTION_REPO = SubscriptionRepository(_SQL_HOST, _SQL_DBNAME)
         _USER_REPO = UserRepository(_SQL_HOST, _SQL_DBNAME)
         _COMPETITION_REPO = CompetitionRepository(_SQL_HOST, _SQL_DBNAME)
@@ -233,7 +234,7 @@ class DataStreamerServicer:
         _SUBSCRIPTION_REPO.cleanup()
 
         while context.is_active():
-            message = consumer.poll(timeout=0)
+            message = consumer.poll(timeout=0.01)
             if message is None:
                 continue
             else:
@@ -242,8 +243,10 @@ class DataStreamerServicer:
                     json_string = json.dumps(values, default=json_util.default)
                     message = self.file_pb2.Message()
                     final_message = json_format.Parse(json_string, message, ignore_unknown_fields=True)
+                    logging.debug("Message: {}".format(message))
                     if context.is_active():
                         yield message
+                        logging.debug("Sending message: {}".format(datetime.datetime.now()))
                     else:
                         break
                 except Exception as e:
@@ -251,7 +254,6 @@ class DataStreamerServicer:
 
             if datetime.datetime.now() > end_date:
                 break
-        print("disconnect")
         logging.debug("disconnect")
         stop_thread = True
         t.join()
