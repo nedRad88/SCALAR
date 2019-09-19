@@ -189,7 +189,7 @@ def _create_evaluation_spark(kafka_server, competition, competition_config):
         .config('spark.driver.host', os.environ['SPARK_DRIVER_HOST']) \
         .config('spark.driver.port', os.environ['SPARK_DRIVER_PORT']) \
         .config('spark.blockManager.port', os.environ['SPARK_BLOCKMANAGER_PORT']) \
-        .config('spark.executor.memory', '4g') \
+        .config('spark.executor.memory', '18g') \
         .config('spark.network.timeout', 800) \
         .config('spark.cleaner.referenceTracking.cleanCheckpoints', "true") \
         .config('spark.shuffle.compress', 'true') \
