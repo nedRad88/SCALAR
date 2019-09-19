@@ -30,7 +30,7 @@ spec:
         - name: MYSQL_PASSWORD
           value: mysql
         - name: MYSQL_ROOT_PASSWORD
-          value: yHnIXC1Skr9k
+          value: yHnIXC1Skr9k2
         - name: MYSQL_USER
           value: mysql
         - name: TZ

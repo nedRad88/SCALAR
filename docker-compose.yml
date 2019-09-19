@@ -53,7 +53,7 @@ services:
     ports:
       - "3306:3306"
     environment:
-       MYSQL_ROOT_PASSWORD: supersecret
+       MYSQL_ROOT_PASSWORD: yHnIXC1Skr9k2
        MYSQL_DATABASE: sample
        MYSQL_USER: mysql
        MYSQL_PASSWORD: mysql
