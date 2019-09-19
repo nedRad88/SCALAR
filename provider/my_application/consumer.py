@@ -178,6 +178,7 @@ class DataStreamerServicer:
         _COMPETITION_REPO.cleanup()
         _SUBSCRIPTION_REPO.cleanup()
 
+
         if user is None:
             context.set_code(grpc.StatusCode.PERMISSION_DENIED)
             context.set_details('You are not registered, please register on the website')
