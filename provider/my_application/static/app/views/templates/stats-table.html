@@ -1,0 +1,102 @@
+﻿<!DOCTYPE html>
+<md-card class="comparable-chart-card">
+    <div layout="row">
+       <!-- <md-icon class="chart-header-icon"><i class="fa fa-smile-o" aria-hidden="true"></i></md-icon>-->
+        <div layout="column">
+            <md-select class="chart-title" ng-show="title.length > 1" ng-model="IndexOfSerie" aria-label="date" ng-change="loadData()"
+                       ng-init="IndexOfSerie=0">
+                <md-option ng-repeat="t in title" value="{{$index}}">
+                    {{t}}
+                </md-option>
+            </md-select>
+            <h1 class="chart-title" ng-if="title.length == 1">{{title[0] | uppercase}}</h1>
+            
+           
+        </div>
+        
+
+        <div layout="column" flex class="flex" style="text-align:right"  >
+            <div>
+                <md-menu class="md-menu" style="padding: 0px">
+                    <md-button class="charts-menu-button" type="button" ng-click="$mdOpenMenu($event)" aria-label="Unit">
+                        {{selectedUnit}}
+                    </md-button>
+                    <md-menu-content width="2" style="padding: 8px;">
+                        <md-menu-item ng-repeat="unit in units">
+                            <md-button ng-click="selectUnit(unit)">
+                                {{unit | uppercase}}
+                            </md-button>
+                        </md-menu-item>
+                    </md-menu-content>
+                </md-menu>
+
+            </div>
+            <div layout="row">
+                <div flex  class="flex"></div>
+                <md-input-container  style="margin-top: -4px; margin-right:10px; font-size:12px"  ng-if="!isCustomDate">
+                    <md-select ng-model="selectedDate" aria-label="date"
+                               ng-init="selectedDate = times[0]"
+                               ng-change="loadData(selectedDate)">
+                        <md-option ng-repeat="time in times" value="{{time}}">
+                            {{time}}
+                        </md-option>
+                    </md-select>
+                </md-input-container>
+            </div>
+        </div>
+    </div>
+
+
+    <div layout="row" ng-show="edit">
+        <div flex class="flex"></div>
+        <md-button class="md-cornered btn1" ng-click="changeRange('custom')" aria-label="custom">Custom</md-button>
+        <md-button style="font-size: 12px" ng-click="changeRange('year')" aria-label="year">Year</md-button>
+        <md-button style="font-size: 12px" ng-click="changeRange('month')" aria-label="month">Month</md-button>
+        <md-button style="font-size: 12px" ng-click="changeRange('week')" aria-label="week">Week</md-button>
+        <md-button style="font-size: 12px" ng-click="changeRange('day')" aria-label="day">Day</md-button>
+    </div>
+
+
+    <div layout="row" ng-show="edit">
+        <span class="md-caption" style="margin-top: 12px">From</span>
+        <md-datepicker ng-change="loadData()" ng-disabled="!isCustomDate" ng-model="beginDate" md-placeholder="Enter date"></md-datepicker>
+        <span class="md-caption" style="margin-top: 12px">To</span>
+        <md-datepicker ng-change="loadData()" ng-disabled="!isCustomDate" ng-model="endDate" md-placeholder="Enter date"></md-datepicker>
+        <div flex class="flex"></div>
+
+
+
+
+
+
+        <md-input-container class="md-block" style="margin-top: -1px">
+
+        </md-input-container>
+
+    </div>
+
+    <div>
+        
+
+        <md-table-container ng-if="!loading">
+            <table md-table>
+                <thead md-head>
+                    <tr md-row>
+                        <th md-column><span> Sentiment </span></th>
+                        <th md-column ng-repeat="serie in series"><span>{{serie.name}}</span></th>
+                    </tr>
+                </thead>
+                <tbody md-body>
+                   <tr md-row ng-repeat="row in rows">
+                       <td md-cell >{{row.name}}</td>
+                       <td md-cell ng-repeat="i in [0,1,2,3]">{{row.data[i]}}</td>
+                    </tr>
+                </tbody>
+            </table>
+        </md-table-container>
+
+    </div>
+    <div layout="row" layout-sm="column" layout-align="space-around" style="padding:100px" flex ng-if="loading">
+        <md-progress-circular class="md-hue-5" md-mode="indeterminate" md-diameter="100px"></md-progress-circular>
+    </div>
+</md-card>

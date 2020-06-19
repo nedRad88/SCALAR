@@ -1,0 +1,13 @@
+
+
+{% extends "base.html" %}
+
+{% block content %}
+  <h1>Datastreams</h1>
+    <ul>
+    {% for datastream  in datastreams %}
+    <li>{{ datastream.name }}</li>
+{% endfor %}
+</ul>
+{% endblock %}
+

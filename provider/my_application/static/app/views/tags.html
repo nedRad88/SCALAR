@@ -1,0 +1,62 @@
+﻿
+<md-card >
+    <md-content class="admin-page-container">
+        <md-table-container>
+            <div layout-gt-sm="row" class="md-table-toolbar md-default">
+                <div flex="5" class="flex"></div>
+                <md-input-container class="md-block" flex-gt-sm>
+                    <md-icon class="material-icons">search</md-icon>
+                    <input type="text" ng-model="searchQuery" ng-change="search(searchQuery)" placeholder="search">
+                </md-input-container>
+                <md-input-container class="md-block">
+                    <button class="md-icon-button md-button md-ink-ripple" type="button" ng-click="addTag()" aria-label="filter_list">
+                        <md-icon class="md-48" md-font-set="material-icons">add_circle</md-icon>
+                        <div class="md-ripple-container"></div>
+                    </button>
+                </md-input-container>
+                <md-input-container class="md-block">
+                    <button class="md-icon-button md-button md-ink-ripple" type="button" ng-click="deleteTags()" ng-disabled="selectedTags.length==0" aria-label="local_dining">
+                        <md-icon class="md-48" md-font-set="material-icons">remove_circle</md-icon>
+                        <div class="md-ripple-container"></div>
+                    </button>
+                </md-input-container>
+                <div flex="5" class="flex"></div>
+            </div>
+            <md-divider class="md-primary"></md-divider>
+
+            <md-progress-linear ng-if="loading" md-mode="indeterminate"></md-progress-linear>
+
+            <table md-table md-row-select multiple ng-model="selectedTags">
+                <thead md-head>
+                    <tr md-row>
+                        <th md-column style="width: 250px"><span>Tag</span></th>
+                        <th md-column flex class="flex"><span>Keywords</span></th>
+                        <th md-column style="width: 125px"></th>
+                    </tr>
+                </thead>
+                <tbody md-body>
+                    <tr md-row md-select="tag" md-select-id="id" md-auto-select="false" ng-repeat="tag in tags">
+                        <td md-cell>{{tag.id}}</td>
+                        <td md-cell>
+
+                            <md-chips ng-model="tag.keywords" readonly="true" md-max-chips="200">
+                                <md-chip-template>
+                                    {{$chip}}
+                                </md-chip-template>
+                            </md-chips>
+
+                        </td>
+                        <td md-cell>
+                            <div flex="4" class="flex"></div>
+                            <md-button ng-click="editTag(tag)">
+                                <md-icon class="md-48" md-font-set="material-icons">create</md-icon>
+                            </md-button>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </md-table-container>
+
+        <md-table-pagination md-limit="tagQuery.limit" md-limit-options="[10, 20, 30]" md-page="tagQuery.page" md-total="{{tagCount()}}" md-on-paginate="getTags" md-page-select></md-table-pagination>
+    </md-content>
+</md-card>

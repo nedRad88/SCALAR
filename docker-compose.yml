@@ -1,0 +1,186 @@
+version: '3'
+
+services:
+  zookeeper:
+    networks:
+      - new_network
+    image: wurstmeister/zookeeper
+    ports: 
+      - "2181:2181" 
+    container_name: zookeeper
+  kafka:
+    image: wurstmeister/kafka
+    ports:
+      - "9092:9092"
+    networks:
+      - new_network
+    environment:
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_LISTENERS:
+        "INTERNAL://kafka:9092,\
+	 EXTERNAL://:9094"
+      KAFKA_ADVERTISED_LISTENERS:
+        "INTERNAL://kafka:9092,\
+	 EXTERNAL://nedeljko-Precision-7530:9094"
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP:
+        "INTERNAL:PLAINTEXT,\
+	 EXTERNAL:PLAINTEXT"
+      KAFKA_INTER_BROKER_LISTENER_NAME: INTERNAL
+      KAFKA_LOG4J_ROOT_LOGLEVEL: WARN
+      KAFKA_TOOLS_LOG4J_LOGLEVEL: ERROR
+      TZ: "Europe/Paris"
+    container_name: kafka
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+    depends_on:
+      - zookeeper
+
+  mongo_db:
+    image: mongo:3.6.18
+    networks:
+      - new_network
+    environment:
+      TZ: "Europe/Paris"
+    volumes:
+      - /home/nedeljko/data/mongo_dir:/data/db
+      - /etc/localtime:/etc/localtime:ro
+    container_name: mongo_db
+
+  sql_db:
+    image: mysql:5.7.21
+    networks:
+      - new_network
+    ports:
+      - "3306:3306"
+    environment:
+       MYSQL_ROOT_PASSWORD: yHnIXC1Skr9k2
+       MYSQL_DATABASE: sample
+       MYSQL_USER: mysql
+       MYSQL_PASSWORD: mysql
+       TZ: "Europe/Paris"
+    volumes:
+      - /home/nedeljko/data/sql_dir:/var/lib/mysql
+      - /etc/localtime:/etc/localtime:ro
+    container_name: sql_db
+    command: [mysqld, --default-authentication-plugin=mysql_native_password]
+    depends_on:
+      - spark-master
+
+  provider:
+    build: provider
+    ports:
+      - "80:5000"
+      - "5005:5005"
+      - "50051:50051"
+      - "13666:13666"
+    networks:
+      - new_network
+    environment:
+      TZ: "Europe/Paris"
+      DNS_NAME: "http://localhost"
+      SQL_HOST: "mysql+pymysql://mysql:mysql@sql_db/"
+      KAFKA_HOST: "kafka:9092"
+      SQL_DBNAME: "sample"
+      MONGO_HOST: "mongo_db"
+      SPARK_HOST: "spark-master"
+      SPARK_DRIVER_HOST: "provider"
+      SPARK_DRIVER_PORT: "5005"
+      SPARK_BLOCKMANAGER_PORT: "13666"
+    volumes:
+      - /home/nedeljko/uploaded_data:/local/data
+      - /etc/localtime:/etc/localtime:ro
+    container_name: provider
+    depends_on:
+      - sql_db
+
+  mongo-express:
+    image: mongo-express
+    networks:
+      - new_network
+    links:
+      - mongo_db:mongo
+    environment:
+      TZ: "Europe/Paris"
+    ports:
+      - "8081:8081"
+    container_name: mongo-express
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+    depends_on:
+      - mongo_db
+
+  myadmin:
+    image: nedeljkoradulovic88/phpmyadminbase:v1
+    networks:
+      - new_network
+    links:
+      - sql_db:db
+    ports:
+      - "8083:80"
+    container_name: myadmin
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+    depends_on:
+      - sql_db
+
+  spark-master:
+    image: nedeljkoradulovic88/spark
+    networks:
+      - new_network
+    environment:
+      TZ: "Europe/Paris"
+      SPARK_CONF_DIR: /conf
+      PACKAGES: 'org.apache.spark:spark-sql-kafka-0-10_2.11:2.4.0'
+    ports:
+      - "4040:4040"
+      - "6066:6066"
+      - "7077:7077"
+      - "8080:8080"
+    container_name: spark-master
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+    expose:
+      - 7001
+      - 7002
+      - 7003
+      - 7004
+      - 7005
+      - 7006
+      - 7077
+      - 6066
+    #command: ['bin/spark-class org.apache.spark.deploy.master.Master', './bin/pyspark --packages org.apache.spark:spark-sql-kafka-0-10_2.11:2.4.0']
+
+  worker1:
+    image: nedeljkoradulovic88/spark
+    networks:
+      - new_network
+    command: 'bin/spark-class org.apache.spark.deploy.worker.Worker spark://spark-master:7077'
+    hostname: worker1
+    environment:
+      SPARK_CONF_DIR: /conf
+      SPARK_WORKER_CORES: 2
+      SPARK_WORKER_MEMORY: 2g
+      SPARK_WORKER_PORT: 8881
+      SPARK_WORKER_WEBUI_PORT: 8082
+      PACKAGES: 'org.apache.spark:spark-sql-kafka-0-10_2.11:2.4.0'
+    links:
+      - spark-master
+    expose:
+      - 7012
+      - 7013
+      - 7014
+      - 7015
+      - 7016
+      - 8881
+    ports:
+      - 8082:8082
+    container_name: worker1
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+      - /home/nedeljko/spark_checkpoints:/tmp
+
+
+networks:
+  new_network:
+    external:
+      name: new_network

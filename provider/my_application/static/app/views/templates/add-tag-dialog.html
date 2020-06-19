@@ -1,0 +1,64 @@
+﻿<!DOCTYPE html>
+<md-dialog ng-cloak flex="50">
+    <form ng-submit="modeEdit?edit(tag):add(tag)" >
+        <md-toolbar>
+            <div class="md-toolbar-tools">
+                <h2>{{modeEdit?"Edit":"Add"}} Tag</h2>
+                <span flex></span>
+                <md-button class="md-icon-button" ng-click="cancel()">
+                    <md-icon  md-font-set="material-icons">close</md-icon>
+                </md-button>
+            </div>
+        </md-toolbar>
+        <md-dialog-content>
+            <div class="md-dialog-content dialog-form">
+                <md-input-container class="md-block">
+                    <label>Label</label>
+                    <md-icon class="md-48" md-font-set="material-icons">person</md-icon>
+                    <input ng-model="tag.id" ng-required="true" ng-disabled="modeEdit">
+                </md-input-container>
+               
+                <label>Keywords</label>
+                <md-chips ng-model="tag.keywords" md-separator-keys="keys" required>
+                    <md-chip-template>
+                        {{$chip}}
+                    </md-chip-template>
+                </md-chips>
+
+                <md-progress-linear md-mode="indeterminate" ng-if="isLoading"> </md-progress-linear>
+                <div layout-gt-sm="row" ng-if="suggestedKeywords.length != 0">
+                    <md-input-container class="md-block">
+                        <label>Keywords</label>
+                        <md-select ng-model="selectedKeywords" multiple >
+                            <md-option ng-value="keyword" ng-repeat="keyword in suggestedKeywords"> <span>{{keyword[0]}}</span> : <span>{{keyword[1]}}</span></md-option>
+                        </md-select>
+                    </md-input-container>
+                    <md-input-container class="md-block">
+                        <md-button ng-click="addSelectedKeywords(selectedKeywords)">Add selected</md-button>
+                    </md-input-container>
+                </div>
+
+
+                    <md-input-container class="md-block">
+                        <md-button ng-click="suggest(tag.keywords)">Suggest</md-button>
+                    </md-input-container>
+            </div>
+            <div class="md-warn" style="text-align: center;">
+                <div flex></div>
+                <div>
+                    {{message.message}}
+                </div>
+                <div flex></div>
+            </div>
+        </md-dialog-content>
+        <md-dialog-actions layout="row">
+            <span flex></span>
+            <md-button ng-click="cancel()">
+                Cancel
+            </md-button>
+            <md-button type="submit" style="margin-right:20px;" ng-disabled="tag.keywords.length<=0">
+                {{modeEdit?"Apply":"Add"}}
+            </md-button>
+        </md-dialog-actions>
+    </form>
+</md-dialog>

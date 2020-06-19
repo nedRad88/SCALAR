@@ -1,0 +1,61 @@
+﻿<!DOCTYPE html>
+<md-card >
+    <md-content class="admin-page-container">
+        <md-table-container>
+            <div layout-gt-sm="row" class="md-table-toolbar md-default">
+                <div flex="5" class="flex"></div>
+                <md-input-container class="md-block" flex-gt-sm>
+                    <md-icon class="material-icons">search</md-icon>
+                    <input type="text" ng-model="searchQuery" ng-change="search(searchQuery)" placeholder="search">
+                </md-input-container>
+                <md-input-container class="md-block">
+                    <button class="md-icon-button md-button md-ink-ripple" type="button" ng-click="addTopic()" aria-label="filter_list">
+                        <md-icon class="md-48" md-font-set="material-icons">add_circle</md-icon>
+                        <div class="md-ripple-container"></div>
+                    </button>
+                </md-input-container>
+                <md-input-container class="md-block">
+                    <button class="md-icon-button md-button md-ink-ripple" type="button" ng-click="deleteTopics()" ng-disabled="selectedTopics.length==0" aria-label="local_dining">
+                        <md-icon class="md-48" md-font-set="material-icons">remove_circle</md-icon>
+                        <div class="md-ripple-container"></div>
+                    </button>
+                </md-input-container>
+                <div flex="5" class="flex"></div>
+            </div>
+            <md-divider class="md-primary"></md-divider>
+            <md-progress-linear ng-if="loading" md-mode="indeterminate"></md-progress-linear>
+
+            <table md-table md-row-select multiple ng-model="selectedTopics">
+                <thead md-head>
+                    <tr md-row>
+                        <th md-column style="width: 250px"><span>Topic</span></th>
+                        <th md-column flex class="flex"><span>Tags</span></th>
+                        <th md-column style="width: 125px"></th>
+                    </tr>
+                </thead>
+                <tbody md-body>
+                    <tr md-row md-select="topic" md-select-id="id" md-auto-select="false" ng-repeat="topic in topics">
+                        <td md-cell>{{topic.id}}</td>
+                        <td md-cell>
+
+                            <md-chips ng-model="topic.tags" readonly="true">
+                                <md-chip-template>
+                                    {{$chip}}
+                                </md-chip-template>
+                            </md-chips>
+
+                        </td>
+                        <td md-cell>
+                            <div flex="4" class="flex"></div>
+                            <md-button ng-click="editTopic(topic)">
+                                <md-icon class="md-48" md-font-set="material-icons">create</md-icon>
+                            </md-button>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </md-table-container>
+
+    <md-table-pagination md-limit="topicQuery.limit" md-limit-options="[10, 20, 30]" md-page="topicQuery.page" md-total="{{topicCount()}}" md-on-paginate="getTopics" md-page-select></md-table-pagination>
+   </md-content>
+</md-card>

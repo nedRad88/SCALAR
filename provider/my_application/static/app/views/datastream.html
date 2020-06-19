@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<md-content>
+    <div layout="row" layout-align="center center" class="nav-bar-subheader md-whiteframe-1dp" style="padding-top:16px; padding-bottom : 8px; margin-bottom : 32px;">
+    
+        <div flex></div>
+    
+        <div layout-gt-xs="row"  >
+            
+            <div flex="5"></div>
+            <div layout="row" ng-if="isInRole('ADMIN')" >
+                <md-button class="md-button md-ink-ripple md-primary" type="button"  ng-click="addDatastream()">Add Datastream</md-button>
+                <md-icon style="font-size: 24px;" md-font-set="material-icons">add_circle</md-icon>
+            </div>
+            
+            
+            
+            
+            
+
+        </div>
+        
+
+    </div>
+    
+    <md-list flex>
+                
+        <md-list-item class="md-2-line" ng-repeat="item in datastreams" ng-click="go(item.id)">
+        <img ng-if ="item" ng-src="static/content/images/trophy.png" class="md-avatar" alt="{{item.name}}" />
+        <div ng-if ="item" class="md-list-item-text" layout="column">
+            <h2>{{ item.name }}</h2>
+            <p> {{item.description}} </p>
+            
+        </div>
+        <md-divider ></md-divider>
+        </md-list-item>
+                
+    </md-list>
+    
+    <div layout="column" layout-align="center center">
+            <wan-material-paging wmp-total="total" goto-page="gotoPage()" position="center" current-page="currentPage" step="step">
+    </div>
+    
+
+  </md-content>

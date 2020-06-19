@@ -1,0 +1,38 @@
+﻿<!DOCTYPE html>
+
+
+
+
+<md-dialog ng-cloak flex="50"  class="posts-dialog">
+    <div id="container">
+        <md-toolbar>
+            <div class="md-toolbar-tools">
+                <h2>Posts</h2>
+                <span flex></span>
+                <md-button class="md-icon-button" ng-click="cancel()">
+                    <md-icon md-font-set="material-icons">close</md-icon>
+                </md-button>
+            </div>
+        </md-toolbar>
+        <md-dialog-content>
+            <div ng-repeat="post in posts">
+                <div post-card post="post" params="params"></div>
+                <script ng-if="$last"> FB.XFBML.parse();</script> 
+            </div>
+           
+            <div layout="row">
+                <div flex></div>
+
+                <md-button ng-click="nextPage()" ng-show="next">
+                    Next
+                    <md-icon md-font-set="material-icons">navigate_next</md-icon>
+                </md-button>
+            </div>
+            
+
+
+        </md-dialog-content>
+
+    </div>
+
+</md-dialog>

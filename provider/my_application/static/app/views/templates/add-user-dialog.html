@@ -1,0 +1,84 @@
+﻿<!DOCTYPE html>
+<md-dialog aria-label="Mango (Fruit)" ng-cloak flex="50">
+    <form ng-submit="(modeEdit)?edit(user, previousUser.email):add(user)">
+        <md-toolbar>
+            <div class="md-toolbar-tools">
+                <h2>Add User</h2>
+                <span flex></span>
+                <md-button class="md-icon-button" ng-click="cancel()">
+                    <md-icon md-font-set="material-icons">close</md-icon>
+                </md-button>
+                
+            </div>
+        </md-toolbar>
+        <md-dialog-content>
+            <div class="md-dialog-content dialog-form">
+
+                <div layout-gt-sm="row">
+                    <md-input-container class="md-block">
+                        <label>First Name</label>
+                        <md-icon class="md-48" md-font-set="material-icons">person</md-icon>
+                        <input ng-model="user.firstName" ng-required="true">
+                    </md-input-container>
+                    <div flex="20" hide-xs hide-sm>
+                        <!-- Spacer //-->
+                    </div>
+                    <md-input-container class="md-block">
+                        <label>Last Name</label>
+                        <input ng-model="user.lastName" ng-required="true">
+                    </md-input-container>
+                </div>
+                    <md-input-container class="md-block">
+                        <label>Email</label>
+                        <md-icon class="md-48" md-font-set="material-icons">mail</md-icon>
+                        <input ng-model="user.email" ng-required="true">
+                    </md-input-container>
+
+                    
+                    <div layout-gt-sm="row">
+                        <md-input-container flex>
+                            <label>Roles</label>
+                            <md-icon class="md-48" md-font-set="material-icons">supervisor_account</md-icon>
+                            <md-select ng-model="selectedRoles" multiple>
+                                <md-option ng-value="role" ng-repeat="role in roles ">{{role}}</md-option>
+
+                            </md-select>
+                        </md-input-container>
+                        <div flex="20" hide-xs hide-sm>
+                            <!-- Spacer //-->
+                        </div>
+                        <md-input-container class="md-block">
+                            <label>Password</label>
+                            <md-icon class="md-48" md-font-set="material-icons" ng-click="generatePassword()">lock</md-icon>
+                            <input ng-model="user.password" ng-required="true" disabled="disabled">
+                        </md-input-container>
+                    </div>
+                <div layout-gt-sm="row">
+                    <md-input-container class="md-block">
+                       
+                        <md-checkbox ng-model="user.notify" aria-label="Notify">
+                            Notify
+                        </md-checkbox>
+                    </md-input-container>
+                    </div>
+                </div>
+            <div class="md-warn" style="text-align: center;">
+                <div flex></div>
+                <div>
+                    {{message.modelState[""][0]}}
+                </div>
+                <div flex></div>
+            </div>
+        </md-dialog-content>
+
+        <md-dialog-actions layout="row">
+            <span flex></span>
+            <md-button ng-click="cancel()">
+                Cancel
+            </md-button>
+            <md-button type="submit" style="margin-right:20px;">
+                {{(modeEdit)?'Apply':'Add'}}
+            </md-button>
+        </md-dialog-actions>
+    </form>
+</md-dialog>

@@ -1,0 +1,72 @@
+﻿<!DOCTYPE html>
+    
+    <md-content layout="vertical" flex id="content" layout-align="center center" class="login">
+        <md-card>
+            <md-card-title-media>
+                <div class="card-media" >
+                    <img  src="static/content/images/logo.PNG" alt="Stream Challenge Platform">
+                </div>
+            </md-card-title-media>
+            <md-progress-linear md-mode="indeterminate" ng-if="progress" flex></md-progress-linear>
+            <md-progress-linear md-mode="indeterminate" ng-if="progress" flex></md-progress-linear>
+            <md-card-content>
+                    <form ng-submit="register(user)">
+                        
+                        
+                            <div class="md-dialog-content dialog-form">
+
+                                
+                                    <md-input-container class="md-block">
+                                        <label>First Name</label>
+                                        <md-icon class="md-48" md-font-set="material-icons">person</md-icon>
+                                        <input ng-model="user.firstName" ng-required="true">
+                                    </md-input-container>
+                                    
+                                        <!-- Spacer //-->
+                                    
+                                    <md-input-container class="md-block">
+                                        <label>Last Name</label>
+                                        <md-icon class="md-48" md-font-set="material-icons">person</md-icon>
+                                        <input ng-model="user.lastName" ng-required="true">
+                                    </md-input-container>
+                                
+                                    <md-input-container class="md-block">
+                                        <label>Email</label>
+                                        <md-icon class="md-48" md-font-set="material-icons">mail</md-icon>
+                                        <input ng-model="user.email" ng-required="true">
+                                    </md-input-container>
+
+                                    
+                                    
+                                        
+                                        <md-input-container class="md-block">
+                                            <label>Password</label>
+                                            <md-icon class="md-48" md-font-set="material-icons">lock</md-icon>
+                                            <input ng-model="user.password" ng-required="true" type="password">
+                                        </md-input-container>
+                                    
+                                
+                            <div class="md-warn" style="text-align: center;">
+                                <div flex></div>
+                                <div>
+                                    {{message.modelState[""][0]}}
+                                </div>
+                                <div flex></div>
+                            </div>
+                        
+
+                    </form>
+                
+            </md-card-content>
+            
+            <md-card-actions layout="row" layout-align="start">
+                <span flex></span>
+                
+                <md-button type="submit" class="md-raised md-primary" style="margin-right:20px;"> Register</md-button>
+            </md-card-actions>
+  	    <div layout="row" layout-align="center center", style="color: grey; margin-top: 10px">
+                    <label>*<strong>S</strong>treaming <strong>C</strong>h<strong>AL</strong>lenge Pl<strong>A</strong>tfo<strong>R</strong>m</label>
+            </div>
+        </md-card>
+       
+    </md-content>

@@ -1,0 +1,116 @@
+﻿<!DOCTYPE html>
+<md-card >
+    <md-card-header>
+        <md-card-avatar>
+            <img class="md-user-avatar" ng-src="https://graph.facebook.com/v2.6/{{post.pageId}}/picture" />
+        </md-card-avatar>
+        <md-card-header-text>
+            <span class="md-title">{{post.pageName}}</span>
+            <span class="md-subhead">{{post.createdTime | date:'yyyy/MM/dd  hh:mm'}}</span>
+        </md-card-header-text>
+    </md-card-header>
+
+    <div ng-if="post.type=='video'" style="margin-left: auto;    margin-right: auto;" >
+        <div  class="fb-video md-card-image" data-href="{{post.link}}" data-width="500"></div>
+    </div>
+    <!--
+    <div ng-if="post.type=='youtube'">
+        <iframe width="500" height="375"  src="{{post.link}}"></iframe>
+    </div>
+    -->
+    <img ng-if="post.type=='photo'" ng-src="{{post.full_picture}}" class="md-card-image" alt="photo">
+
+
+        <md-card-content ng-if="post.message">
+            <p ng-bind-html="urlify(post.message)">
+
+            </p>
+        </md-card-content>
+
+        <md-card-actions layout="row" layout-align="right center">
+            <md-card-icon-actions>
+                <div flex></div>
+                <md-button ng-if="post.pos || post.neg || post.net" aria-label="Comments" ng-click="showAll()" ng-class="(filter=='all')?'selected_button':''">
+                    {{post.neg + post.net + post.pos}}
+                    <md-icon md-font-set="material-icons" ng-class="(filter=='all')?'selected_button':''">mode_comment</md-icon>
+                </md-button>
+                <md-button ng-if="post.neg" aria-label="Negative" ng-click="showNegative()" ng-class="(filter=='neg')?'selected_button':''">
+                    {{post.neg}}
+                    <md-icon md-font-set="material-icons" ng-class="(filter=='neg')?'selected_button':''" >thumb_down</md-icon>
+                </md-button>
+                <md-button ng-if="post.pos" aria-label="Positive" ng-click="showPositive()" ng-class="(filter=='pos')?'selected_button':''">
+                    {{post.pos}}
+                    <md-icon md-font-set="material-icons"  ng-class="(filter=='pos')?'selected_button':''" >thumb_up</md-icon>
+                </md-button>
+            </md-card-icon-actions>
+        </md-card-actions>
+        
+        <md-list>
+            <md-divider></md-divider>
+            <md-list-item class="md-2-line md-long-text" ng-repeat="comment in comments">
+                <md-divider ng-if="!$last"></md-divider>
+                <md-icon ng-if="comment.sentiment == 'pos'" class="md-avatar" md-font-set="material-icons">thumb_up</md-icon>
+                <md-icon ng-if="comment.sentiment == 'neg'" class="md-avatar" md-font-set="material-icons">thumb_down</md-icon>
+                <md-icon ng-if="comment.sentiment == 'net'" class="md-avatar" md-font-set="material-icons">mode_comment</md-icon>
+                <div class="md-list-item-text">
+                    <md-menu class="comment-menu" md-position-mode="target-right target" md-offset="30 30">
+                        <md-button  class="md-icon-button" ng-click="$mdOpenMenu($event)">
+                            <md-icon md-font-set="material-icons">more_vert</md-icon>
+                        </md-button>
+                        <md-menu-content width="2" >
+                            <md-menu-item >
+                                <md-button ng-click="openLink('https://www.facebook.com/'+comment.id)">
+                                    <md-icon md-font-set="material-icons">reply</md-icon>
+                                    Reply
+                                </md-button>
+                                
+                            </md-menu-item>
+                            <md-menu-item>
+                                <md-button ng-click="comment.report = true">
+                                    <md-icon md-font-set="material-icons">error</md-icon>
+                                    Report
+                                </md-button>
+                            </md-menu-item>
+                            
+                        </md-menu-content>
+                    </md-menu>
+                   
+                    <h3>{{comment.createdTime  | date:'yyyy/MM/dd  hh:mm'}}</h3>
+                    <p>
+                        {{comment.message}}
+                    </p>
+                    <div>
+                         <div style="display: inline-block" flex></div>
+                        <div ng-repeat="tag in comment.tags" style="display: inline-block" class="tag">{{tag}} </div>
+                    </div>
+                    <div class="report-comment" ng-if="comment.report">
+                        <p>Choose the right sentiment: </p>
+                        <md-radio-group ng-model="comment.newSentiment" layout="row">
+                            <md-radio-button value="pos" class="md-primary">Positive</md-radio-button>
+                            <md-radio-button value="neg" class="md-primary">Negative </md-radio-button>
+                            <md-radio-button value="net" class="md-primary">Neutral</md-radio-button>
+                        </md-radio-group>
+                        <div layout="row">
+                            <div flex></div>
+                            <md-button class="md-icon-button" ng-click="reportComment(comment)">
+                                <md-icon md-font-set="material-icons" style="color:#388E3C" >done</md-icon>
+                            </md-button>
+                            <md-button class="md-icon-button" ng-click="comment.report = false">
+                                <md-icon md-font-set="material-icons" style="color:#e00000" >close</md-icon>
+
+                            </md-button>
+                        </div>
+                       
+
+                    </div>
+                </div>
+            </md-list-item>
+            <div layout="row" ng-if="next">
+                <div flex></div>
+                <md-button aria-label="Comments" ng-click="nextPage()">
+                    <md-icon md-font-set="material-icons"  >more_horiz</md-icon>
+                </md-button>
+            </div>
+        </md-list>
+
+</md-card>

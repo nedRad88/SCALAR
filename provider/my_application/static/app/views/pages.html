@@ -1,0 +1,37 @@
+﻿<!DOCTYPE html>
+<md-table-container>
+    <md-toolbar class="md-table-toolbar md-default" aria-hidden="false" style="">
+        <div class="md-toolbar-tools">
+            <h2 class="md-title">Users</h2>
+            <div flex="" class="flex"></div>
+            <button class="md-icon-button md-button md-ink-ripple" type="button" ng-click="addUser()" aria-label="filter_list">
+                <md-icon class="md-48" md-font-set="material-icons">add_circle</md-icon>
+                <div class="md-ripple-container"></div>
+            </button>
+            <button class="md-icon-button md-button md-ink-ripple" type="button" ng-click="deleteUsers()" aria-label="local_dining">
+                <md-icon class="md-48" md-font-set="material-icons">remove_circle</md-icon>
+                <div class="md-ripple-container"></div>
+            </button>
+        </div>
+    </md-toolbar>
+
+    <table md-table md-row-select multiple ng-model="selected">
+        <thead md-head>
+            <tr md-row>
+                <th md-column><span>Page </span></th>
+                
+                
+                
+                <th md-column>Roles</th>
+            </tr>
+        </thead>
+        <tbody md-body>
+            <tr md-row md-select="page" md-select-id="id" md-auto-select="" ng-repeat="page in pages">
+                
+                
+            </tr>
+        </tbody>
+    </table>
+</md-table-container>
+
+<md-table-pagination md-limit="query.limit" md-limit-options="[5, 10, 15]" md-page="query.page" md-total="{{count()}}" md-on-paginate="getUsers" md-page-select></md-table-pagination>

@@ -1,0 +1,265 @@
+﻿<!DOCTYPE html>
+
+
+<md-content style="margin: 64px; margin-top : -8px;" class="page-container"  ng-cloak>
+
+    <!--<md-progress-linear md-mode="indeterminate" ng-if="!topic" flex ></md-progress-linear>-->
+    <md-card>
+        <img ng-src="static/content/images/competition_background_small.png" class="md-card-image" style = "height: 256px;" alt="">
+        <md-card-title>
+            <div layout="column">
+                
+                    <div layout='row'>
+                        <span class="md-headline">{{competitionInfo.name}}</span>
+                        
+                        <div flex ></div>
+                        
+                        <md-button ng-if = "!finished" class='md-raised md-primary'  ng-click ='isSubscribed ? unsubscribe() : subscribe()'>  {{isSubscribed ? 'Unsubscribe' : 'Subscribe'}} </md-button>
+                    </div>
+                
+                
+                    <p >  
+                        <i style = "font-size : medium; margin-right : 8px;" class="material-icons">av_timer</i> 
+                        <i style = "margin-bottom : 4px;">Started at : {{competitionInfo.start_date}}</i>
+                        
+                        <i style = "font-size : medium; margin-left : 16px;" class="material-icons">date_range</i> 
+                        <i style = "margin-bottom : 4px;">Ends at : {{competitionInfo.end_date}}</i>
+                        
+                        <i style = "font-size : medium; margin-left : 16px;" class="material-icons">date_range</i> 
+                        <i style = "margin-bottom : 4px;">code: {{competitionInfo.code}}</i>
+                                
+                        
+                    </p>
+                    
+                    <div ng-show = "isSubscribed">
+                        <md-input-container class="md-block">
+                                    <label>Secret Key</label>
+                                    <md-icon class="md-48" md-font-set="material-icons">lock</md-icon>
+                                    <input ng-model="secretKey">
+                        </md-input-container>
+                        
+                    </div>
+                
+            </div>
+        </md-card-title>
+        <md-card-content>
+              <md-tabs md-dynamic-height md-border-bottom>
+                <md-tab label="Overview">
+                    <md-content class="md-padding">
+                        <section>
+                            <md-subheader class="md-primary">Information</md-subheader>
+                            <div layout='row' class="md-padding">  
+                                <i style = "margin-right : 8px;" class="material-icons">view_stream</i> 
+                                <p>Initial Batch : {{competitionInfo.initial_batch_size}}</p>
+                                
+                                <i style = "margin-left : 16px; margin-right:8px;" class="material-icons">timer</i> 
+                                <p >Intial Time : {{competitionInfo.initial_training_time}}</p>
+                                
+                                <i style = "margin-left : 16px; margin-right:8px;" class="material-icons">view_stream</i> 
+                                <p >Batch Size : {{competitionInfo.batch_size}}</p>
+                                
+                                <i style = "margin-left : 16px; margin-right:8px;" class="material-icons">timer</i> 
+                                <p >Time Interval : {{competitionInfo.time_interval}}</p>
+                                
+                                <i style = "margin-left : 16px; margin-right:8px;" class="material-icons">timer</i> 
+                                <p >Predictions Interval : {{competitionInfo.predictions_time_interval}}</p>
+                                        
+                            </div>
+                        <section>
+                        <section>
+                            
+                                <md-subheader class="md-primary">Source Files</md-subheader>
+                                <div class="md-padding">
+                                    <md-list-item ng-repeat = "file in files">
+                                        <p>{{file}}</p>
+                                        <div flex> </div>
+                                        
+                                        <md-button class="md-icon-button" aria-label="More" ng-click="downloadFile()">
+                                            <md-icon class="md-48" md-font-set="material-icons">cloud_download</md-icon>
+                                        </md-button>
+                                    </md-list-item>
+                                </div>
+                                
+                              
+                                
+                              
+                            
+                        </section>
+                        <section>
+                            <md-subheader class="md-primary">Description</md-subheader>
+                            <div class="md-padding">
+                                <p>
+                                    {{competitionInfo.description}}
+                                </p>
+                            </div>
+                            
+                        </section>
+
+
+                    </md-content>
+                </md-tab>
+                 <md-tab label="Data">
+                    <md-content class="md-padding">
+
+                        <div layout='row'>
+                            <span class="md-headline">{{datastreamInfo.name}}</span>
+                            <div flex ></div>
+                        </div>
+                        
+                        <section>
+                            <md-subheader class="md-primary">Description</md-subheader>
+                             <p>
+                                {{datastreamInfo.description}}
+                            </p>
+
+
+                        </section>
+                
+                    
+                    
+                    </md-content>
+                </md-tab>
+                 <md-tab label="Evaluation">
+                    <md-content class="md-padding">
+                    
+                        <div layout='row'>
+                            <span class="md-headline">{{datastreamInfo.name}}</span>
+                            <div flex ></div>
+                        </div>
+                        
+                        <section>
+                            <md-subheader class="md-primary">Evaluation Measures by fields</md-subheader>
+                            <md-list>
+                                
+                                <md-list-item ng-repeat="measure in evaluationMeasures">
+                                    <h3 md-subheader>{{measure.field}}</h3>
+                                    <md-list>
+                                        <md-list-item ng-repeat="m in measure.measures">
+                                            <md-icon md-list-icon>folder</md-icon>
+                                            <h4 md-line>{{m}}</h4>
+                                            
+                                        </md-list-item>
+                                        
+                                    </md-list>
+                                    <md-divider ng-if="!$last"></md-divider>
+                                </md-list-item>
+                                
+                               
+                            </md-list>
+                           
+                            
+                            
+                        </section>
+                
+                    
+                    
+                    </md-content>
+                </md-tab>
+
+                <md-tab label="Leaderboard">
+                    <md-content class="md-padding">
+
+                            <div comparable-chart
+                                        style="margin-top : 48px;"
+                                        title=page.title
+                                        fields = "page.fields"
+                                        endpoint="page.endpoint"
+                                        type="{{page.type}}"
+                                        mode="{{page.mode}}"
+                                        config="page.config"
+                                        period="period"
+                                        params="page.params"
+                                        filter="topic"
+                                        is-custom-date="page.isCustomDate"
+                                        s = "page.dataEndpoint"
+                                        competition = "page.competition"
+                                        ngCloak flex>
+                            </div>
+
+                    </md-content>
+                </md-tab>
+
+                
+                <md-tab label ="Ranking">
+                    <md-card>
+                        <md-content class="admin-page-container">
+                            <md-table-container>
+
+                                <div layout-gt-sm="row" class="md-table-toolbar md-default">
+                                    <div flex="5" class="flex"></div>
+                                    <md-input-container class="md-block" flex-gt-sm>
+                                        <md-icon class="material-icons">search</md-icon>
+                                        <input type="text" ng-model="searchQuery" ng-change="search(searchQuery)" placeholder="search">
+                                    </md-input-container>
+                                    
+                                    
+                                </div>
+                                <md-divider class="md-primary"></md-divider>
+                                <md-progress-linear ng-if="loading" md-mode="indeterminate"></md-progress-linear>
+
+                                <table md-table ng-model="selected">
+                                    <thead md-head md-order="query.order" md-on-reorder="logOrder">
+                                        <tr md-row>
+                                        
+                                            <th md-column ><span>#</span></th>
+                                            <th md-column md-order-by = "firstName"><span>First Name </span></th>
+                                            <th md-column md-order-by = "lastName"><span>Last Name </span></th>
+                                            <th md-column md-order-by = "email">Mail </th>
+                                            
+                                            <th md-column md-order-by = "measure"> 
+                                            
+                                                <div layout="row">
+                                                    <md-select class="chart-title" ng-model="selectedField" aria-label="measure" ng-change="loadField()"
+                                                            ng-init="IndexOfSerie=0">
+                                                        <md-option ng-repeat="f in evaluationMeasures" value="{{f}}">
+                                                            {{f.field}}
+                                                        </md-option>
+                                                    </md-select>
+                                                    <div flex=5> </div>
+                                                    
+                                                    <md-select class="chart-title" ng-model="selectedMeasure" aria-label="measure" ng-change="loadMeasure()"
+                                                            ng-init="IndexOfSerie=0">
+                                                        <md-option ng-repeat="m in measures" value="{{m}}">
+                                                            {{m}}
+                                                        </md-option>
+                                                    </md-select>
+                                                </div>
+                                            
+                                            </th> 
+                                            
+                                        </tr>
+                                    </thead>
+                                    <tbody md-body>
+                                        <tr md-row md-select="user" md-select-id="id" md-auto-select="false" 
+                                            ng-repeat="user in users | filter: filter.search | orderBy: query.order | limitTo: query.limit : (query.page -1) * query.limit">
+                                            <td md-cell>{{$index+1}}</td>
+                                            <td md-cell>{{user.firstName}}</td>
+                                            <td md-cell>{{user.lastName}}</td>
+                                            <td md-cell>{{user.email}}</td>
+                                            <td md-cell>{{user.measure}}</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </md-table-container>
+
+                            <md-table-pagination md-limit="query.limit" md-limit-options="110" md-page="query.page" md-total="{{count()}}" md-on-paginate="getUsers" md-page-select></md-table-pagination>
+                        </md-content>
+                    </md-card>
+
+                </md-tab>
+            </md-tabs>
+            
+            
+        </md-card-content>
+        
+    </md-card>
+    
+    
+</md-content>
+
+
+
+
+
+
+

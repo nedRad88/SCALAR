@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="en" ng-app="myApp">
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <!-- The above 3 meta tags *must* come first in the head; any other head content must come *after* these tags -->
+    <meta name="description" content="">
+    <meta name="author" content="">
+    <link rel="icon" href="static/content/images/favicon.ico">
+
+    <title>SCALAR</title>
+
+    <!-- OpenML -->
+
+    <link href="static/assets/css/expdb.css" rel="stylesheet">
+
+    <!-- Awesome fonts -->
+    
+    <link rel="stylesheet" type="text/css" href="static/assets/css/font-awesome.min.css">
+    
+    
+    <link rel="stylesheet" type="text/css" href="static/assets/css/mdPickers.min.css" >
+    <link rel="stylesheet" type="text/css" href="static/content/css/md-data-table.min.css" >
+    <link rel="stylesheet" type="text/css" href="static/content/css/style.css" >
+    <link rel="stylesheet" type="text/css" href="static/content/css/angular-material-paging.css" >
+    
+    <!-- Custom styles for this template 
+    <link href="static/assets/css/style.css" rel="stylesheet">-->
+    
+    
+
+    <!-- Bootstrap core CSS -->
+    <link  rel="stylesheet" type="text/css" href="static/assets/css/bootstrap.min.css" >
+    <link  rel="stylesheet" type="text/css" href="static/assets/css/bootstrap-datepicker.min.css" >
+    <link  rel="stylesheet" type="text/css" href="static/assets/css/angular-material-event-calendar.css" >
+   
+
+
+    <!-- Custom styles for this template 
+    <link href="static/assets/css/style.css" rel="stylesheet">-->
+    
+    
+    <link rel="stylesheet" href="http://ajax.googleapis.com/ajax/libs/angular_material/1.0.8/angular-material.min.css">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons"  rel="stylesheet">
+    <link rel="stylesheet" href="//cdn.materialdesignicons.com/1.5.54/css/materialdesignicons.min.css">
+    
+    
+    
+    
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,400,500,700,400italic">
+    <script src="https://use.fontawesome.com/d719ac9a3e.js"></script>
+
+    
+
+    
+</head>
+
+
+        
+
+<body layout="row" ng-controller="navBarController" ng-cloak style='padding="16px"'>
+
+<md-content  flex >
+
+    <md-toolbar  md-scroll-shrink class="md-primary main-toolbar" ng-show="auth.isAuth">
+        
+    
+        <div class="md-toolbar-tools" >
+            
+            <h2>
+                <span>{{path}}</span>
+            </h2>
+            
+            <span flex="5" ></span>
+            
+            <md-menu class="md-menu ng-scope">
+            
+                <div layout="row">
+                    <md-button class="md-button md-ink-ripple" type="button"  ng-click="goToPage('competitions')">
+                        Competitions
+                    </md-button>
+                    
+                    <md-button class="md-button md-ink-ripple" type="button"  ng-click="goToPage('datastreams')">
+                        Datastreams
+                    </md-button>
+                </div>
+                
+               
+                
+               
+
+                
+            </md-menu>
+        
+            <span flex></span>
+            
+
+            <md-menu class="md-menu ng-scope">
+            
+                <md-button class="md-icon-button md-button md-ink-ripple" type="button"  ng-click="$mdOpenMenu($event)">
+                    <md-icon class="md-secondary" md-font-set="material-icons" aria-label="menu">&#xE853;</md-icon>
+                    <div class="md-ripple-container"></div>
+                </md-button>
+                
+                <md-menu-content width="2">
+                    
+                    <md-menu-item ng-if="isInRole('ADMIN')">
+                        <md-button ng-click="switchMode(!isAdminMode)" aria-label="Admin">
+                            <md-icon md-font-set="material-icons" md-menu-align-target>&#xE8D3;</md-icon>
+                            <span>Change Admin</span>
+                        </md-button>
+                    </md-menu-item>
+
+                    <md-menu-item>
+                        <md-button ng-click="changePassword()" aria-label="Change Password">
+                            <md-icon md-font-set="material-icons" md-menu-align-target>lock</md-icon>
+                            <span>Change Password</span>
+                        </md-button>
+                    </md-menu-item>
+                    <md-divider></md-divider>
+                    <md-menu-item>
+                        <md-button ng-click="logout()" aria-label="Logout">
+                            <md-icon md-font-set="material-icons" md-menu-align-target>exit_to_app</md-icon>
+                            <span>Logout</span>
+                        </md-button>
+                    </md-menu-item>
+                </md-menu-content>
+
+                
+            </md-menu>
+            
+          
+
+        </div>
+    </md-toolbar>
+    <section flex style="margin-top : 20px;">
+    
+       
+        
+        <md-content class="main-container">
+          <div ng-view="" >
+
+
+          </div>
+        </md-content>
+    </section>
+</md-content>
+
+
+
+
+
+<!-- 3rd party libraries -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/1.12.0/jquery.min.js"></script>
+<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/js/bootstrap.min.js" integrity="sha384-0mSbJDEHialfmuBBQP6A4Qrprq5OVfW37PRR3j5ELqxss1yVqOtnepnHVP9aJ7xS" crossorigin="anonymous"></script>
+
+<!-- Angular Material requires Angular.js Libraries -->
+<script src="http://ajax.googleapis.com/ajax/libs/angularjs/1.5.3/angular.min.js"></script>
+<script src="http://ajax.googleapis.com/ajax/libs/angularjs/1.5.3/angular-animate.min.js"></script>
+<script src="http://ajax.googleapis.com/ajax/libs/angularjs/1.5.3/angular-aria.min.js"></script>
+<script src="http://ajax.googleapis.com/ajax/libs/angularjs/1.5.3/angular-messages.min.js"></script>
+<script src="//code.angularjs.org/1.5.3/angular-route.min.js"></script>
+<script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/socket.io/1.3.6/socket.io.min.js"></script>
+
+
+
+
+<!-- Library -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.0.2/Chart.js"></script>
+<script src="static/content/js/md-data-table.js"></script>
+<script src="http://ajax.googleapis.com/ajax/libs/angular_material/1.0.8/angular-material.min.js"></script>
+<script src="static/bower_components/angular-local-storage/dist/angular-local-storage.min.js"></script>
+<script src="static/bower_components/angular-material-paging/angular-material-paging.js"></script>
+<script src="https://cdn.jsdelivr.net/angular.chartjs/latest/angular-chart.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.14.1/moment.min.js"></script>
+<script src="static/bower_components/angular-random-string/src/angular-random-string.js"></script>
+<script src="static/bower_components/angular-material-event-calendar/angular-material-event-calendar.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/2.0.3/socket.io.js"></script>
+
+    
+<script src="https://cdnjs.cloudflare.com/ajax/libs/angular-sanitize/1.5.7/angular-sanitize.min.js"></script>
+<script src= "static/assets/js/mdPickers.js"></script>
+
+<!-- Load app main script -->
+<script src= "static/app/app.js"></script>
+
+
+
+<script src="static/app/services/dataService.js"></script>
+<script src="static/app/services/oAuthService.js"></script>
+<script src="static/app/services/accountsService.js"></script>
+<script src="static/app/services/competitionService.js"></script>
+<script src="static/app/services/datastreamService.js"></script>
+<script src="static/app/services/subscriptionService.js"></script>
+<script src="static/app/services/usersService.js"></script>
+<script src="static/app/services/evaluationService.js"></script>
+<script src="static/app/services/resultsService.js"></script>
+
+<!-- Load app services Interceptor -->
+<script src="static/app/services/authInterceptorService.js"></script>
+
+
+
+<!-- Load controllers    -->
+<script src="static/app/controllers/navBarController.js"></script>
+<script src="static/app/controllers/homeController.js"></script>
+<script src="static/app/controllers/signupController.js"></script>
+<script src="static/app/controllers/loginController.js"></script>
+<script src="static/app/controllers/accountsController.js"></script>
+<script src="static/app/controllers/competitionController.js"></script>
+<script src="static/app/controllers/datastreamController.js"></script>
+<script src="static/app/controllers/pageController.js"></script>
+<script src="static/app/controllers/errorController.js"></script>
+
+
+ 
+<!--Directives   -->
+
+<script src="static/app/directives/comparable-chart.js"></script>
+
+
+
+
+
+<!-- Bootstrap core JavaScript
+================================================== -->
+<!-- Placed at the end of the document so the pages load faster -->
+
+</body>
+</html>
