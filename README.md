@@ -56,3 +56,7 @@ Open source Docker containers were used:
 * [phpMyAdmin](https://hub.docker.com/r/phpmyadmin/phpmyadmin)
 * [Kafka by Wurstmeister](https://hub.docker.com/r/wurstmeister/kafka)
 * [Zookeeper by Wurstmeister](https://hub.docker.com/r/wurstmeister/zookeeper)
+
+## References
+
+* [Boulegane, Dihia, et al. "Real-Time Machine Learning Competition on Data Streams at the IEEE Big Data 2019." 2019 IEEE International Conference on Big Data (Big Data). IEEE, 2019.](https://ieeexplore.ieee.org/abstract/document/9006357?casa_token=f0mJeR8-WfYAAAAA:yEt_Mix9dumrPpo64uPBbI0XI4Kvfim4Pkg5xNVVzXqK4AGToX0XcJPKgETkE1hs86Pcc0u5xYc)
