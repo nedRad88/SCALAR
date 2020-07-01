@@ -1,19 +1,30 @@
 from pyspark.sql.functions import *
 from pyspark.sql.types import *
 from pyspark.sql import functions as F
-#from pyspark.sql import SparkSession
-
-# bin/pyspark --packages org.apache.spark:spark-sql-kafka-0-10_2.11:2.4.0 # in container
-# os.environ['PYSPARK_SUBMIT_ARGS'] = '--packages org.apache.spark:spark-sql-kafka-0-10_2.11:2.4.0 pyspark-shell'
-#spark_context = SparkSession.builder.appName("Kafka_structured_streaming").getOrCreate()
 
 
-def evaluate(spark_context, broker, competition, competition_config, window_duration, prediction_window_duration,
+def evaluate(spark_context, kafka_broker, competition, competition_config, window_duration, prediction_window_duration,
              train_schema, prediction_schema, columns_to_sum, checkpoints, targets):
+    """
+    The function for online evaluation of the incremental predicting models.
+
+    :param spark_context:
+    :param kafka_broker: Address of kafka server
+    :param competition: Competition object
+    :param competition_config: Competition configuration dictionary
+    :param window_duration: Time (in seconds) to keep the test batches in the memory when performing a join
+    :param prediction_window_duration: Time (in seconds) to keep the predictions in the memory when performing a join
+    :param train_schema: Column names and types in the training batch
+    :param prediction_schema: Column names and types in the prediction batch
+    :param columns_to_sum: Columns to aggregate for evaluation
+    :param checkpoints: Checkpoint locations for Spark jobs
+    :param targets: target column names
+    :return: Writes to MongoDB: instances of the stream, predictions by users and evaluation measures for each user
+    """
     golden = spark_context\
         .readStream\
         .format("kafka")\
-        .option("kafka.bootstrap.servers", broker)\
+        .option("kafka.bootstrap.servers", kafka_broker)\
         .option("subscribe", competition.name.lower().replace(" ", "") + 'spark_train')\
         .option("kafkaConsumer.pollTimeoutMs", 5000)\
         .option("failOnDataLoss", "false")\
@@ -32,7 +43,7 @@ def evaluate(spark_context, broker, competition, competition_config, window_dura
     prediction_stream = spark_context\
         .readStream\
         .format("kafka")\
-        .option("kafka.bootstrap.servers", broker)\
+        .option("kafka.bootstrap.servers", kafka_broker)\
         .option("subscribe", competition.name.lower().replace(" ", "") + 'predictions')\
         .option("kafkaConsumer.pollTimeoutMs", 1000) \
         .option("failOnDataLoss", "false") \
@@ -86,7 +97,7 @@ def evaluate(spark_context, broker, competition, competition_config, window_dura
     # exprs = {x: "sum" for x in columns_to_sum}
     agg_exp = [F.expr('sum(`{0}`)'.format(col)) for col in columns_to_sum] + [F.expr('max(rowID) as max_rowID')]
     # Grouping by user_id and aggregation
-    results = join_result\
+    agg_results = join_result\
         .drop("timestamp_deadline", "timestamp_submitted")\
         .groupBy("user_id")\
         .agg(*agg_exp)\
@@ -94,31 +105,31 @@ def evaluate(spark_context, broker, competition, competition_config, window_dura
         .withColumn("total_number_of_messages", F.col("max_rowID") - F.lit(competition.initial_batch_size))\
         .drop("max_rowID")
 
-    results = results\
-        .withColumn("total_number_of_messages", when(results["total_number_of_messages"].isNotNull(), results["total_number_of_messages"]).otherwise(results["sum(total_num)"]))
+    agg_results = agg_results\
+        .withColumn("total_number_of_messages", when(agg_results["total_number_of_messages"].isNotNull(), agg_results["total_number_of_messages"]).otherwise(agg_results["sum(total_num)"]))
 
     # Calculating batch measures
 
     for target in targets:
         for measure in competition_config[target]:
             if measure == "MAPE":
-                results_final = results\
-                    .withColumn("MAPE" + "_" + target, 100 * ((results["sum(MAPE" + "_" + target + ")"] + (results["total_number_of_messages"] - results["sum(total_num)"])) / results["total_number_of_messages"])) \
+                batch_measures = agg_results\
+                    .withColumn("MAPE" + "_" + target, 100 * ((agg_results["sum(MAPE" + "_" + target + ")"] + (agg_results["total_number_of_messages"] - agg_results["sum(total_num)"])) / agg_results["total_number_of_messages"])) \
                     .drop("sum(MAPE" + "_" + target + ")")
 
             if measure == "MSE":
-                results_final = results\
-                    .withColumn("MSE" + "_" + target, results["sum(MSE" + "_" + target + ")"] / results["total_number_of_messages"] + (results["total_number_of_messages"] - results["sum(num_submissions)"])) \
+                batch_measures = agg_results\
+                    .withColumn("MSE" + "_" + target, agg_results["sum(MSE" + "_" + target + ")"] / agg_results["total_number_of_messages"] + (agg_results["total_number_of_messages"] - agg_results["sum(num_submissions)"])) \
                     .drop("sum(MSE" + "_" + target + ")")
 
             if measure == "MAE":
-                results_final = results\
-                    .withColumn("MAE" + "_" + target, results["sum(MAE" + "_" + target + ")"] / results["total_number_of_messages"] + (results["total_number_of_messages"] - results["sum(num_submissions)"])) \
+                batch_measures = agg_results\
+                    .withColumn("MAE" + "_" + target, agg_results["sum(MAE" + "_" + target + ")"] / agg_results["total_number_of_messages"] + (agg_results["total_number_of_messages"] - agg_results["sum(num_submissions)"])) \
                     .drop("sum(MAE" + "_" + target + ")")
 
             if measure == "ACC":
-                results_final = results\
-                    .withColumn("ACC" + "_" + target, results["sum(ACC" + "_" + target + ")"] / results["total_number_of_messages"]) \
+                batch_measures = agg_results\
+                    .withColumn("ACC" + "_" + target, agg_results["sum(ACC" + "_" + target + ")"] / agg_results["total_number_of_messages"]) \
                     .drop("sum(ACC" + "_" + target + ")")
 
     pred = prediction_stream \
@@ -127,7 +138,7 @@ def evaluate(spark_context, broker, competition, competition_config, window_dura
         .queryName(competition.name.lower().replace(" ", "") + 'prediction_stream') \
         .trigger(processingTime='30 seconds') \
         .format("kafka") \
-        .option("kafka.bootstrap.servers", broker) \
+        .option("kafka.bootstrap.servers", kafka_broker) \
         .option("topic", competition.name.lower().replace(" ", "") + 'spark_predictions') \
         .option("checkpointLocation", checkpoints[0]) \
         .outputMode("append") \
@@ -138,14 +149,14 @@ def evaluate(spark_context, broker, competition, competition_config, window_dura
         .writeStream \
         .queryName(competition.name.lower().replace(" ", "") + 'training_stream') \
         .format("kafka") \
-        .option("kafka.bootstrap.servers", broker) \
+        .option("kafka.bootstrap.servers", kafka_broker) \
         .option("topic", competition.name.lower().replace(" ", "") + 'spark_golden') \
         .option("checkpointLocation", checkpoints[1]) \
         .outputMode("append") \
         .start()
 
-    output_stream = results_final \
-        .withColumn("latency", results_final["sum(latency)"] / (results_final["sum(total_num)"])) \
+    output_stream = batch_measures \
+        .withColumn("latency", batch_measures["sum(latency)"] / (batch_measures["sum(total_num)"])) \
         .withColumnRenamed("sum(penalized)", "penalized") \
         .withColumnRenamed("sum(num_submissions)", "num_submissions") \
         .drop("sum(latency)", "sum(total_num)") \
@@ -154,7 +165,7 @@ def evaluate(spark_context, broker, competition, competition_config, window_dura
         .queryName(competition.name.lower().replace(" ", "") + 'measure_stream') \
         .trigger(processingTime='30 seconds') \
         .format("kafka") \
-        .option("kafka.bootstrap.servers", broker) \
+        .option("kafka.bootstrap.servers", kafka_broker) \
         .option("topic", competition.name.lower().replace(" ", "") + 'spark_measures') \
         .option("checkpointLocation", checkpoints[2]) \
         .outputMode("update") \

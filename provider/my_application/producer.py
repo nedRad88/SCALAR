@@ -1,4 +1,3 @@
-import threading
 import datetime
 import time
 import pause
@@ -6,7 +5,7 @@ from confluent_kafka import Producer
 import csv
 from apscheduler.schedulers.background import BackgroundScheduler
 from apscheduler.jobstores.mongodb import MongoDBJobStore
-from repositories.CompetitionRepository import CompetitionRepository, Competition, Datastream, DatastreamRepository
+from repositories.CompetitionRepository import CompetitionRepository, DatastreamRepository
 from repositories.KafkaToMongo import ConsumerToMongo
 from repositories.BaselineToMongo import BaselineToMongo
 import sparkEvaluator
@@ -22,22 +21,25 @@ from repository import MongoRepository
 from multiprocessing import Process
 from pyspark.sql.types import *
 import logging
-
 logging.basicConfig(level='DEBUG')
-# os.environ['PYSPARK_SUBMIT_ARGS'] = '--packages org.apache.spark:spark-sql-kafka-0-10_2.11:2.4.0 pyspark-shell'
+
 spark_master = "spark://" + os.environ['SPARK_HOST'] + ":7077"
-
-
 _ONE_DAY_IN_SECONDS = 60 * 60 * 24
 
+"""
+Read the environment variables or the config file to define the services:
+SQL_HOST: The address of MySQL server
+SQL_DBNAME: The name of the MySQL Database
+KAFKA_HOST: The address of Kafka Server
+MONGO_HOST: The address of MongoDB server
+SPARK_DRIVER_HOST: The address of Spark Driver
+"""
 with open('config.json') as json_data_file:
     config = json.load(json_data_file)
-
 try:
     _SQL_HOST = os.environ['SQL_HOST']
 except Exception:
     _SQL_HOST = config['SQL_HOST']
-
 try:
     _SQL_DBNAME = os.environ['SQL_DBNAME']
 except Exception:
@@ -45,13 +47,11 @@ except Exception:
 try:
     SERVER_HOST = os.environ['KAFKA_HOST']
 except Exception:
-    SERVER_HOST = config['KAFKA_HOST']  # 172.22.0.2:9092
-
+    SERVER_HOST = config['KAFKA_HOST']
 try:
     _MONGO_HOST = os.environ['MONGO_HOST']
 except Exception:
     _MONGO_HOST = config['MONGO_HOST']
-
 try:
     SPARK_DRIVER_HOST = os.environ['SPARK_DRIVER_HOST']
 except Exception:
@@ -66,9 +66,18 @@ _COMPETITION_GENERATED_CODE = config['COMPETITION_GENERATED_CODE']
 
 
 def _create_competition(competition, competition_config):
+    """
+    Starts the processes needed to run the competition.
+    Reads the .csv file, initiates Kafka to start generating the stream.
+    Starts the Spark online evaluation and writing of the results in MongoDB.
+
+    :param competition: The competition object
+    :param competition_config: Competition configuration dictionary
+    :return: None
+    """
     items, predictions, initial_batch, classes = read_csv_file(competition, competition_config)
     processes = []
-    producer_process = Process(target=_create_competition_thread, args=(competition, items, predictions, initial_batch))
+    producer_process = Process(target=_start_competition, args=(competition, items, predictions, initial_batch))
     producer_process.start()
     processes.append(producer_process)
     try:
@@ -83,8 +92,7 @@ def _create_competition(competition, competition_config):
     time.sleep(2)
     spark_process = Process(target=_create_evaluation_spark, args=(SERVER_HOST, competition, competition_config))
     spark_process.start()
-    # processes.append(spark_process)
-    mongo_sink_process = Process(target=_create_mongo_sink_evaluation, args=(SERVER_HOST, competition, competition_config))
+    mongo_sink_process = Process(target=_create_spark2mongo_sink, args=(SERVER_HOST, competition, competition_config))
     mongo_sink_process.start()
     processes.append(mongo_sink_process)
 
@@ -120,35 +128,24 @@ def read_csv_file(competition, competition_config, data_format='csv'):
                 data = list(datareader)
                 nb_rows = len(data)
                 header = data[0]
-                rowID = 1
+                row_id = 1
                 # Process initial batch
                 for row in range(1, initial_batch_size + 1):
-                    # If the row is not empty ???
                     if not all(item == "" for item in data[row]):
-
-                        values = {'tag': 'INIT', 'rowID': rowID}
-                        rowID = rowID + 1
+                        values = {'tag': 'INIT', 'rowID': row_id}
+                        row_id = row_id + 1
                         for i in range(0, len(data[row])):
                             field = header[i].replace(" ", "")
                             values[field] = data[row][i]
-
                         initial_batch.append(values)
                 # After the initial batch
                 for row in range(initial_batch_size + 1, nb_rows - 1):
-                    # If row is not empty ???
                     if not all(item == "" for item in data[row]):
-                        # Create a dictionaries: values = {'rowID': rowID}
-                        # prediction = {'rowID': rowID}
                         try:
-                            values = {}
-                            values['rowID'] = rowID
-                            prediction = {}
-                            prediction['rowID'] = rowID
-                            rowID = rowID + 1
-                            # print("Competition config: ", competition_config)
-                            # For every field in row
+                            values = {'rowID': row_id}
+                            prediction = {'rowID': row_id}
+                            row_id = row_id + 1
                             for i in range(0, len(data[row])):
-                                # keys in competition_config  ??? targets?
                                 for key in competition_config.keys():
                                     x = header[i].lower().replace(' ', '')  # Field name
                                     y = str(key.lower().replace(' ', ''))  # Key
@@ -162,11 +159,9 @@ def read_csv_file(competition, competition_config, data_format='csv'):
                                     # If field name != target = > values
                                     else:
                                         values[field] = data[row][i]
-
                             # add values to items list and prediction to predictions list
                             items.append(values)
                             predictions.append(prediction)
-
                         except Exception as e:
                             print('error')
 
@@ -177,6 +172,7 @@ def read_csv_file(competition, competition_config, data_format='csv'):
 
 
 def _create_evaluation_spark(kafka_server, competition, competition_config):
+    # Create Spark Session for online evaluation job
     spark_context = SparkSession \
         .builder \
         .appName("Kafka_structured_streaming") \
@@ -241,7 +237,6 @@ def _create_evaluation_spark(kafka_server, competition, competition_config):
                 if target not in prediction_schema.fieldNames():
                     prediction_schema.add("prediction_" + target, StringType(), False)
 
-    # return train_schema, prediction_schema, targets  # , test_schema, init_schema
     # Time window duration for watermarking
     window_duration = str(competition.predictions_time_interval) + " " + "seconds"
     prediction_window_duration = str(12 * competition.predictions_time_interval) + " " + "seconds"
@@ -275,7 +270,7 @@ def _create_evaluation_spark(kafka_server, competition, competition_config):
                             "/tmp/" + competition.name.lower().replace(" ", "") + "training_checkpoint",
                             "/tmp/" + competition.name.lower().replace(" ", "") + "measure_checkpoint"]
 
-    sparkEvaluator.evaluate(spark_context=spark_context, broker=kafka_server, competition=competition,
+    sparkEvaluator.evaluate(spark_context=spark_context, kafka_broker=kafka_server, competition=competition,
                             competition_config=competition_config, window_duration=window_duration,
                             prediction_window_duration=prediction_window_duration, train_schema=train_schema,
                             prediction_schema=prediction_schema, columns_to_sum=columns_to_sum,
@@ -284,7 +279,7 @@ def _create_evaluation_spark(kafka_server, competition, competition_config):
     spark_context.stop()
 
 
-def _create_mongo_sink_evaluation(kafka_server, competition, competition_config):
+def _create_spark2mongo_sink(kafka_server, competition, competition_config):
     spark_to_mongo = SparkToMongo(kafka_server, competition.name.lower().replace(" ", "") + 'spark_predictions',
                                   competition.name.lower().replace(" ", "") + 'spark_golden',
                                   competition.name.lower().replace(" ", "") + 'spark_measures', competition,
@@ -292,27 +287,19 @@ def _create_mongo_sink_evaluation(kafka_server, competition, competition_config)
     spark_to_mongo.run()
 
 
-"""
-def _create_evaluation_engine(competition_id, config, evaluation_time_interval):
-    threading.Thread(target=_create_evaluation_job, args=(competition_id, config, evaluation_time_interval)).start()
-"""
-
-
-def _create_competition_thread(competition, items, predictions, initial_batch):
-    # print(competition, datetime.datetime.now())
-    print("usao u create competition tred")
-    producer = CompetitionProducer(SERVER_HOST)  # 172.22.0.2:9092
-
+def _start_competition(competition, items, predictions, initial_batch):
+    '''Starts Kafka producer to publish the stream.'''
+    producer = CompetitionProducer(SERVER_HOST)
     producer.create_competition(competition, items, predictions, initial_batch)
-    # producer.producer.flush()
 
 
 def _create_consumer(competition, competition_config):
+    ''' Starts the consumer for streams of predictions sent by users.'''
     logging.debug("Creating consumer")
     options = (('grpc.so_reuseport', 1),)
     grpc_server = StreamServer('0.0.0.0:50051', options=options)
     try:
-        streamer = DataStreamerServicer(SERVER_HOST, competition, competition_config)  # 172.22.0.2:9092
+        streamer = DataStreamerServicer(SERVER_HOST, competition, competition_config)
         grpc_server.add_server(streamer, competition)
         grpc_server.start_server()
         grpc_server._wait_forever()
@@ -321,11 +308,13 @@ def _create_consumer(competition, competition_config):
 
 
 def _create_mongo_sink_consumer(topic, competition):
+    '''Starts writing the data published in Kafka to MongoDB.'''
     mongo_writer = ConsumerToMongo(SERVER_HOST, topic, competition)
     mongo_writer.write()
 
 
 def _create_baseline(competition, competition_config):
+    '''Starts the Baseline prediction model.'''
     topic = competition.name.lower().replace(" ", "")
     baseline = BaselineToMongo(SERVER_HOST, topic, competition, competition_config)
     baseline.write()
@@ -352,7 +341,6 @@ class CompetitionProducer:
 
     # message must be in byte format
     def send(self, topic, message):
-
         self.producer.produce(topic, message)  # Sending messages to a certain topic
         self.producer.poll(timeout=0)
 
@@ -373,16 +361,12 @@ class CompetitionProducer:
         test_groups = list(self.chunker(items, batch_size))
         train_groups = list(self.chunker(predictions, batch_size))
 
-
         i = -1
-
 
         # Accessing each group in the list test_groups
         for group in test_groups:
-
-                # In parallel accessing the predictions
-                # Adding tag, deadline and released at to every item in train group / prediction
-
+            # In parallel accessing the predictions
+            # Adding tag, deadline and released at to every item in train group / prediction
             released_at = datetime.datetime.now()
             # for item in test group add tag, deadline and released
             for item in group:
@@ -398,10 +382,8 @@ class CompetitionProducer:
                     print(e)
 
             i = i + 1
-
             train_group = train_groups[i]
             for item in train_group:
-                # deadline = deadline + datetime.timedelta(seconds=int(predictions_time_interval) * i+1)
                 deadline = released_at + datetime.timedelta(seconds=int(predictions_time_interval))
                 item['Deadline'] = deadline.strftime("%Y-%m-%d %H:%M:%S")
                 item['Released'] = released_at.strftime("%Y-%m-%d %H:%M:%S")
@@ -411,19 +393,14 @@ class CompetitionProducer:
                 except Exception as e:
                     print(e)
 
-
             time.sleep(time_interval)
-
 
             for item in train_group:
                 item['tag'] = 'TRAIN'
-                # deadline = deadline + datetime.timedelta(seconds=int(predictions_time_interval) * i+1)
                 item['Deadline'] = released_at + datetime.timedelta(seconds=int(predictions_time_interval))
                 item['Released'] = released_at
-                # item
                 try:
                     self.send(topic, orjson.dumps(item, default=json_util.default))
-                    # print("Train item:", item)
                 except Exception as e:
                     print(e)
 
@@ -435,13 +412,11 @@ class CompetitionProducer:
     def chunker(self, seq, size):
         return (seq[pos:pos + size] for pos in range(0, len(seq), size))
 
-    # Check if the row is empty ??
     def is_not_empty(self, row):  # is_empty
         return all(item == "" for item in row)
 
-    # Creating competition, competition_config ???
+    # Creating competition, competition_config
     def create_competition(self, competition, items, predictions, initial_batch):
-        print("Came here, create competition: ", competition.name)
         self.main(
             topic=competition.name.lower().replace(" ", ""),
             initial_training_time=competition.initial_training_time,
@@ -481,7 +456,6 @@ class Scheduler:
         job_id_to_remove = publish_job.id
 
     def start(self):
-        # print("Scheduler started!")
         self.scheduler.start()
 
     def _stop_competition(self, job_id, end_date):

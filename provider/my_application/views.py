@@ -1,49 +1,40 @@
 from __future__ import print_function
 from producer import Scheduler
 from datetime import datetime
-from flask import render_template, Flask, Response
+from flask import render_template, Response, Flask, stream_with_context, request, jsonify, send_file
 from auth import decode_auth_token, get_auth_token
 from subscription_auth import get_subscription_token
 from functools import wraps
 from flask_mail import Mail, Message
 from gevent.pywsgi import WSGIServer
-from flask import request
 import json
 import os
 import os.path
 from werkzeug.utils import secure_filename
 from grpc_tools import protoc
-from flask import jsonify
 from repositories.CompetitionRepository import CompetitionRepository, Competition, Datastream, DatastreamRepository, \
     User, UserRepository, Subscription, SubscriptionRepository
 from repository import MongoRepository
-from flask import send_file
 import logging
-
-logging.basicConfig(level='DEBUG')
 from itsdangerous import URLSafeTimedSerializer
 import csv
-from io import StringIO, BytesIO
-from flask import Flask, stream_with_context
+from io import StringIO
 from werkzeug.datastructures import Headers
 from hashids import Hashids
 import eventlet
-
 eventlet.monkey_patch(time=True)
-import time
-
-time.sleep.__module__
+logging.basicConfig(level='DEBUG')
+# time.sleep.__module__
 
 with open('config.json') as json_data_file:
     config = json.load(json_data_file)
 
+# Defining the mail client
 app = Flask(__name__)
-
 app.config['MAIL_SERVER'] = config['MAIL_SERVER']
 app.config['MAIL_PORT'] = config['MAIL_PORT']
 app.config['MAIL_USERNAME'] = config['MAIL_USERNAME']
 app.config['MAIL_PASSWORD'] = config['MAIL_PASSWORD']
-
 MAIL_USE_TSL = (config['MAIL_USE_TLS'].lower() == 'true')
 MAIL_USE_SSL = (config['MAIL_USE_SSL'].lower() == 'true')
 app.config['MAIL_USE_TLS'] = MAIL_USE_TSL
@@ -84,7 +75,6 @@ def code_generator(competition_id):
 
 
 jinja_options = app.jinja_options.copy()
-
 jinja_options.update(dict(
     block_start_string='<%',
     block_end_string='%>',
@@ -163,6 +153,7 @@ def index():
 ############                      Auth Server                             ############
 ######################################################################################
 
+
 # TODO: add checking on email confirmation and add decorator
 @app.route('/auth/login', methods=['POST'])
 def login():
@@ -193,7 +184,6 @@ def confirm_email(token):
     try:
         email = confirm_token(token)
     except Exception as e:
-        # flash('The confirmation link is invalid or has expired.', 'danger')
         logging.debug("Token not valid")
 
     user = _USER_REPO.get_user_by_email(email)
@@ -202,7 +192,6 @@ def confirm_email(token):
     else:
         if user.confirmed:
             logging.debug("already confirmed")
-            # flash('Account already confirmed. Please login.', 'success')
         else:
             _USER_REPO.confirm_user(user)
             print('Account confirmed')
@@ -215,8 +204,6 @@ def register():
 
     data = json.loads(request.data.decode('utf-8'))
     web = config["WEB_ADDRESS"]
-
-
     first_name = data['firstName']
     last_name = data['lastName']
     email = data['email']
@@ -275,7 +262,7 @@ def competitions():
         return jsonify(competitions)
 
     if request.method == 'POST':
-
+        # Adding a competition
         data = dict(request.form)
 
         data = data['competition']
@@ -308,7 +295,6 @@ def competitions():
         if data_file and allowed_file(file_name):
             # Make the filename safe, remove unsupported chars
             extension = get_file_extension(file_name)
-
             filename = secure_filename(str(name) + str(extension))
             # Move the file form the temporal folder to
             # the upload folder we setup
@@ -342,7 +328,6 @@ def competitions():
                                   time_interval=time_interval, target_class=target_class, start_date=start_date,
                                   file_path=file_name, predictions_time_interval=predictions_time_interval,
                                   end_date=end_date, description=description, code=code)
-        # print("Created competition: ******")
 
         _COMPETITION_REPO.insert_one(competition)
         code = code_generator(competition.competition_id)
@@ -352,7 +337,6 @@ def competitions():
         _MONGO_REPO.insert_document('evaluation_measures', 'evaluation_measures', evaluation_measures)
 
         _SCHEDULER.schedule_competition(competition, competition_config)
-        # print("***********Competition scheduled!**********")
 
         return json.dumps({'success': True}), 200, {'ContentType': 'application/json'}
 
@@ -439,7 +423,6 @@ def subscriptions():
             _SUBSCRIPTION_REPO.insert_one(subscription)
 
             user_secret_key = get_subscription_token(competition.competition_id, data['user'])
-
     except Exception as e:
         print(str(e))
 
@@ -563,7 +546,7 @@ def get_competition_golden_standard(competition_id):
 
 
 # These are the extension that we are accepting to be uploaded
-app.config['ALLOWED_EXTENSIONS'] = set(['csv', 'xls', 'proto'])
+app.config['ALLOWED_EXTENSIONS'] = {'csv', 'xls', 'proto'}
 
 
 # For a given file, return whether it's an allowed type or not

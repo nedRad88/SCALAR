@@ -9,7 +9,7 @@
       <sourceFolder url="file://$MODULE_DIR$/my_application/repositories" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/my_application/Multiflow" isTestSource="false" />
     </content>
-    <orderEntry type="jdk" jdkName="Python 3.6" jdkType="Python SDK" />
+    <orderEntry type="jdk" jdkName="Python 3.7 (python372)" jdkType="Python SDK" />
     <orderEntry type="sourceFolder" forTests="false" />
     <orderEntry type="library" name="R Skeletons" level="application" />
     <orderEntry type="library" name="R User Library" level="project" />
@@ -23,7 +23,6 @@
     </option>
   </component>
   <component name="TestRunnerService">
-    <option name="projectConfiguration" value="pytest" />
     <option name="PROJECT_TEST_RUNNER" value="pytest" />
   </component>
 </module>

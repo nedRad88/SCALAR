@@ -1,4 +1,3 @@
-import pymongo
 import sys
 from pymongo import MongoClient
 from datetime import datetime, timedelta

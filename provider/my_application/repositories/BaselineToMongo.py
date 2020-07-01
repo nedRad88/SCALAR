@@ -5,7 +5,7 @@ import operator
 import os
 from confluent_kafka import Consumer, Producer
 
-with open('config.json') as json_data_file:
+with open('./config.json') as json_data_file:
     config = json.load(json_data_file)
 
 try:

@@ -4,13 +4,11 @@ from repository import MongoRepository
 from confluent_kafka import Consumer
 import json
 import orjson
-
-
 import os
+
 
 with open('config.json') as json_data_file:
     config = json.load(json_data_file)
-
 try:
     _MONGO_HOST = os.environ['MONGO_HOST']
 except Exception:
@@ -33,7 +31,6 @@ class SparkToMongo:
         self.db_data = self.mongo_repository.client['data']
 
     def process_measures(self, mess, previous_batch, now):
-
         db = self.mongo_repository.client['evaluation_measures']
         measures_coll = db['measures']
         message = orjson.loads(mess.value())
@@ -54,7 +51,6 @@ class SparkToMongo:
                               'total_number_of_messages']
 
             for key, value in message.items():
-
                 if key not in fields_to_skip:
                     measures = {}
                     batch_measures = {}
@@ -63,11 +59,9 @@ class SparkToMongo:
                     time_series_instance['batch_measures'][new_fields[1]] = batch_measures
                     time_series_instance['measures'][new_fields[1]][new_fields[0]] = message[key]
                     time_series_instance['batch_measures'][new_fields[1]][new_fields[0]] = message[key]
-
             measures_coll.insert_one(time_series_instance)
         except Exception as e:
             print(e)
-
         return previous_batch, now
 
     def process_predictions(self, mess):
