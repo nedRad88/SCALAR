@@ -22,9 +22,9 @@ Also, Docker compose should be installed:
 
 Running is done using Docker-compose.
 
-Download the code locally and then adjust the [config.json](my_application/config.json) file. More details in [config-ReadMe.txt](provider/config-ReadMe.txt).
+Download the code locally and then adjust the [config.json](my_application/config.json) and [docker-compose.yml](./docker-compose.yml) files. More details in [config-ReadMe.txt](provider/config-ReadMe.txt) and in [docker-compose-ReadMe.txt](./docker-compose-ReadMe.txt).
 
-Once the [config.json](my_application/config.json) is adjusted, the platform can be run by:
+Once the [config.json](my_application/config.json) and [docker-compose.yml](./docker-compose.yml) have been set up, the platform can be run by:
 
 ```
 docker-compose up
