@@ -1,3 +1,19 @@
+"""
+Copyright 2020 Nedeljko Radulovic, Dihia Boulegane, Albert Bifet
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+"""
+
 import datetime
 import time
 import pause
@@ -56,6 +72,14 @@ try:
     SPARK_DRIVER_HOST = os.environ['SPARK_DRIVER_HOST']
 except Exception:
     SPARK_DRIVER_HOST = config['SPARK_DRIVER_HOST']
+try:
+    SPARK_DRIVER_PORT = os.environ['SPARK_DRIVER_PORT']
+except Exception:
+    SPARK_DRIVER_PORT = config['SPARK_DRIVER_PORT']
+try:
+    SPARK_BLOCKMANAGER_PORT = os.environ['SPARK_BLOCKMANAGER_PORT']
+except Exception:
+    SPARK_BLOCKMANAGER_PORT = config['SPARK_BLOCKMANAGER_PORT']
 
 _UPLOAD_REPO = config['UPLOAD_REPO']
 _STREAM_REPO = config['STREAM_DATA_FILE']
@@ -178,9 +202,9 @@ def _create_evaluation_spark(kafka_server, competition, competition_config):
         .appName("Kafka_structured_streaming") \
         .master(spark_master) \
         .config('spark.jars.packages', 'org.apache.spark:spark-sql-kafka-0-10_2.11:2.4.0') \
-        .config('spark.driver.host', os.environ['SPARK_DRIVER_HOST']) \
-        .config('spark.driver.port', os.environ['SPARK_DRIVER_PORT']) \
-        .config('spark.blockManager.port', os.environ['SPARK_BLOCKMANAGER_PORT']) \
+        .config('spark.driver.host', SPARK_DRIVER_HOST) \
+        .config('spark.driver.port', SPARK_DRIVER_PORT) \
+        .config('spark.blockManager.port', SPARK_BLOCKMANAGER_PORT) \
         .config('spark.executor.memory', '2g') \
         .config('spark.network.timeout', 800) \
         .config('spark.cleaner.referenceTracking.cleanCheckpoints', "true") \
