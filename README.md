@@ -35,7 +35,7 @@ When all services are up, web application will be available on [localhost:80](ht
 
 Register to the platform and confirm your account following the link sent in the registration e-mail.
 
-To register as an ADMIN user, to be able to create the competition, you will have to change your User type in SQL database.
+To register as an ADMIN user, to be able to create the competition, you will have to change your User type ADMIN in MySQL database.
 
 To get to know around the platform use the tutorial provided in [Starter Pack](https://bigmine.github.io/real-time-ML-competition/Starter_pack.zip).
 
