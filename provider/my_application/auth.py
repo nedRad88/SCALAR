@@ -40,7 +40,6 @@ _USER_REPO = UserRepository(_SQL_HOST, _SQL_DBNAME)
 
 def get_auth_token(user):
     print(user)
-
     data_base_user = _USER_REPO.get_user_by_email(user['id'])
     print(data_base_user)
 

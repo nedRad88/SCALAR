@@ -24,7 +24,8 @@ config.json ReadMe file
 
     "SERVER_HOST" : address and port of kafka server (e.g. if Kafka server is Docker container named kafka then host is kafka:9092),
 
-    "SQL_HOST" : address of mysql server (e.g. if MySQL server is Docker container named sql_db then the host is: mysql+pymysql://mysql:mysql@sql_db/),
+    "SQL_HOST" : connection string to MySQL server 
+    (e.g. if MySQL server is Docker container named sql_db and user name is mysql and USER password is mysql, then the host is: mysql+pymysql://mysql:mysql@sql_db/),
 
     "SQL_DBNAME" : SQL database name,
 

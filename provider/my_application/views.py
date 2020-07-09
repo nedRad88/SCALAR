@@ -16,6 +16,8 @@ limitations under the License.
 
 
 from __future__ import print_function
+import time
+time.sleep(10)
 from producer import Scheduler
 from datetime import datetime
 from flask import render_template, Response, Flask, stream_with_context, request, jsonify, send_file
@@ -35,6 +37,7 @@ from repository import MongoRepository
 import logging
 from itsdangerous import URLSafeTimedSerializer
 import csv
+
 from io import StringIO
 from werkzeug.datastructures import Headers
 from hashids import Hashids
@@ -60,6 +63,7 @@ app.config['SECRET_KEY'] = config['SECRET_KEY']
 app.config['SECURITY_PASSWORD_SALT'] = config['SECURITY_PASSWORD_SALT']
 mail = Mail(app)
 app.debug = True
+
 
 _SCHEDULER = Scheduler()
 _SCHEDULER.start()
@@ -204,6 +208,7 @@ def confirm_email(token):
         logging.debug("Token not valid")
 
     user = _USER_REPO.get_user_by_email(email)
+    _USER_REPO.session.commit()
     if user is None:
         print("User not registered.")
     else:
@@ -229,6 +234,7 @@ def register():
     user = User(user_id=None, first_name=first_name, last_name=last_name, email=email, password=password, role='USER',
                 confirmed=confirmed, confirmed_on=None)
     _USER_REPO.insert_one(user)
+    _USER_REPO.session.commit()
 
     token = generate_confirmation_token(email)
 
