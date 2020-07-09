@@ -22,9 +22,23 @@ Also, Docker compose should be installed:
 
 Running is done using Docker-compose.
 
-Download the code locally and then adjust the [config.json](my_application/config.json) and [docker-compose.yml](./docker-compose.yml) files. More details in [config-ReadMe.txt](provider/config-ReadMe.txt) and in [docker-compose-ReadMe.txt](./docker-compose-ReadMe.txt).
+ - Download the code locally and then adjust the [config.json](my_application/config.json) and [docker-compose.yml](./docker-compose.yml) files. More details in [config-ReadMe.txt](provider/config-ReadMe.txt) and in [docker-compose-ReadMe.txt](./docker-compose-ReadMe.txt).
 
-Once the [config.json](my_application/config.json) and [docker-compose.yml](./docker-compose.yml) have been set up, the platform can be run by:
+ - Set up an email account which will be used to send the registration confirmation message and authentication token.
+For that, you will need to set up your email account to allow the access of less secure apps.
+For a quick start, update only email information in [config.json](my_application/config.json).
+
+ - In [docker-compose.yml](./docker-compose.yml) update only the local paths to mount a persistent volumes, following the [docker-compose-ReadMe.txt](./docker-compose-ReadMe.txt).
+
+ - To run the SCALAR application using Docker-compose, first create the Docker bridge network on your local machine:
+```
+docker network create --driver=bridge --subnet=172.22.0.0/16 --ip-range=172.22.0.0/24 --gateway=172.22.0.1 provider-network
+
+```
+You can choose the IP ranges according to your preferences.
+
+ - Once the [config.json](my_application/config.json) and [docker-compose.yml](./docker-compose.yml) have been set up and Docker network has been created,
+  the platform can be run by:
 
 ```
 docker-compose up
@@ -36,6 +50,16 @@ When all services are up, web application will be available on [localhost:80](ht
 Register to the platform and confirm your account following the link sent in the registration e-mail.
 
 To register as an ADMIN user, to be able to create the competition, you will have to change your User type ADMIN in MySQL database.
+
+From terminal, connect to the MySQL database. Fetch the ip-address of the 'sql_db' container:
+```
+docker inspect sql_db
+```
+Then connect to the database `sample`, and in the table `USERS`, change your role to `ADMIN` instead of `USER`:
+```
+mysql -u mysql -pmysql -h sql_db_IP_address sample
+```
+After this change, restart the platform.
 
 To get to know around the platform use the tutorial provided in [Starter Pack](https://bigmine.github.io/real-time-ML-competition/Starter_pack.zip).
 
@@ -49,11 +73,9 @@ To get to know around the platform use the tutorial provided in [Starter Pack](h
 ## Acknowledgments
 
 Open source Docker containers were used:
-* [Mongo-Express](https://hub.docker.com/_/mongo-express)
 * [MongoDB](https://hub.docker.com/_/mongo)
 * [Spark Docker container by GettyImages](https://hub.docker.com/r/gettyimages/spark)
 * [MySQL](https://hub.docker.com/_/mysql)
-* [phpMyAdmin](https://hub.docker.com/r/phpmyadmin/phpmyadmin)
 * [Kafka by Wurstmeister](https://hub.docker.com/r/wurstmeister/kafka)
 * [Zookeeper by Wurstmeister](https://hub.docker.com/r/wurstmeister/zookeeper)
 

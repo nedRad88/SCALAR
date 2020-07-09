@@ -85,36 +85,6 @@ services:
     depends_on:
       - sql_db
 
-  mongo-express:
-    image: mongo-express
-    networks:
-      - provider_network
-    links:
-      - mongo_db:mongo
-    environment:
-      TZ: "Europe/Paris"
-    ports:
-      - "8081:8081"
-    container_name: mongo-express
-    volumes:
-      - /etc/localtime:/etc/localtime:ro
-    depends_on:
-      - mongo_db
-
-  myadmin:
-    image: nedeljkoradulovic88/phpmyadminbase:v1
-    networks:
-      - provider_network
-    links:
-      - sql_db:db
-    ports:
-      - "8083:80"
-    container_name: myadmin
-    volumes:
-      - /etc/localtime:/etc/localtime:ro
-    depends_on:
-      - sql_db
-
   spark-master:
     image: nedeljkoradulovic88/spark
     networks:
