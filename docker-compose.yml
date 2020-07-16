@@ -135,11 +135,10 @@ services:
       - 8082:8082
     container_name: worker1
     volumes:
-      - /etc/localtime:/etc/localtime:ro
       - >>local_path_volume<<:/tmp
 
 
 networks:
-  new_network:
+  provider_network:
     external:
       name: provider_network

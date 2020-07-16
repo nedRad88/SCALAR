@@ -49,9 +49,18 @@ In docker-compose.yml file, you need to setup usernames, passwords and local vol
     volumes:
       - >>local_path_volume<<:/local/data
 
-5. spark-master and worker service:
-  In Spark-master and worker set up the environment variable to align the timezone of the container with the timezone of the host.
+5. spark-master service:
+  In Spark-master set up the environment variable to align the timezone of the container with the timezone of the host.
 
+    environment:
+      TZ: "Europe/Paris"
+
+6. worker service:
+  In worker service set up the volume where Spark will store temporary files during computation.
+  Set up the environment variable to align the timezone of the container with the timezone of the host.
+
+    volumes:
+      - >>local_path_volume<<:/tmp
     environment:
       TZ: "Europe/Paris"
 

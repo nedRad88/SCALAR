@@ -32,7 +32,7 @@ For a quick start, update only email information in [config.json](provider/my_ap
 
  - To run the SCALAR application using Docker-compose, first create the Docker bridge network on your local machine:
 ```
-docker network create --driver=bridge --subnet=172.22.0.0/16 --ip-range=172.22.0.0/24 --gateway=172.22.0.1 provider-network
+docker network create --driver bridge provider-network --subnet=172.22.0.0/16 --ip-range=172.22.0.0/24 --gateway=172.22.0.1
 
 ```
 You can choose the IP ranges according to your preferences.
