@@ -8,17 +8,10 @@
     "SECRET_KEY" : "flask-session-secret-key",
     "SECURITY_PASSWORD_SALT": "flask-security-salt-password",
     "WEB_ADDRESS" : "localhost",
-    "KAFKA_HOST" : "kafka:9092",
-    "SQL_HOST" : "mysql+pymysql://mysql:mysql@sql_db/",
-    "SQL_DBNAME" : "sample",
     "UPLOAD_REPO":"../local/data/uploads/",
     "COMPETITION_PROTO_REPO":"competition_proto_file",
     "COMPETITION_GENERATED_CODE" : "competition_generated_code",
-    "STREAM_DATA_FILE": "stream_data_file",
-    "MONGO_HOST" : "mongo_db",
-    "SPARK_DRIVER_HOST": "provider",
-    "SPARK_DRIVER_PORT": 5005,
-    "SPARK_BLOCKMANAGER_PORT": 13666
+    "STREAM_DATA_FILE": "stream_data_file"
 } 
 
 

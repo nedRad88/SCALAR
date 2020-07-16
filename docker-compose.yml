@@ -77,6 +77,13 @@ services:
       TZ: "Europe/Paris"
       DNS_NAME: "http://localhost"
       SPARK_HOST: "spark-master"
+      MONGO_HOST: "mongo_db"
+      SPARK_DRIVER_HOST: "provider"
+      SPARK_DRIVER_PORT: 5005
+      SPARK_BLOCKMANAGER_PORT: 13666
+      KAFKA_HOST: "kafka:9092"
+      SQL_HOST: "mysql+pymysql://mysql:mysql@sql_db/"
+      SQL_DBNAME: "sample"
     volumes:
       - >>local_path_volume<<:/local/data
     container_name: provider
