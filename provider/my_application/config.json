@@ -8,7 +8,7 @@
     "SECRET_KEY" : "flask-session-secret-key",
     "SECURITY_PASSWORD_SALT": "flask-security-salt-password",
     "WEB_ADDRESS" : "localhost",
-    "SERVER_HOST" : "kafka:9092",
+    "KAFKA_HOST" : "kafka:9092",
     "SQL_HOST" : "mysql+pymysql://mysql:mysql@sql_db/",
     "SQL_DBNAME" : "sample",
     "UPLOAD_REPO":"../local/data/uploads/",

@@ -76,6 +76,7 @@ services:
     environment:
       TZ: "Europe/Paris"
       DNS_NAME: "http://localhost"
+      SPARK_HOST: "spark-master"
     volumes:
       - >>local_path_volume<<:/local/data
     container_name: provider

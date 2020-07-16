@@ -39,6 +39,10 @@ from pyspark.sql.types import *
 import logging
 logging.basicConfig(level='DEBUG')
 
+with open('config.json') as json_data_file:
+    config = json.load(json_data_file)
+
+SPARK_HOST = config['SPARK_HOST']
 spark_master = "spark://" + os.environ['SPARK_HOST'] + ":7077"
 _ONE_DAY_IN_SECONDS = 60 * 60 * 24
 
