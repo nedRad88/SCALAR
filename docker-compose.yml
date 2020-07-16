@@ -2,6 +2,8 @@ version: '3'
 
 services:
   zookeeper:
+    environment:
+      TZ: "Europe/Paris"
     networks:
       - provider_network
     image: wurstmeister/zookeeper
@@ -30,8 +32,6 @@ services:
       KAFKA_TOOLS_LOG4J_LOGLEVEL: ERROR
       TZ: "Europe/Paris"
     container_name: kafka
-    volumes:
-      - /etc/localtime:/etc/localtime:ro
     depends_on:
       - zookeeper
 
@@ -43,7 +43,6 @@ services:
       TZ: "Europe/Paris"
     volumes:
       - local_path_volume:/data/db
-      - /etc/localtime:/etc/localtime:ro
     container_name: mongo_db
 
   sql_db:
@@ -60,7 +59,6 @@ services:
        TZ: "Europe/Paris"
     volumes:
       - >>local_path_volume<<:/var/lib/mysql
-      - /etc/localtime:/etc/localtime:ro
     container_name: sql_db
     command: [mysqld, --default-authentication-plugin=mysql_native_password]
     depends_on:
@@ -80,7 +78,6 @@ services:
       DNS_NAME: "http://localhost"
     volumes:
       - >>local_path_volume<<:/local/data
-      - /etc/localtime:/etc/localtime:ro
     container_name: provider
     depends_on:
       - sql_db
@@ -99,8 +96,6 @@ services:
       - "7077:7077"
       - "8080:8080"
     container_name: spark-master
-    volumes:
-      - /etc/localtime:/etc/localtime:ro
     expose:
       - 7001
       - 7002
@@ -119,12 +114,14 @@ services:
     command: 'bin/spark-class org.apache.spark.deploy.worker.Worker spark://spark-master:7077'
     hostname: worker1
     environment:
+      TZ: "Europe/Paris"
       SPARK_CONF_DIR: /conf
       SPARK_WORKER_CORES: 2
       SPARK_WORKER_MEMORY: 2g
       SPARK_WORKER_PORT: 8881
       SPARK_WORKER_WEBUI_PORT: 8082
       PACKAGES: 'org.apache.spark:spark-sql-kafka-0-10_2.11:2.4.0'
+      TZ: "Europe/Paris"
     links:
       - spark-master
     expose:
