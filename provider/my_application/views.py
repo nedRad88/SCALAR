@@ -187,7 +187,7 @@ def login():
     }
 
     token = get_auth_token(user)
-
+    _USER_REPO.session.commit()
     if token[0] != 200:
         return json.dumps(token[1]).encode('utf-8'), 401, {'ContentType': 'application/json'}
     return jsonify({'access_token': token[1].decode("utf-8")})

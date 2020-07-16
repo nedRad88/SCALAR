@@ -185,7 +185,6 @@ class BaseRepository():
     def insert_one(self, row):
         try:
             self.session.add(row)
-            self.session.flush()
             self.session.commit()
         except Exception as e:
             print(e)
@@ -195,7 +194,6 @@ class BaseRepository():
         try:
             for row in rows:
                 self.session.add(row)
-                self.session.flush()
             self.session.commit()
         except Exception as e:
             print(e)
@@ -228,7 +226,6 @@ class CompetitionRepository(BaseRepository):
 
     def set_competition_code(self, competition_id, code):
         self.session.query(Competition).filter_by(competition_id=competition_id).update({"code": code})
-        self.session.flush()
         self.session.commit()
 
     def get_all_competitions(self, status=None, page=None, step=None):
