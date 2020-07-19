@@ -17,7 +17,7 @@ limitations under the License.
 
 from __future__ import print_function
 import time
-time.sleep(10)
+time.sleep(15)
 from producer import Scheduler
 from datetime import datetime
 from flask import render_template, Response, Flask, stream_with_context, request, jsonify, send_file

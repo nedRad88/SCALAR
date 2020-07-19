@@ -32,7 +32,7 @@ For a quick start, update only email information in [config.json](provider/my_ap
 
  - To run the SCALAR application using Docker-compose, first create the Docker bridge network on your local machine:
 ```
-docker network create --driver bridge provider-network --subnet=172.22.0.0/16 --ip-range=172.22.0.0/24 --gateway=172.22.0.1
+docker network create --driver bridge provider_network --subnet=172.22.0.0/16 --ip-range=172.22.0.0/24 --gateway=172.22.0.1
 
 ```
 You can choose the IP ranges according to your preferences.
@@ -51,14 +51,18 @@ Register to the platform and confirm your account following the link sent in the
 
 To register as an ADMIN user, to be able to create the competition, you will have to change your User type ADMIN in MySQL database.
 
-From terminal, connect to the MySQL database. Fetch the ip-address of the 'sql_db' container:
+You will have to install MySQL client installed on your host machine.
+Then connect to the `sql_db` container:
 ```
-docker inspect sql_db
+docker exec -it sql_db mysql -u mysql -pmysql
 ```
-Then connect to the database `sample`, and in the table `USERS`, change your role to `ADMIN` instead of `USER`:
+Then in database `sample` and in the table `USERS`, change your role to `ADMIN` instead of `USER` (check your `user_id` before):
 ```
-mysql -u mysql -pmysql -h sql_db_IP_address sample
+use sample;
+
+UPDATE USERS SET role='ADMIN' where user_id = 1;
 ```
+
 After this change, restart the platform.
 
 To get to know around the platform use the tutorial provided in [Starter Pack](https://bigmine.github.io/real-time-ML-competition/Starter_pack.zip).
