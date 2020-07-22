@@ -6,7 +6,7 @@ pymysql==0.8.0
 Flask==0.12.2
 Flask-SQLAlchemy==2.3.2
 Flask-WTF==0.14.2
-werkzeug==0.14.1
+werkzeug==0.15.3
 grpcio==1.10.0
 grpcio-tools==1.10.0
 multiprocessing==2.6.2.1
