@@ -65,10 +65,8 @@ UPDATE USERS SET role='ADMIN' where user_id = 1;
 
 After this change, restart the platform.
 
-To get to know around the platform use the tutorial provided in [Starter Pack](https://bigmine.github.io/real-time-ML-competition/Starter_pack.zip).
-
-## Authors
-
+To get to know around the platform use the the [Quick Start Guide](./SCALAR_Quick_Start_Guide.pdf). 
+To create and participate in the competition use the provided [examples](./example_data).
 * **Nedeljko Radulovic**
 * **Dihia Boulegane**
 * **Albert Bifet**
@@ -86,3 +84,4 @@ Open source Docker containers were used:
 ## References
 
 * [Boulegane, Dihia, et al. "Real-Time Machine Learning Competition on Data Streams at the IEEE Big Data 2019." 2019 IEEE International Conference on Big Data (Big Data). IEEE, 2019.](https://ieeexplore.ieee.org/abstract/document/9006357?casa_token=f0mJeR8-WfYAAAAA:yEt_Mix9dumrPpo64uPBbI0XI4Kvfim4Pkg5xNVVzXqK4AGToX0XcJPKgETkE1hs86Pcc0u5xYc)
+* [IEEE Big Data Cup 2019](https://bigmine.github.io/real-time-ML-competition/index.html)
