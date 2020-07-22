@@ -1,4 +1,6 @@
 # SCALAR - Streaming ChALlenge plAtfoRm
+![Logo](./logo.PNG)
+
 
 SCALAR is the first of its kind, platform to organize Machine Learning competitions on Data Streams.
 It was used to organize a real-time ML competition on IEEE Big Data Cup Challenges 2019.
