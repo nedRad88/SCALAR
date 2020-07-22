@@ -3,7 +3,7 @@ python-dateutil==2.7.0
 apscheduler==3.5.1
 sqlalchemy==1.2.5
 pymysql==0.8.0
-Flask==0.12.2
+Flask==1.0
 Flask-SQLAlchemy==2.3.2
 Flask-WTF==0.14.2
 werkzeug==0.14.1
