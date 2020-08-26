@@ -1,7 +1,23 @@
+"""
+Copyright 2020 Nedeljko Radulovic, Dihia Boulegane, Albert Bifet
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+"""
+
+
 from __future__ import absolute_import
 from confluent_kafka import Consumer, Producer
 import grpc
-import sys
 import os
 import orjson
 from repository import MongoRepository
@@ -14,10 +30,16 @@ import json
 import threading
 from subscription_auth import decode_subscription_token
 from repositories.CompetitionRepository import SubscriptionRepository, UserRepository, CompetitionRepository
-
 import logging
 
 logging.basicConfig(level='DEBUG')
+
+"""
+Read the environment variables or the config file to define the services:
+SQL_HOST: The address of MySQL server
+SQL_DBNAME: The name of the MySQL Database
+MONGO_HOST: The address of MongoDB server
+"""
 
 with open('config.json') as json_data_file:
     config = json.load(json_data_file)
@@ -25,7 +47,6 @@ try:
     _SQL_HOST = os.environ['SQL_HOST']
 except Exception:
     _SQL_HOST = config['SQL_HOST']
-
 try:
     _SQL_DBNAME = os.environ['SQL_DBNAME']
 except Exception:
@@ -34,7 +55,6 @@ try:
     _MONGO_HOST = os.environ['MONGO_HOST']
 except Exception:
     _MONGO_HOST = config['MONGO_HOST']
-
 
 _UPLOAD_REPO = config['UPLOAD_REPO']
 _COMPETITION_GENERATED_CODE = config['COMPETITION_GENERATED_CODE']
@@ -86,7 +106,6 @@ class ProducerToMongoSink:
 
     # message must be in byte format
     def send(self, topic, prediction):
-
         try:
             self.producer.produce(topic, orjson.dumps(prediction))
             self.producer.poll(0)
@@ -98,7 +117,7 @@ class DataStreamerServicer:
 
     def __init__(self, server, competition, competition_config):
         self.server = server
-        self.producer = ProducerToMongoSink(server)  # 172.22.0.2:9092
+        self.producer = ProducerToMongoSink(server)
         self.predictions_producer = ProducerToMongoSink(server)
         conf_producer = {'bootstrap.servers': server}
         self.kafka_producer = Producer(conf_producer)
@@ -129,11 +148,9 @@ class DataStreamerServicer:
         # grpc file path: ../local/data/uploads/competition_generated_code/competition_name -> file_pb2_grpc.py
         pb2_grpc_file_path = os.path.join(_UPLOAD_REPO, _COMPETITION_GENERATED_CODE, self.competition.name,
                                           'file_pb2_grpc.py')
-
         # import parent modules
         self.file_pb2 = imp.load_source('file_pb2', pb2_file_path)
         self.file_pb2_grpc = imp.load_source('file_pb2_grpc', pb2_grpc_file_path)
-
         # import classes
         self.DataStreamer = imp.load_source('file_pb2_grpc.DataStreamerServicer', pb2_grpc_file_path)
         self.Message = imp.load_source('file_pb2.Message', pb2_file_path)
@@ -153,7 +170,6 @@ class DataStreamerServicer:
         metadata = context.invocation_metadata()
         metadata = dict(metadata)
         token = metadata['authorization']
-
 
         user_id = metadata['user_id']
         competition_code = metadata['competition_id']
@@ -216,13 +232,12 @@ class DataStreamerServicer:
                                  kwargs={'predictions': request_iterator,
                                          'competition_id': self.competition.competition_id, 'user_id': user.user_id,
                                          'end_date': end_date, 'kafka_producer': self.kafka_producer,
-                                         'spark_topic': self.spark_topic, 'targets': self.targets, 'stop': lambda: stop_thread})
+                                         'spark_topic': self.spark_topic, 'targets': self.targets,
+                                         'stop': lambda: stop_thread})
             # use default name
             t.start()
         except Exception as e:
             print(str(e))
-
-
 
         _USER_REPO.cleanup()
         _COMPETITION_REPO.cleanup()

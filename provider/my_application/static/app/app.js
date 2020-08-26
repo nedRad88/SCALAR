@@ -1,4 +1,19 @@
+/*
 
+Copyright 2020 Nedeljko Radulovic, Dihia Boulegane, Albert Bifet
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+*/
 
 
 var app = angular.module('myApp', ['ngMaterial', 'angularRandomString', 'ngRoute', 'LocalStorageModule', 'chart.js', 'md.data.table', 'ngSanitize','ngAnimate',
@@ -132,14 +147,6 @@ app.constant('dashboardSections', {
 var oAuthServiceBase = 'http://localhost:80/auth/';
 var ressourceServerBaseUri = 'http://localhost:80/';
 
-//var ressourceServerBaseUri = 'http://app.streaming-challenge.com:80/';
-//var oAuthServiceBase = 'http://app.streaming-challenge.com:80/auth/';
-
-
-//var oAuthServiceBase = 'http://streamingcompetition.francecentral.cloudapp.azure.com:5000/auth/';
-//var ressourceServerBaseUri = 'http://streamingcompetition.francecentral.cloudapp.azure.com:5000/';
-
-
 
 app.constant('ooredooAppSettings', {
     'oAuthServiceBaseUri': oAuthServiceBase,
@@ -172,24 +179,6 @@ app.config(function($routeProvider) {
     });
     
 
-    
-    //$routeProvider.when("/", { redirectTo: "/home" });
-
-    /**
-    $routeProvider.when("/stats", {
-        controller: "statsController",
-        templateUrl: "static/app/views/stats.html",
-        resolve: {
-        settings: function () {
-           return {
-                    isAdminMode: false,
-                    title: "Stats"
-                    
-                }
-            }
-        }
-    });
-    **/
     $routeProvider.when("/forbidden", {
         controller: "errorController",
         templateUrl: "static/app/views/forbidden.html"
@@ -246,19 +235,14 @@ app.config(function($routeProvider) {
         
         console.log(oAuthService.authentication.isAuth)
         // no logged user, we should be going to #login
-        if (next.templateUrl == "static/app/views/signup.html") {
-            //closed registrations
-            $location.path("/closed");
-        }
-        else if (oAuthService.authentication.isAuth == false && next.templateUrl != "static/app/views/sorry.html" ) {
+        if (oAuthService.authentication.isAuth === false) {
 
-            if (next.templateUrl != "static/app/views/login.html") {
+            // no logged user, we should be going to #login
+            if (next.templateUrl !== "static/app/views/login.html" && next.templateUrl !== 'static/app/views/signup.html' ) {
                 $location.path("/login");
             }
-            
         }
         Chart.defaults.global.animation = false;
-        
     });
 }]);
 

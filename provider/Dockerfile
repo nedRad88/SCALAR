@@ -20,13 +20,12 @@ EXPOSE 27017
 EXPOSE 5005
 
 # Set the default directory where CMD will execute
-WORKDIR /my_application/Multiflow/scikit-multiflow-master
 RUN pip3 install --upgrade pip
 RUN pip3 install -U numpy
 RUN pip3 install -U pyspark==2.4.0
 RUN pip3 install -U confluent-kafka
 RUN pip3 install -U orjson
-RUN pip3 install -U .
+RUN pip3 install -U scikit-multiflow
 RUN pip3 uninstall -y grpcio==1.13.0
 RUN pip3 uninstall -y grpcio-tools
 RUN pip3 install grpcio-tools==1.13.0

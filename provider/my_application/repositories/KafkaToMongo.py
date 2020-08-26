@@ -1,14 +1,27 @@
-# from kafka import KafkaConsumer, KafkaProducer, SimpleClient
-# import repository
+"""
+Copyright 2020 Nedeljko Radulovic, Dihia Boulegane, Albert Bifet
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+"""
+
+
 from repository import MongoRepository
 import orjson
 import json
 from confluent_kafka import Consumer
-# import bson
-from bson import json_util
 import os
 
-with open('config.json') as json_data_file:
+with open('./config.json') as json_data_file:
     config = json.load(json_data_file)
 
 try:
@@ -27,19 +40,13 @@ class ConsumerToMongo:
                 'auto.offset.reset': 'earliest'}
         self.consumer = Consumer(conf)
         self.consumer.subscribe([topic])
-        # self.client = SimpleClient(kafka_server)
         self.mongo_repository = MongoRepository(_MONGO_HOST)
-        # print (topic)
 
     # message must be in byte format
     def write(self):
 
         db = self.mongo_repository.client['data']
-        # predictions = db['predictions_v2']
         data = db['data']
-        # golden_standard = db['golden_standard']
-
-        # predictions.create_index( [("competition_id", 1), ("user_id", 1)], unique=True)
         data.create_index([("competition_id", 1)], unique=True)
 
         while True:
@@ -49,18 +56,10 @@ class ConsumerToMongo:
                 continue
             if msg is not None:
                 message = orjson.loads(msg.value())
-                # print(type(message), message)
-                # message = orjson.loads(str(message))
-
                 if message['type'] == "DATA":
-                    # self.mongo_repository.insert_document(dbname, 'data', message)
                     # print('TODO : write to data collection')
-
                     competition_id = message['competition_id']
-
                     del message['competition_id']
                     del message['type']
                     del message['tag']
-
-                    # print(message)
                     data.update({'competition_id': str(competition_id)}, {'$addToSet': {'dataset': message}})

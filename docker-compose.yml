@@ -144,23 +144,9 @@ services:
     container_name: worker1
     volumes:
       - >>local_path_volume<<:/tmp
+
+
 networks:
   provider_network:
     external:
       name: provider_network
-
-    © 2020 GitHub, Inc.
-    Terms
-    Privacy
-    Security
-    Status
-    Help
-
-    Contact GitHub
-    Pricing
-    API
-    Training
-    Blog
-    About
-
-

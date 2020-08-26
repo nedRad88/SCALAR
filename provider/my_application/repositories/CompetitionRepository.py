@@ -1,15 +1,30 @@
+"""
+Copyright 2020 Nedeljko Radulovic, Dihia Boulegane, Albert Bifet
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+"""
+
+
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy import Column, DateTime, String, Integer, ForeignKey, func, exc
-from sqlalchemy.orm import relationship, backref
+from sqlalchemy import Column, DateTime, ForeignKey, func
+from sqlalchemy.orm import relationship
 from sqlalchemy import UniqueConstraint
 from werkzeug.security import generate_password_hash, check_password_hash
-from datetime import datetime
 from sqlalchemy.types import Integer, String, Boolean
 from datetime import datetime
 from sqlalchemy import and_
-import os
 
 _BASE = declarative_base()
 
@@ -125,7 +140,6 @@ class User(_BASE):
         return check_password_hash(self.password_hash, password)
 
     def serialize(self):
-        # print (self.target_class)
         return {
             'user_id': self.user_id,
             'firstName': self.first_name,
@@ -161,7 +175,6 @@ class BaseRepository():
         self.instance = None
         self.engine = create_engine(host + dbname)
         self.sessionmaker = sessionmaker()
-        # self.sessionmaker = SingletonSession().instance
         self.sessionmaker.configure(bind=self.engine)
         self.Base = _BASE
         self.Base.metadata.create_all(self.engine)
@@ -172,25 +185,21 @@ class BaseRepository():
     def insert_one(self, row):
         try:
             self.session.add(row)
-            self.session.flush()
             self.session.commit()
         except Exception as e:
             print(e)
             self.session.rollback()
 
     def insert_many(self, rows):
-
         try:
             for row in rows:
                 self.session.add(row)
-                self.session.flush()
             self.session.commit()
         except Exception as e:
             print(e)
             self.session.rollback()
 
     def delete_one(self, row):
-
         try:
             self.session.delete(row)
             self.session.commit()
@@ -206,11 +215,9 @@ class BaseRepository():
 class CompetitionRepository(BaseRepository):
 
     def __init__(self, host, dbname):
-
         BaseRepository.__init__(self, host, dbname)
 
     def get_competition_by_id(self, competition_id):
-
         results = self.session.query(Competition).filter_by(competition_id=competition_id)
         try:
             return results[0]
@@ -219,7 +226,6 @@ class CompetitionRepository(BaseRepository):
 
     def set_competition_code(self, competition_id, code):
         self.session.query(Competition).filter_by(competition_id=competition_id).update({"code": code})
-        self.session.flush()
         self.session.commit()
 
     def get_all_competitions(self, status=None, page=None, step=None):
@@ -232,7 +238,8 @@ class CompetitionRepository(BaseRepository):
                 self.session.rollback()
         elif status == 'active':
             try:
-                results = self.session.query(Competition).filter(and_(Competition.end_date > now, Competition.start_date < now))
+                results = self.session.query(Competition).filter(and_(Competition.end_date > now,
+                                                                      Competition.start_date < now))
             except Exception:
                 self.session.rollback()
         elif status == 'coming':
@@ -250,21 +257,15 @@ class CompetitionRepository(BaseRepository):
 
         if results is not None:
             copy = results
-
             if step:
                 results = results.limit(step)
-
             if page:
                 results = results.offset((page - 1) * step)
-
             data = []
             for r in results:
-                row = {}
-                row['name'] = r.name
-                row['id'] = r.competition_id
-                row['description'] = r.description
-                row['start_date'] = r.start_date.strftime("%Y-%m-%d %H:%M")
-                row['end_date'] = r.end_date.strftime("%Y-%m-%d %H:%M")
+                row = {'name': r.name, 'id': r.competition_id, 'description': r.description,
+                       'start_date': r.start_date.strftime("%Y-%m-%d %H:%M"),
+                       'end_date': r.end_date.strftime("%Y-%m-%d %H:%M")}
 
                 data.append(row)
 
@@ -322,22 +323,16 @@ class CompetitionRepository(BaseRepository):
 
         if results is not None:
             copy = results
-
             if step:
                 results = results.limit(step)
-
             if page:
                 results = results.offset((page - 1) * step)
 
             data = []
             for r in results:
-                row = {}
-                row['name'] = r.name
-                row['id'] = r.competition_id
-                row['description'] = r.description
-                row['start_date'] = r.start_date.strftime("%Y-%m-%d %H:%M")
-                row['end_date'] = r.end_date.strftime("%Y-%m-%d %H:%M")
-
+                row = {'name': r.name, 'id': r.competition_id, 'description': r.description,
+                       'start_date': r.start_date.strftime("%Y-%m-%d %H:%M"),
+                       'end_date': r.end_date.strftime("%Y-%m-%d %H:%M")}
                 data.append(row)
 
             return {'data': data, 'total': copy.count()}
@@ -348,7 +343,6 @@ class CompetitionRepository(BaseRepository):
 class DatastreamRepository(BaseRepository):
 
     def __init__(self, host, dbname):
-
         BaseRepository.__init__(self, host, dbname)
 
     def get_datastream_by_id(self, datastream_id):
@@ -370,10 +364,8 @@ class DatastreamRepository(BaseRepository):
             copy = results
             if step:
                 results = results.limit(step)
-
             if page:
                 results = results.offset((page - 1) * step)
-
             data = [r.serialize() for r in results]
 
             return {'data': data, 'total': copy.count()}
@@ -385,7 +377,6 @@ class UserRepository(BaseRepository):
 
     def __init__(self, host, dbname):
         BaseRepository.__init__(self, host, dbname)
-
     def get_user_by_id(self, id):
         results = None
         try:
@@ -401,13 +392,6 @@ class UserRepository(BaseRepository):
         except Exception:
             self.session.rollback()
         return results
-
-    """
-        if len(results) > 0 :
-            return results[0]
-        else:
-            return None
-    """
 
     def get_all_users(self):
         results = None
@@ -448,7 +432,6 @@ class SubscriptionRepository(BaseRepository):
             subscribed = False if len(list(s)) == 0 else True
         except Exception:
             self.session.rollback()
-
         return subscribed
 
     def get_subscription(self, competition_id, user_id):
