@@ -27,6 +27,7 @@ nocite: '@*'
 # Summary
 
 `SCALAR` is a new platform for running real-time machine learning competitions on data streams. Following the intent of Kaggle, that serves as a platform for organizing machine learning competitions adapted for batch learning, we propose `SCALAR` as a novel platform designed specifically for stream learning in real-time. `SCALAR` supports both classification and regression problems in the data streaming setting. It has been developed in `Python`, using state of the art open source solutions: `Apache Kafka`, `Apache Spark`, `gRPC`, `Protobuf`, and `Docker`. 
+
 # Statement of need 
 
 `SCALAR` has been inspired by existing competition platforms for batch (offline) setting such as: [`Kaggle`](https://www.kaggle.com/) and [`Alibaba Tianchi`](https://tianchi.aliyun.com/).
