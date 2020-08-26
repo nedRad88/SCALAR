@@ -81,7 +81,7 @@ To make this scenario possible in `SCALAR`, we first assume that the records in 
 # Architecture
 
 To support all the aforementioned requirements for stream data mining, and to be able to organize competitions in such a scenario, a specific dedicated platform was needed. To the best of our knowledge, there doesn't exist such platform, thus we propose \scalar. Figure \@ref{architecture} highlights the architecture of the platform that includes a web application and a streaming engine following the fundamentals of Information Flow Processing (IFP)[@Cugola:12].
-[Architecture of the platform\label{architecture}](Architecture.png)
+![Architecture of the platform\label{architecture}](Architecture.png)
 
 We explain layer by layer:
 * Data sources: `SCALAR` allows creating competitions by providing data in the form of a `CSV` file. That file is used to recreate a continuous stream following predefined competition settings such as the time interval between two releases and the number of instances at a time.
