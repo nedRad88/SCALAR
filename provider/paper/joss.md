@@ -21,6 +21,7 @@ affiliations:
  - name: University of Waikato, New Zealand
    index: 3
 date: 26 August 2020
+output: bookdown::pdf_document2 
 
 ---
 
@@ -54,50 +55,46 @@ are evaluated in real-time, and the results are shown on the live leaderboard.
 `SCALAR` has been used for organizing, a first  Real-time Machine Learning Competition on 
 Data Streams[@boulegane2019real] as part of the [IEEE Big Data 2019 Cup Challenges](http://bigdataieee.org/BigData2019/BigDataCupChallenges.html).
 
+# Streaming learning setting
 
-# Mathematics
+Most of the existing platforms for data science competitions are tailored to offline learning 
+where a static dataset is made available to the participants before the competition starts. 
+This dataset is divided into training and test sets. The training set is used to build and 
+train the model, which is then tested on the test set. 
 
-Single dollars ($) are required for inline mathematics e.g. $f(x) = e^{\pi/x}$
+In online learning, data arrive in a stream of records (instances) and the model needs to be 
+trained incrementally as new instances are released. Since the data arrive at high speed, 
+predictions have to be issued within a short time. Having in mind this specific setup of the 
+data stream mining scenario (Figure \ref{stream_mining}), every model should use a limited 
+amount of time and memory, process one instance at a time and inspect it only once and the 
+model must be able to predict at any time [@bifet2010moa].
+![Stream data mining scenario\label{stream_mining}](stream_mining.png)
 
-Double dollars make self-standing equations:
 
-$$\Theta(x) = \left\{\begin{array}{l}
-0\textrm{ if } x < 0\cr
-1\textrm{ else}
-\end{array}\right.$$
+The model is being updated using the labeled instances and then evaluated on new unlabeled instances. This scenario represents the prequential evaluation scenario or "test-then-train" setting.
+To make this scenario possible in `SCALAR`, we first assume that the records in the data stream arrive in batches and that each batch can be of size `1` or more. Then, we define two different kinds of batches:
+* Initial batch: This batch is used to build and train the initial model. It is aimed to avoid the cold start problem and as such contains both features and targets. The initial batch usually has a large number of instances.
+* Regular batch: The regular batch contains new test instances while providing training instances of previous batches that are  used to evaluate the quality of the model up to the current time.
 
-You can also use plain \LaTeX for equations
-\begin{equation}\label{eq:fourier}
-\hat f(\omega) = \int_{-\infty}^{\infty} f(x) e^{i\omega x} dx
-\end{equation}
-and refer to \autoref{eq:fourier} from text.
+![Initial and regular batches in the data stream\label{fig:online_learning}](online_learning.jpg)
 
-# Citations
+# Architecture
 
-Citations to entries in paper.bib should be in
-[rMarkdown](http://rmarkdown.rstudio.com/authoring_bibliographies_and_citations.html)
-format.
+To support all the aforementioned requirements for stream data mining, and to be able to organize competitions in such a scenario, a specific dedicated platform was needed. To the best of our knowledge, there doesn't exist such platform, thus we propose \scalar. Figure \@ref{architecture} highlights the architecture of the platform that includes a web application and a streaming engine following the fundamentals of Information Flow Processing (IFP)[@Cugola:12].
+[Architecture of the platform\label{architecture}](Architecture.png)
 
-If you want to cite a software repository URL (e.g. something on GitHub without a preferred
-citation) then you can do it with the example BibTeX entry below for @fidgit.
-
-For a quick reference, the following citation commands can be used:
-- `@author:2001`  ->  "Author et al. (2001)"
-- `[@author:2001]` -> "(Author et al., 2001)"
-- `[@author1:2001; @author2:2001]` -> "(Author1 et al., 2001; Author2 et al., 2002)"
-
-# Figures
-
-Figures can be included like this:
-![Caption for example figure.\label{fig:example}](figure.png)
-and referenced from text using \autoref{fig:example}.
-
-Fenced code blocks are rendered with syntax highlighting:
+We explain layer by layer:
+* Data sources: `SCALAR` allows creating competitions by providing data in the form of a `CSV` file. That file is used to recreate a continuous stream following predefined competition settings such as the time interval between two releases and the number of instances at a time.
+    
+  * Data layer: represents the persistence node in the system where different kinds of information are stored. `MongoDB` is used for unstructured data (e.g. user’s predictions, records from the stream, evaluation metrics) and `MySQL` for structured data (competition information, user information).
+    
+  * Streaming Engine: is responsible for handling the streams. From `CSV` files, `Kafka` recreates multiple streams to be sent to multiple users. `SCALAR` provides a secure and independent bi-directional streaming communication between the user and the streaming engine. This allows each user to consume training and test instances and submit the respective predictions according to competition predefined data format. Resource server is the `API` that handles all authenticated requests from the client application whereas the authorization server is is in charge of users' identification. The Online evaluation engine handles both the stream of instances and the streams of participants' predictions in order to compute and update the evaluation metrics online before storing them into the dedicated database.
+    
+  * Application: the application layer consists of two parts: web application and client application. Web application represents an user-friendly interface that allows participants to register,subscribe to competitions, and follow leaderboard and models' performance online. The client application is provided in order to accommodate participants' code to solve the machine learning problem at hand. It delivers  a secure communication channel to receive the stream of training and test instances and send their respective predictions to the server.
 
 # Acknowledgements
 
-We acknowledge contributions from Brigitta Sipocz, Syrtis Major, and Semyeong
-Oh, and support from Kathryn Johnston during the genesis of this project.
+We would like to acknowledge support for this project from the EDF (Electricité de France) and OpenML.
 
 # References
 
