@@ -1,5 +1,6 @@
 ---
 title: '`SCALAR` - A Platform for Real-time Machine Learning Competitions on Data Streams'
+bibliography: references.bib
 tags:
   - Python
   - Stream Data Mining
@@ -20,7 +21,6 @@ affiliations:
  - name: University of Waikato, New Zealand
    index: 3
 date: 26 August 2020
-bibliography: references.bib
 
 ---
 
