@@ -125,6 +125,13 @@ def _create_competition(competition, competition_config):
 
 
 def read_csv_file(competition, competition_config, data_format='csv'):
+    """
+
+    :param competition:
+    :param competition_config:
+    :param data_format:
+    :return:
+    """
     initial_batch = []
     items = []
     predictions = []

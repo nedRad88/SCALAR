@@ -24,6 +24,7 @@ def evaluate(spark_context, kafka_broker, competition, competition_config, windo
              train_schema, prediction_schema, columns_to_sum, checkpoints, targets):
     """
     The function for online evaluation of the incremental predicting models.
+    It computes selected evaluation measures and stores them in the database.
 
     :param spark_context:
     :param kafka_broker: Address of kafka server
