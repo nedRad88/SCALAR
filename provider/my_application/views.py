@@ -1,4 +1,6 @@
 from __future__ import print_function
+import time
+time.sleep(10)
 from producer import Scheduler
 from datetime import datetime
 from apscheduler.schedulers.background import BackgroundScheduler
@@ -44,7 +46,6 @@ import eventlet
 
 eventlet.monkey_patch(time=True)
 
-import time
 import pause
 
 time.sleep.__module__
@@ -211,6 +212,7 @@ def confirm_email(token):
         logging.debug("Token not valid")
 
     user = _USER_REPO.get_user_by_email(email)
+    _USER_REPO.session.commit()
     if user is None:
         print("User not registered.")
     else:
@@ -238,6 +240,7 @@ def register():
     user = User(user_id=None, first_name=first_name, last_name=last_name, email=email, password=password, role='USER',
                 confirmed=confirmed, confirmed_on=None)
     _USER_REPO.insert_one(user)
+    _USER_REPO.session.commit()
 
     token = generate_confirmation_token(email)
 
@@ -245,7 +248,7 @@ def register():
     msg = Message('Streaming Data Challenge : Registration confirmed', sender='streaming.challenge@gmail.com',
                   recipients=[email])
     # msg.body = "Hello  " + first_name + ' ' + last_name + "\n\n Welcome to Streaming Data Challenge platform \n\n Cheers, \n\n The team \n Please confirm \n" "http://streamigchallenge.cloudapp.net:5000/auth/api/account/confirm/"+ token
-    msg.body = "Hello " + first_name + ' ' + last_name + ", \n\nWelcome to Streaming Data Challenge platform! \n\nCheers, \nThe team \n\nPlease click on the link below to confirm your e-mail.\n" "http://app.streaming-challenge.com:80/auth/api/account/confirm/" + token
+    msg.body = "Hello " + first_name + ' ' + last_name + ", \n\nWelcome to Streaming Data Challenge platform! \n\nCheers, \nThe team \n\nPlease click on the link below to confirm your e-mail.\n" "http://localhost:80/auth/api/account/confirm/" + token
     # msg.body = "Hello " + first_name + ' ' + last_name + ", \n\nUnfortunately, the registration deadline has passed. Hopefully you will have another chance to try our platform.  \n\nCheers, \nThe team \n\n"
     # http: // streamingcompetition.francecentral.cloudapp.azure.com
     # Was localhost:5000/auth...

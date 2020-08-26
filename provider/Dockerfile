@@ -33,10 +33,10 @@ RUN pip3 install grpcio==1.13.0 --no-binary grpcio
 
 WORKDIR /my_application
 
-# Set the default command to execute    
-# when creating a new container
-# i.e. using CherryPy to serve the application
+ENV WAIT_VERSION 2.7.3
+ADD https://github.com/ufoscout/docker-compose-wait/releases/download/$WAIT_VERSION/wait /wait
+RUN chmod +x /wait
 
-#CMD python producer.py 
+
 ENTRYPOINT ["python3"]
 CMD ["views.py"]

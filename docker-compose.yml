@@ -36,7 +36,7 @@ services:
       - zookeeper
 
   mongo_db:
-    image: mongo
+    image: mongo:3.6.18
     networks:
       - new_network
     environment:
@@ -63,8 +63,6 @@ services:
       - /etc/localtime:/etc/localtime:ro
     container_name: sql_db
     command: [mysqld, --default-authentication-plugin=mysql_native_password]
-    depends_on:
-      - spark-master
 
   provider:
     build: provider
@@ -90,36 +88,6 @@ services:
       - /home/nedeljko/uploaded_data:/local/data
       - /etc/localtime:/etc/localtime:ro
     container_name: provider
-    depends_on:
-      - sql_db
-
-  mongo-express:
-    image: mongo-express
-    networks:
-      - new_network
-    links:
-      - mongo_db:mongo
-    environment:
-      TZ: "Europe/Paris"
-    ports:
-      - "8081:8081"
-    container_name: mongo-express
-    volumes:
-      - /etc/localtime:/etc/localtime:ro
-    depends_on:
-      - mongo_db
-
-  myadmin:
-    image: nedeljkoradulovic88/phpmyadminbase:v1
-    networks:
-      - new_network
-    links:
-      - sql_db:db
-    ports:
-      - "8083:80"
-    container_name: myadmin
-    volumes:
-      - /etc/localtime:/etc/localtime:ro
     depends_on:
       - sql_db
 
@@ -159,7 +127,7 @@ services:
     environment:
       SPARK_CONF_DIR: /conf
       SPARK_WORKER_CORES: 4
-      SPARK_WORKER_MEMORY: 6g
+      SPARK_WORKER_MEMORY: 1g
       SPARK_WORKER_PORT: 8881
       SPARK_WORKER_WEBUI_PORT: 8082
       PACKAGES: 'org.apache.spark:spark-sql-kafka-0-10_2.11:2.4.0'
