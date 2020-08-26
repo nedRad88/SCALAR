@@ -21,9 +21,8 @@ affiliations:
  - name: University of Waikato, New Zealand
    index: 3
 date: 26 August 2020
-
+nocite: '@*'
 ---
-nocite: @team2013r
 
 # Summary
 
