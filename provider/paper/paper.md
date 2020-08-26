@@ -46,9 +46,9 @@ Most of the existing platforms for data science competitions are tailored to off
 This dataset is divided into training and test sets. The training set is used to build and train the model, which is then tested on the test set. 
 
 In online learning, data arrive in a stream of records (instances) and the model needs to be trained incrementally as new instances are released. Since the data arrive at high speed, 
-predictions have to be issued within a short time. Having in mind this specific setup of the data stream mining scenario (Figure \@ref{stream_mining}), every model should use a limited 
+predictions have to be issued within a short time. Having in mind this specific setup of the data stream mining scenario (Figure \@ref{fig:stream_mining}), every model should use a limited 
 amount of time and memory, process one instance at a time and inspect it only once and the model must be able to predict at any time [@bifet2010moa].
-![Stream data mining scenario\label{stream_mining}](stream_mining.png)
+![Stream data mining scenario\label{fig:stream_mining}](stream_mining.png)
 
 
 The model is being updated using the labeled instances and then evaluated on new unlabeled instances. This scenario represents the prequential evaluation scenario or "test-then-train" setting.
