@@ -20,11 +20,6 @@ affiliations:
  - name: University of Waikato, New Zealand
    index: 3
 date: 26 August 2020
-output: 
-  pdf_document:
-    number_sections: true
-    fig_caption: true
-    citation_package: natbib
 bibliography: references.bib
 
 ---
