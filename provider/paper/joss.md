@@ -27,47 +27,28 @@ output: bookdown::pdf_document2
 
 # Summary
 
-`SCALAR` is a new platform for running real-time machine learning competitions on data streams.
-Following the intent of Kaggle, that serves as a platform for organizing machine learning 
-competitions adapted for batch learning, we propose `SCALAR` as a novel platform designed 
-specifically for stream learning in real-time. `SCALAR` supports both classification and regression 
-problems in the data streaming setting. It has been developed in `Python`, using state of the art 
-open source solutions: `Apache Kafka`, `Apache Spark`, `gRPC`, `Protobuf`, and `Docker`. 
-
+`SCALAR` is a new platform for running real-time machine learning competitions on data streams. Following the intent of Kaggle, that serves as a platform for organizing machine learning competitions adapted for batch learning, we propose `SCALAR` as a novel platform designed specifically for stream learning in real-time. `SCALAR` supports both classification and regression problems in the data streaming setting. It has been developed in `Python`, using state of the art open source solutions: `Apache Kafka`, `Apache Spark`, `gRPC`, `Protobuf`, and `Docker`. 
 # Statement of need 
 
-`SCALAR` has been inspired by existing competition platforms for batch (offline) setting 
-such as: [`Kaggle`](https://www.kaggle.com/) and [`Alibaba Tianchi`](https://tianchi.aliyun.com/).
+`SCALAR` has been inspired by existing competition platforms for batch (offline) setting such as: [`Kaggle`](https://www.kaggle.com/) and [`Alibaba Tianchi`](https://tianchi.aliyun.com/).
 
-These platforms, and especially `Kaggle`, have attracted many companies, researchers and people 
-working in the field of machine learning, to take part in competitions, proposing better 
-solutions, and in that way, pushing forward the whole research community. We believe that 
-introducing `SCALAR` will have a significant impact on the AI research community, 
-especially regarding the rising interest and need for online stream data mining. 
-Processing data streams is in high demand due to the fast development of IoT and many other 
-real-time devices. Data are generated in real-time from a great number of various sources: sensors, 
-IoT devices, social networks, applications, bank and market transactions. 
-`SCALAR` supports this data stream machine learning scenario where data is continuously 
-released, in batches  every time interval. 
-Predictions for each current batch, that are sent before a defined deadline, 
-are evaluated in real-time, and the results are shown on the live leaderboard. 
+These platforms, and especially `Kaggle`, have attracted many companies, researchers and people working in the field of machine learning, to take part in competitions, proposing better 
+solutions, and in that way, pushing forward the whole research community. We believe that introducing `SCALAR` will have a significant impact on the AI research community, 
+especially regarding the rising interest and need for online stream data mining. Processing data streams is in high demand due to the fast development of IoT and many other 
+real-time devices. Data are generated in real-time from a great number of various sources: sensors, IoT devices, social networks, applications, bank and market transactions. 
+`SCALAR` supports this data stream machine learning scenario where data is continuously released, in batches  every time interval. 
+Predictions for each current batch, that are sent before a defined deadline, are evaluated in real-time, and the results are shown on the live leaderboard. 
 
-`SCALAR` has been used for organizing, a first  Real-time Machine Learning Competition on 
-Data Streams[@boulegane2019real] as part of the [IEEE Big Data 2019 Cup Challenges](http://bigdataieee.org/BigData2019/BigDataCupChallenges.html).
+`SCALAR` has been used for organizing, a first  Real-time Machine Learning Competition on Data Streams[@boulegane2019real] as part of the [IEEE Big Data 2019 Cup Challenges](http://bigdataieee.org/BigData2019/BigDataCupChallenges.html).
 
 # Streaming learning setting
 
-Most of the existing platforms for data science competitions are tailored to offline learning 
-where a static dataset is made available to the participants before the competition starts. 
-This dataset is divided into training and test sets. The training set is used to build and 
-train the model, which is then tested on the test set. 
+Most of the existing platforms for data science competitions are tailored to offline learning where a static dataset is made available to the participants before the competition starts. 
+This dataset is divided into training and test sets. The training set is used to build and train the model, which is then tested on the test set. 
 
-In online learning, data arrive in a stream of records (instances) and the model needs to be 
-trained incrementally as new instances are released. Since the data arrive at high speed, 
-predictions have to be issued within a short time. Having in mind this specific setup of the 
-data stream mining scenario (Figure \ref{stream_mining}), every model should use a limited 
-amount of time and memory, process one instance at a time and inspect it only once and the 
-model must be able to predict at any time [@bifet2010moa].
+In online learning, data arrive in a stream of records (instances) and the model needs to be trained incrementally as new instances are released. Since the data arrive at high speed, 
+predictions have to be issued within a short time. Having in mind this specific setup of the data stream mining scenario (Figure \ref{stream_mining}), every model should use a limited 
+amount of time and memory, process one instance at a time and inspect it only once and the model must be able to predict at any time [@bifet2010moa].
 ![Stream data mining scenario\label{stream_mining}](stream_mining.png)
 
 
