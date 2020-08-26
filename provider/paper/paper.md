@@ -1,7 +1,6 @@
 ---
 title: '`SCALAR` - A Platform for Real-time Machine Learning Competitions on Data Streams'
 bibliography: references.bib
-nocite: @team2013r
 tags:
   - Python
   - Stream Data Mining
