@@ -99,7 +99,7 @@ def _create_competition(competition, competition_config):
     :param competition_config: Competition configuration dictionary
     :return: None
     """
-    items, predictions, initial_batch, classes = read_csv_file(competition, competition_config)
+    items, predictions, initial_batch = read_csv_file(competition, competition_config)
     processes = []
     producer_process = Process(target=_start_competition, args=(competition, items, predictions, initial_batch))
     producer_process.start()
@@ -126,11 +126,13 @@ def _create_competition(competition, competition_config):
 
 def read_csv_file(competition, competition_config, data_format='csv'):
     """
+    Reads the data from a .csv file for a given competition.
 
-    :param competition:
-    :param competition_config:
-    :param data_format:
-    :return:
+    :param competition: Competition object
+    :param competition_config: Cometition configuration
+    :param data_format: Format of the data. For now, the only format supported is 'csv'
+    :return: It returns the read data in batches(without the target value), the target values and
+    the initial batch(with target values)
     """
     initial_batch = []
     items = []
@@ -199,10 +201,17 @@ def read_csv_file(competition, competition_config, data_format='csv'):
         except IOError as e:
             print("could not open file" + file_path)
 
-    return items, predictions, initial_batch, classes
+    return items, predictions, initial_batch
 
 
 def _create_evaluation_spark(kafka_server, competition, competition_config):
+    """
+
+    :param kafka_server: IP address and port of the Kafka server to read from and write to
+    :param competition: Competition object
+    :param competition_config: Competition config
+    :return:
+    """
     # Create Spark Session for online evaluation job
     spark_context = SparkSession \
         .builder \
@@ -311,6 +320,14 @@ def _create_evaluation_spark(kafka_server, competition, competition_config):
 
 
 def _create_spark2mongo_sink(kafka_server, competition, competition_config):
+    """
+    Creates Mongo sink for Spark job to write to it.
+
+    :param kafka_server: IP address and port of the Kafka server to read from and write to
+    :param competition: Competition object
+    :param competition_config: Competition config
+    :return:
+    """
     spark_to_mongo = SparkToMongo(kafka_server, competition.name.lower().replace(" ", "") + 'spark_predictions',
                                   competition.name.lower().replace(" ", "") + 'spark_golden',
                                   competition.name.lower().replace(" ", "") + 'spark_measures', competition,
@@ -378,6 +395,23 @@ class CompetitionProducer:
     def main(self, topic, initial_batch, items, predictions, initial_training_time, batch_size, time_interval,
              predictions_time_interval, spark_topic, competition_id):
 
+        """
+        Recreates the stream. Sends the data in batches: first test (without the target value) and then train batches.
+        All batches are sent according to the time intervals set for the current competition.
+
+        :param topic:
+        :param initial_batch:
+        :param items:
+        :param predictions:
+        :param initial_training_time:
+        :param batch_size:
+        :param time_interval:
+        :param predictions_time_interval:
+        :param spark_topic:
+        :param competition_id:
+        :return:
+        """
+
         for item in initial_batch:
             try:
                 # Send row by row from initial batch as json
@@ -439,7 +473,6 @@ class CompetitionProducer:
 
         self.producer.flush()
 
-    # Creating chunks of batch size
     def chunker(self, seq, size):
         return (seq[pos:pos + size] for pos in range(0, len(seq), size))
 
@@ -490,17 +523,4 @@ class Scheduler:
         self.scheduler.start()
 
     def _stop_competition(self, job_id, end_date):
-        """
-        def _delete_job(job_id):
-            print('stop',self.scheduler.get_jobs())
-            for job in self.scheduler.get_jobs():
-                print(job.id, job_id)
-                if job.id == job_id:
-                    self.schedulder.remove_job(job)
-                    print ("No more " + job_id)"""
         self.scheduler.add_job(self.scheduler.remove_job, 'date', run_date=end_date, args=[job_id])
-
-
-
-
-
