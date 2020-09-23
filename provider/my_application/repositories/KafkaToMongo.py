@@ -31,6 +31,9 @@ except Exception:
 
 
 class ConsumerToMongo:
+    """
+
+    """
     consumer = None
     mongo_repository = None
 
@@ -44,7 +47,10 @@ class ConsumerToMongo:
 
     # message must be in byte format
     def write(self):
-
+        """
+        Writes data to the MongoDB.
+        :return:
+        """
         db = self.mongo_repository.client['data']
         data = db['data']
         data.create_index([("competition_id", 1)], unique=True)

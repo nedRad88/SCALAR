@@ -55,6 +55,23 @@ class Competition(_BASE):
     def __init__(self, competition_id, name, datastream_id, initial_batch_size, initial_training_time, batch_size,
                  time_interval, start_date, end_date, target_class, file_path, predictions_time_interval, description,
                  code):
+        """
+        Construct a class for Competition table
+        :param competition_id:
+        :param name:
+        :param datastream_id:
+        :param initial_batch_size:
+        :param initial_training_time:
+        :param batch_size:
+        :param time_interval:
+        :param start_date:
+        :param end_date:
+        :param target_class:
+        :param file_path:
+        :param predictions_time_interval:
+        :param description:
+        :param code:
+        """
         self.competition_id = competition_id
         self.name = name
         self.datastream_id = datastream_id
@@ -100,6 +117,13 @@ class Datastream(_BASE):
     __table_args__ = (UniqueConstraint('name'),)
 
     def __init__(self, datastream_id, name, description, file_path):
+        """
+        Construct a class for Datastream table.
+        :param datastream_id:
+        :param name:
+        :param description:
+        :param file_path:
+        """
         self.datastream_id = datastream_id
         self.name = name
         self.description = description
@@ -124,6 +148,18 @@ class User(_BASE):
     __table_args__ = (UniqueConstraint('email'),)
 
     def __init__(self, user_id, first_name, last_name, email, password, role, confirmed, confirmed_on):
+        """
+        Construct the class for USERS table.
+
+        :param user_id:
+        :param first_name:
+        :param last_name:
+        :param email:
+        :param password:
+        :param role:
+        :param confirmed:
+        :param confirmed_on:
+        """
         self.user_id = user_id
         self.first_name = first_name
         self.last_name = last_name
@@ -163,12 +199,30 @@ class Subscription(_BASE):
     __table_args__ = (UniqueConstraint('competition_id', 'user_id'),)
 
     def __init__(self, subscription_id, competition_id, user_id):
+        """
+        Construct the class for Subscriptions table.
+        :param subscription_id:
+        :param competition_id:
+        :param user_id:
+        """
         self.subscription_id = subscription_id
         self.competition_id = competition_id
         self.user_id = user_id
 
 
 class BaseRepository():
+    """
+    Repository base class.
+    Implements the methods to write or delete rows in the table.
+
+    --------------------------------------------------------------------
+        insert_one(): inserts one row in the table
+
+        insert_many(): insets multiple rows in the table
+
+        delete_one(): deletes one row from the table
+
+    """
     instance = None
 
     def __init__(self, host, dbname):
@@ -213,6 +267,25 @@ class BaseRepository():
 
 
 class CompetitionRepository(BaseRepository):
+    """
+    Competition repository class.
+
+    Implements the methods to retrieve competitions by different condititons.
+
+    ---------------------------------------------------------------------------
+
+        get_competition_by_id(): Retrieve competition by its ID
+
+        set_competition_code(): Update the competition code
+
+        get_all_competitions(): Retrieve all competition
+
+        get_competition_by_code(): Retrieve the competition by code
+
+        get_competitions_by_user(): Retrieve competition for a given user
+
+
+    """
 
     def __init__(self, host, dbname):
         BaseRepository.__init__(self, host, dbname)
@@ -341,6 +414,25 @@ class CompetitionRepository(BaseRepository):
 
 
 class DatastreamRepository(BaseRepository):
+    """
+        Competition repository class.
+
+        Implements the methods to retrieve competitions by different condititons.
+
+        ---------------------------------------------------------------------------
+
+            get_competition_by_id(): Retrieve competition by its ID
+
+            set_competition_code(): Update the competition code
+
+            get_all_competitions(): Retrieve all competition
+
+            get_competition_by_code(): Retrieve the competition by code
+
+            get_competitions_by_user(): Retrieve competition for a given user
+
+
+        """
 
     def __init__(self, host, dbname):
         BaseRepository.__init__(self, host, dbname)

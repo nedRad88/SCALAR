@@ -14,7 +14,6 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
-
 from __future__ import print_function
 import time
 time.sleep(15)
@@ -37,7 +36,6 @@ from repository import MongoRepository
 import logging
 from itsdangerous import URLSafeTimedSerializer
 import csv
-
 from io import StringIO
 from werkzeug.datastructures import Headers
 from hashids import Hashids
@@ -137,32 +135,29 @@ _MONGO_REPO.insert_standard_measures(standard_measures=standard_measures)
 
 
 def authorized(*roles):
+    """
+    Give authorization only to ADMIN user for some routes.
+
+    :param roles:
+    :return:
+    """
     def wrapper(f):
         @wraps(f)
         def wrapped(*args, **kwargs):
-
             token = request.headers.get('Authorization')
-
             decoded = decode_auth_token(token)
             # print decoded
             if decoded[0] != 200:
                 return decoded[1]
-
             user = decoded[1]
             logging.debug("Decorator: {}".format(user))
-
             if roles:
-
                 user_roles = [str(r) for r in user['roles']]
-
                 if "roles" not in user or len(set(user_roles).intersection(set(roles))) == 0:
                     # return "Not Allowed"
                     return json.dumps('Forbidden Admin Only'), 403, {'ContentType': 'application/json'}
-
             return f(user, *args, **kwargs)
-
         return wrapped
-
     return wrapper
 
 
@@ -178,6 +173,11 @@ def index():
 # TODO: add checking on email confirmation and add decorator
 @app.route('/auth/login', methods=['POST'])
 def login():
+    """
+    Login route. Provide the credentials (email/password).
+
+    :return:
+    """
     user_name = request.form['username']
     password = request.form['password']
 
@@ -201,6 +201,12 @@ def me(user):
 
 @app.route('/auth/api/account/confirm/<token>')
 def confirm_email(token):
+    """
+    Check if the confirmation token is correct.
+
+    :param token:
+    :return:
+    """
     logging.debug("Token: {}".format(token))
     try:
         email = confirm_token(token)
@@ -223,7 +229,15 @@ def confirm_email(token):
 
 @app.route('/auth/register', methods=['POST'])
 def register():
+    """
+    Registration route. Provides a form to register to the platform.
+        Parameters:
+            - First name, last name, email, password
+    Then the confirmation e-mail is sent with a token to validate the registration.
 
+    :return: Response:
+                - 200: confirm success
+    """
     data = json.loads(request.data.decode('utf-8'))
     web = config["WEB_ADDRESS"]
     first_name = data['firstName']
@@ -244,7 +258,6 @@ def register():
     msg.body = "Hello " + first_name + ' ' + last_name + ", \n\nWelcome to Streaming Data Challenge platform! \n\nCheers, \nThe team \n\nPlease click on the link below to confirm your e-mail.\n" "http://" + web + ":80/auth/api/account/confirm/" + token
 
     mail.send(msg)
-
     return json.dumps({'success': True}), 200, {'ContentType': 'application/json'}
 
 
@@ -260,7 +273,6 @@ def get_users(user):
 def delete_users(user):
     users = json.loads(request.data)
     _USER_REPO.delete_many(users)
-
     return json.dumps({'success': True}), 200, {'ContentType': 'application/json'}
 
 
@@ -276,6 +288,24 @@ def test():
 
 @app.route('/api/competitions', methods=['POST', 'GET'])
 def competitions():
+    """
+    Competitions route.
+    Implements two methods:
+    GET: retrieve the competitions
+    POST: create new competition:
+        Parameters:
+            - Competition name
+            - Datastream
+            - Description of the competition
+            - Competition settings: size of initial batch, initial training time, size of a regular batch,
+                                    time interval between the batches, name of the label column and the evaluation
+                                    metric, start and end date, time interval to send the predictions, .proto file
+
+    :return: Responses:
+            - 200: If method== "GET", return the list of the competitions;
+                   If method == "POST", confirm success
+            - 500: Error
+    """
     if request.method == 'GET':
         status = request.args.get('status')
         page = request.args.get('page')
@@ -368,6 +398,12 @@ def competitions():
 
 @app.route('/api/competitions/<competition_id>')
 def get_competition_info(competition_id):
+    """
+    Retrieve the competition by its id.
+
+    :param competition_id: Competition id
+    :return: The competition object
+    """
     competition = _COMPETITION_REPO.get_competition_by_id(competition_id)
     logging.debug("Competition info request!")
     return jsonify(competition.serialize())
@@ -375,6 +411,21 @@ def get_competition_info(competition_id):
 
 @app.route('/api/datastreams', methods=['GET', 'POST'])
 def get_datastreams():
+    """
+    Datastreams route. It implements 2 methods:
+    - GET: retrieve already existing datasets
+    - POST: add new dataset
+        Parameters:
+                - Dataset name
+                - Dataset description
+                - Dataset file
+
+    :return: Responses:
+                - If method == "GET": return the list of the datasets
+                - If method == "POST":
+                    - 200: confirm success
+                    - 500: Error
+    """
     if request.method == 'GET':
         status = request.args.get('status')
         page = request.args.get('page')
@@ -421,18 +472,36 @@ def get_datastreams():
 
 @app.route('/api/datastreams/<datastream_id>')
 def get_datastream_info(datastream_id):
+    """
+    Retrieve information about the dataset.
+
+    :param datastream_id: Dataset id
+    :return: Response: Return the information about the dataset (name, description)
+    """
     datastream = _DATASTREAM_REPO.get_datastream_by_id(datastream_id)
     return jsonify(datastream.serialize())
 
 
 @app.route('/api/results/<competition_id>')
 def results_by_user_by_competition(competition_id):
+    """
+    Retrieve results of the users for a given competition.
+
+    :param competition_id: Competition id
+    :return: List of users with results
+    """
     results = _MONGO_REPO.get_results_by_user(competition_id)
     return jsonify(results)
 
 
 @app.route('/api/subscriptions', methods=['POST'])
 def subscriptions():
+    """
+    Subscriptions route. Registers the users' subscriptions to competitions.
+
+    :return: Responses:
+                - 200: Confirm success
+    """
     user_secret_key = ''
     try:
         data = json.loads(request.data.decode('utf-8'))
@@ -442,7 +511,6 @@ def subscriptions():
         if competition is not None and user is not None:
             # insert subscriptions
             subscription = Subscription(None, competition.competition_id, user.user_id)
-            logging.debug("here4: {}".format(subscription))
             _SUBSCRIPTION_REPO.insert_one(subscription)
 
             user_secret_key = get_subscription_token(competition.competition_id, data['user'])
@@ -457,6 +525,11 @@ def subscriptions():
 
 @app.route('/api/subscriptions/delete', methods=['POST'])
 def delete_subscription():
+    """
+    Removes the subscription for a competition
+    :return: Response:
+                - 200: OK
+    """
     try:
         data = json.loads(request.data)
         competition = _COMPETITION_REPO.get_competition_by_id(data['competition_id'])
@@ -475,6 +548,10 @@ def delete_subscription():
 
 @app.route('/api/subscriptions/check')
 def check_subscription():
+    """
+    Check if user is subscribed to a given competition.
+    :return: True or False
+    """
     user = request.args.get('user')
     competition = request.args.get('competition')
     s = _SUBSCRIPTION_REPO.check_subscription(competition, user)
@@ -483,9 +560,15 @@ def check_subscription():
 
 @app.route('/api/subscriptions/secret')
 def get_secret_key():
+    """
+    Retrieve the subscription token for a given user and competition.
+
+    :return: Responses:
+                - 200: Confirm the token
+                - 404: If user is not subscribed
+    """
     user_id = request.args.get('user')
     competition_id = request.args.get('competition')
-
     user_secret_key = ''
 
     try:
@@ -507,6 +590,12 @@ def get_secret_key():
 
 @app.route('/api/users/<user_id>/competitions')
 def get_competitions_by_user(user_id):
+    """
+    Retrieve the list of the competitions to which user is subscribed.
+
+    :param user_id: User ID
+    :return: List the competitions.
+    """
     status = request.args.get('status')
     page = request.args.get('page')
     step = request.args.get('step')
@@ -517,6 +606,12 @@ def get_competitions_by_user(user_id):
 
 @app.route('/api/evaluation/<competition_id>')
 def get_competition_evaluation_measure(competition_id):
+    """
+    Get evaluation measures for a given competition.
+
+    :param competition_id: Competition ID
+    :return: Evaluation measure, or list if there are multiple
+    """
     competition_measures = _MONGO_REPO.get_competition_evaluation_measures(competition_id)
     logging.debug("Competition measures: {}".format(competition_measures))
     return jsonify(competition_measures)
@@ -524,12 +619,22 @@ def get_competition_evaluation_measure(competition_id):
 
 @app.route('/api/evaluation/measures')
 def get_standard_evaluation_measures():
+    """
+    Get all available evaluation measures.
+    :return: List of the evaluation measures
+    """
     measures = _MONGO_REPO.get_standard_evaluation_measures()
     return jsonify(measures)
 
 
 @app.route('/api/leaderboard/<competition_id>')
 def get_leaderboard_by_competition(competition_id):
+    """
+    Leaderboard route. Retrieves the results, for a given competition, for all the users to show it on the leaderboard.
+
+    :param competition_id: Competition ID
+    :return: Ordered list with users and their results
+    """
     field = request.args.get('field')
     measure = request.args.get('measure')
 
@@ -554,6 +659,13 @@ def get_leaderboard_by_competition(competition_id):
 
 @app.route("/competition/<competition_id>/stream")
 def get_competition_stream(competition_id):
+    """
+    Retrieve the stream.
+    NOT USED.
+
+    :param competition_id: Competition ID
+    :return:
+    """
     db = _MONGO_REPO.client['data']
     collection = db['data']
     stream = collection.find_one({"competition_id": competition_id})
@@ -562,6 +674,13 @@ def get_competition_stream(competition_id):
 
 @app.route("/competition/<competition_id>/golden_standard")
 def get_competition_golden_standard(competition_id):
+    """
+    Retrieve the dataset with labels (training dataset).
+    NOT USED.
+
+    :param competition_id: Competition ID
+    :return:
+    """
     db = _MONGO_REPO.client['data']
     collection = db['golden_standard']
     stream = collection.find_one({"competition_id": competition_id})
@@ -572,19 +691,36 @@ def get_competition_golden_standard(competition_id):
 app.config['ALLOWED_EXTENSIONS'] = {'csv', 'xls', 'proto'}
 
 
-# For a given file, return whether it's an allowed type or not
 def allowed_file(filename):
+    """
+    Check if the file has an allowed file extension.
+    :param filename:
+    :return: True/False
+    """
     return '.' in filename and \
            filename.rsplit('.', 1)[1] in app.config['ALLOWED_EXTENSIONS']
 
 
 def get_file_extension(filename):
+    """
+    Get the extension of the file.
+    :param filename:
+    :return:
+    """
     file_name, extension = os.path.splitext(filename)
     return extension
 
 
 @app.route('/topic/<competition_id>/<field>/<measure>/<user_id>')
 def get_messages(competition_id, field, measure, user_id):
+    """
+    Stream live results to the chart.
+    :param competition_id: Competition ID
+    :param field: Label column
+    :param measure: Evaluation metric
+    :param user_id: User ID
+    :return: Batch metrics to be shown on the live chart.
+    """
     def stream_results(competition):
         # Getting competition from Database
 
@@ -606,7 +742,6 @@ def get_messages(competition_id, field, measure, user_id):
                 results = _MONGO_REPO.get_results_by_user(competition.competition_id, field, measure, user_id)
                 data = 'retry: 100000000\n'
                 data = data + 'data: {0}\n\n'.format(json.dumps({"status": 'INIT', "results": results}))
-
                 return data
 
         else:
@@ -635,6 +770,12 @@ def get_messages(competition_id, field, measure, user_id):
 
 @app.route('/download/data/<competition_id>')
 def download_data(competition_id):
+    """
+    Dowload the .csv file with the records from the stream that have been published until now.
+
+    :param competition_id: Competition ID
+    :return: .csv file
+    """
     def generate():
         data = StringIO()
         w = csv.writer(data)
@@ -664,24 +805,27 @@ def download_data(competition_id):
     headers = Headers()
     headers.set('Content-Disposition', 'attachment', filename=competition_id + 'data.csv')
     # stream the response as the data is generated
-    return Response(
-        stream_with_context(generate()),
-        mimetype='text/csv', headers=headers
-    )
+    return Response(stream_with_context(generate()), mimetype='text/csv', headers=headers)
 
 
 @app.route("/download/proto/<competition_id>")
 def download_proto_file(competition_id):
+    """
+    Download the proto file for a given competition.
+    :param competition_id: Competition ID
+    :return: Responses:
+                - .proto file
+                - 404: File not found
+
+    """
     competition = _COMPETITION_REPO.get_competition_by_id(competition_id)
     if competition is None:
         return json.dumps('Competition not found !, please check'), 404, {'ContentType': 'application/json'}
-
     try:
         path = os.path.join(config['UPLOAD_REPO'], config['COMPETITION_PROTO_REPO'], competition.name, 'file.proto')
         print(path)
         return send_file(path, as_attachment=True)
     except Exception as e:
-
         print(str(e))
         return json.dumps('no File'), 404, {'ContentType': 'application/json'}
 

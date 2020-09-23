@@ -62,6 +62,20 @@ _COMPETITION_GENERATED_CODE = config['COMPETITION_GENERATED_CODE']
 
 def receive_predictions(predictions, competition_id, user_id, end_date, kafka_producer,
                         spark_topic, targets, stop):
+    """
+    This function receives the predictions from the users and publishes them to a Kafka topic so they can be read by
+    Spark module.
+
+    :param predictions: Batch predictions sent by user
+    :param competition_id: Competition ID
+    :param user_id: User ID
+    :param end_date: Competition end date
+    :param kafka_producer: Kafka producer for a given user
+    :param spark_topic: Kafka topic to publish in, so it would be read by Spark
+    :param targets: label columns
+    :param stop: Kill signal for the thread
+    :return:
+    """
 
     last_sent_message = datetime.datetime.now()
     while True:
@@ -97,6 +111,12 @@ def receive_predictions(predictions, competition_id, user_id, end_date, kafka_pr
 
 
 class ProducerToMongoSink:
+    """
+    Kafka producer.
+
+    Publishes messages to a given topic.
+
+    """
     daemon = True
     producer = None
 
@@ -106,6 +126,13 @@ class ProducerToMongoSink:
 
     # message must be in byte format
     def send(self, topic, prediction):
+        """
+        Publish messages to a given topic in byte format.
+
+        :param topic: Kafka topic
+        :param prediction: data
+        :return:
+        """
         try:
             self.producer.produce(topic, orjson.dumps(prediction))
             self.producer.poll(0)
@@ -114,8 +141,21 @@ class ProducerToMongoSink:
 
 
 class DataStreamerServicer:
+    """
+    Datastream Servicer handles the communication with users. Sends the datastream records and handles the predictions
+    that are sent by users.
 
+    It creates the topics. Starts Kafka producers and loads the data structures for communication with users, generated
+    from .proto file.
+
+    """
     def __init__(self, server, competition, competition_config):
+        """
+
+        :param server: Kafka server IP address
+        :param competition: Competition object
+        :param competition_config: Competition configuration object
+        """
         self.server = server
         self.producer = ProducerToMongoSink(server)
         self.predictions_producer = ProducerToMongoSink(server)
@@ -164,6 +204,13 @@ class DataStreamerServicer:
         self.__bases__ = (self.DataStreamer,)  # ??
 
     def sendData(self, request_iterator, context):
+        """
+        After the user has initialized the communication with the server. It checks user's credentials and
+        starts sending the data records.
+        :param request_iterator: Sent by the user through gRPC/Protobuf protocol
+        :param context: data
+        :return:
+        """
         _SUBSCRIPTION_REPO = SubscriptionRepository(_SQL_HOST, _SQL_DBNAME)
         _USER_REPO = UserRepository(_SQL_HOST, _SQL_DBNAME)
         _COMPETITION_REPO = CompetitionRepository(_SQL_HOST, _SQL_DBNAME)

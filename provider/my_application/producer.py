@@ -380,6 +380,9 @@ def terminate(processes):
 
 
 class CompetitionProducer:
+    """
+
+    """
     daemon = True
     producer = None
 
@@ -473,14 +476,19 @@ class CompetitionProducer:
 
         self.producer.flush()
 
-    def chunker(self, seq, size):
+    @staticmethod
+    def chunker(seq, size):
+        """ Returns data in chunks (batches) of a given size. """
         return (seq[pos:pos + size] for pos in range(0, len(seq), size))
 
-    def is_not_empty(self, row):  # is_empty
+    @staticmethod
+    def is_not_empty(row):
+        """Check if row is empty."""
         return all(item == "" for item in row)
 
-    # Creating competition, competition_config
+
     def create_competition(self, competition, items, predictions, initial_batch):
+        """Create a competition and start releasing the data stream."""
         self.main(
             topic=competition.name.lower().replace(" ", ""),
             initial_training_time=competition.initial_training_time,
@@ -495,7 +503,13 @@ class CompetitionProducer:
 
 
 class Scheduler:
+    """
+    Job Scheduler.
 
+    Used to store new competitions in MongoDBJobStore and
+    initiate the beginning of the competition based on its start date.
+
+    """
     def __init__(self):
         jobstores = {
             'default': MongoDBJobStore(database='apscheduler', collection='jobs', host=_MONGO_HOST, port=27017)}
@@ -503,6 +517,13 @@ class Scheduler:
         # print("Version: ", sys.version)
 
     def schedule_competition(self, competition, competition_config):
+        """
+        Schedule when the competition starts and ends.
+
+        :param competition: Competition object
+        :param competition_config: Competition config
+
+        """
         competition_job_id = str(competition.name)
         start_date = competition.start_date
         end_date = competition.end_date
@@ -520,7 +541,13 @@ class Scheduler:
         job_id_to_remove = publish_job.id
 
     def start(self):
+        """
+        Starts the scheduler.
+        """
         self.scheduler.start()
 
     def _stop_competition(self, job_id, end_date):
+        """
+        Stopping the competition when end date and time has been reached.
+        """
         self.scheduler.add_job(self.scheduler.remove_job, 'date', run_date=end_date, args=[job_id])
