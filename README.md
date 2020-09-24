@@ -101,6 +101,7 @@ To create and participate in the competition use the provided [examples](./examp
 * **Nedeljko Radulovic**
 * **Dihia Boulegane**
 * **Albert Bifet**
+* **Nenad Stojanovic**
 
 
 ## Acknowledgments
