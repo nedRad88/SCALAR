@@ -151,6 +151,8 @@ class DataStreamerServicer:
     """
     def __init__(self, server, competition, competition_config):
         """
+        Construct the DatastreamServicer Class. Once the communication is triggered by the user, it starts publishing
+        messages to be sent to that user and at the same time activates module for receiving the predictions.
 
         :param server: Kafka server IP address
         :param competition: Competition object

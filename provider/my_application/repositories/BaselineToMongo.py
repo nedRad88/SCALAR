@@ -13,14 +13,19 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 """
-
-
 import json
 import orjson
 import datetime
 import operator
 import os
 from confluent_kafka import Consumer, Producer
+
+"""
+This module provides the Baseline classifier class for a given problem.
+Depending of the nature of the problem regression/classification it creates a baseline model 
+average value/ majority class voting.
+It serves as first line comparison of performance with user's model.
+"""
 
 with open('./config.json') as json_data_file:
     config = json.load(json_data_file)

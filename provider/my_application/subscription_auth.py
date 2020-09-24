@@ -13,9 +13,16 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 """
-
-
 import jwt
+
+"""
+
+Subscription module.
+Provides methods for getting authentication tokens for each competition subscription.
+
+"""
+
+
 
 # TODO : make secret key global with authentication
 SECRET_KEY = b"\xf6f \x8a\x08Q\xbd\xca\x0c\x87t|\x0b<\xc0\xb4\x13\xb4\xc6\x13\x8d\x8f\xe6&"

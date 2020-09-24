@@ -105,8 +105,9 @@ def evaluate(spark_context, kafka_broker, competition, competition_config, windo
 
             if measure == "ACC":
                 join_result = join_result\
-                    .withColumn("ACC" + "_" + target, when(join_result[target] == join_result[prediction_target_col], 1).otherwise(0)) \
+                    .withColumn("ACC" + "_" + target, when(F.col(target) == F.col(prediction_target_col), 1).otherwise(0)) \
                     .drop(target, prediction_target_col)
+                # join_result[target] == join_result[prediction_target_col]
 
             #TODO Kappa characteristic
 

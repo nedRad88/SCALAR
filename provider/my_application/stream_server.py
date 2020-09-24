@@ -33,14 +33,29 @@ _COMPETITION_GENERATED_CODE = config['COMPETITION_GENERATED_CODE']
 
 
 class StreamServer:
+    """
+    StreamServer class. It handles the communication through gRPC/Protobuf.
+    """
     server = None
 
     def __init__(self, server_port, options):
+        """
+        Start gRPC server to be able to communicate with multiple users.
+        :param server_port:
+        :param options:
+        """
         if self.server is None:
             self.server = grpc.server(futures.ThreadPoolExecutor(max_workers=100), options=options)
             self.port = server_port
 
     def add_server(self, streamer, competition):
+        """
+        Define the communication protocol, e.g. import the methods and data structures that define protocol, from the
+        files that are generated after compiling .proto file.
+        :param streamer:
+        :param competition:
+        :return:
+        """
         pb2_grpc_file_path = os.path.join(_UPLOAD_REPO, _COMPETITION_GENERATED_CODE, competition.name,
                                           'file_pb2_grpc.py')
         file_pb2_grpc = SourceFileLoader('file_pb2_grpc', pb2_grpc_file_path).load_module()

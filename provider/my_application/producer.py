@@ -206,6 +206,8 @@ def read_csv_file(competition, competition_config, data_format='csv'):
 
 def _create_evaluation_spark(kafka_server, competition, competition_config):
     """
+    Creates new Spark session to handle given competition. Spark program consumes the messages from Kafka
+    to do online evaluation and then store the metrics, predictions and original instances in MongoDB.
 
     :param kafka_server: IP address and port of the Kafka server to read from and write to
     :param competition: Competition object
@@ -369,6 +371,12 @@ def _create_baseline(competition, competition_config):
 
 
 def _end_competition(competition, processes):
+    """
+    Terminate competition processes.
+    :param competition:
+    :param processes:
+    :return:
+    """
     pause.until(competition.end_date + datetime.timedelta(seconds=62))
     if datetime.datetime.now() > competition.end_date + datetime.timedelta(seconds=60):
         terminate(processes)

@@ -13,13 +13,20 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 """
-
-
 import jwt
 import datetime
 from repositories.CompetitionRepository import UserRepository
 import json
 import os
+
+"""
+
+Authentication module.
+Provides methods for getting authentication tokens for registration.
+
+"""
+
+
 
 #TODO Why this key? Does it have to be hardcoded?
 SECRET_KEY = b"\xf6f \x8a\x08Q\xbd\xca\x0c\x87t|\x0b<\xc0\xb4\x13\xb4\xc6\x13\x8d\x8f\xe6&"
@@ -41,13 +48,17 @@ _USER_REPO = UserRepository(_SQL_HOST, _SQL_DBNAME)
 
 def get_auth_token(user):
     """
+    Get authentication token for a given user.
+    :param user: dictionary {'id': user email, 'password': user password}
+    :return: Responses:
+                - 404: User is not registered or password is incorrect
+                - 401: User has not confirmed the email address
+                - 500: Internal server error
+                - Log in success if the password is correct and user has confirmed his/her address.
 
-    :param user:
-    :return:
     """
-    print(user)
+
     data_base_user = _USER_REPO.get_user_by_email(user['id'])
-    print(data_base_user)
 
     if data_base_user is None:
         return 404, "Email Not found ! please check or register"
@@ -65,9 +76,11 @@ def get_auth_token(user):
 
 def encode_auth_token(user):
     """
-
+    Encode authentication token.
     :param user:
-    :return:
+    :return: Responses:
+                - 401: Error
+                - 200: Success
     """
     try:
         payload = {
@@ -91,9 +104,11 @@ def encode_auth_token(user):
 
 def decode_auth_token(auth_token):
     """
-
+    Decode authentication token.
     :param auth_token:
-    :return:
+    :return: Responses:
+                - 100: Invalid or expired token
+                - 200: Success
     """
     try:
         payload = jwt.decode(auth_token, SECRET_KEY)
