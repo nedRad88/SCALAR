@@ -18,10 +18,15 @@ If you are not familiar with GitHub and how to contribute to a github project, c
 
  - Python code shall comply with [PEP 8](https://www.python.org/dev/peps/pep-0008/) 
  - Documentation shall be in docstring.
+ - The names for new modules and methods should be intuitive.
+ - If possible, provide a way to test the new module.
 
 ## Submitting updates
 
 Send your GitHub pull request to [SCALAR](https://github.com/nedRad88/SCALAR/pulls) with a clear statement of what you have done.
+Ensure the PR description clearly describes the problem and solution. Include the relevant issue number if applicable.
+Test the functionality of the module before sending the PR. 
 Please follow our code conventions and write clear messages for your commits.
+
 
 
