@@ -22,7 +22,7 @@ import json
 import orjson
 import os
 
-
+"Read environment variables."
 with open('config.json') as json_data_file:
     config = json.load(json_data_file)
 try:
@@ -32,6 +32,13 @@ except Exception:
 
 
 class SparkToMongo:
+    """
+    Consumer of Spark data class.
+    This class implements Kafka consumer to receive data from Spark and store it in MongoDB.
+    It handles messages from 3 topics: Evaluation metrics(aka. measures), predictions,
+    and original data records (aka. golden).
+
+    """
     def __init__(self, kafka_server, prediction_topic, golden_topic, measures_topic, competition, configuration):
         self.consumer = Consumer({'group.id': 'spark_measures', 'bootstrap.servers': kafka_server,
                                   'session.timeout.ms': competition.initial_training_time * 10000,
@@ -47,6 +54,13 @@ class SparkToMongo:
         self.db_data = self.mongo_repository.client['data']
 
     def process_measures(self, mess, previous_batch, now):
+        """
+        Process the messages on measures topic. Write to 'evaluation_measures' database.
+        :param mess: current message
+        :param previous_batch: previous message
+        :param now: timestamp 'now', to follow the time interval between the messages.
+        :return:
+        """
         db = self.mongo_repository.client['evaluation_measures']
         measures_coll = db['measures']
         message = orjson.loads(mess.value())
@@ -81,16 +95,31 @@ class SparkToMongo:
         return previous_batch, now
 
     def process_predictions(self, mess):
+        """
+        Receive and store predictions in 'predictions_v2' database in MongoDB
+        :param mess: message as json to write
+        :return:
+        """
         predictions = self.db_data['predictions_v2']
         prediction = orjson.loads(mess.value())
         predictions.insert_one(prediction)
 
     def process_golden(self, mess):
+        """
+        Receive and store the original data records, write them to 'golden_standard' database in MongoDB.
+        :param mess: message as json
+        :return:
+        """
         golden = self.db_data['golden_standard']
         message = orjson.loads(mess.value())
         golden.insert_one(message)
 
     def run(self):
+        """
+        Main method, polls Kafka consumer for new messages.
+
+        :return:
+        """
         previous = 0
         date = datetime.datetime.now()
         while True:

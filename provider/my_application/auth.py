@@ -24,6 +24,7 @@ import os
 #TODO Why this key? Does it have to be hardcoded?
 SECRET_KEY = b"\xf6f \x8a\x08Q\xbd\xca\x0c\x87t|\x0b<\xc0\xb4\x13\xb4\xc6\x13\x8d\x8f\xe6&"
 
+"Read the environment variables."
 with open('config.json') as json_data_file:
     config = json.load(json_data_file)
 try:
@@ -39,6 +40,11 @@ _USER_REPO = UserRepository(_SQL_HOST, _SQL_DBNAME)
 
 
 def get_auth_token(user):
+    """
+
+    :param user:
+    :return:
+    """
     print(user)
     data_base_user = _USER_REPO.get_user_by_email(user['id'])
     print(data_base_user)
@@ -58,6 +64,11 @@ def get_auth_token(user):
 
 
 def encode_auth_token(user):
+    """
+
+    :param user:
+    :return:
+    """
     try:
         payload = {
             'exp': datetime.datetime.utcnow() + datetime.timedelta(days=0, hours=12),
@@ -79,6 +90,11 @@ def encode_auth_token(user):
 
 
 def decode_auth_token(auth_token):
+    """
+
+    :param auth_token:
+    :return:
+    """
     try:
         payload = jwt.decode(auth_token, SECRET_KEY)
         if not payload['confirmed']:

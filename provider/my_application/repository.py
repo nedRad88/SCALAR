@@ -31,26 +31,56 @@ class MongoRepository:
             sys.stderr.write(str(e))
 
     def create_database(self, db_name):
+        """
+        Create a database in MongoDB
+        :param db_name: Name of the database
+        :return:
+        """
         db = self.client[db_name]
         return db
 
     def create_collection(self, db_name, collection_name):
+        """
+        Create collection inside database db_name.
+        :param db_name: Name of the database
+        :param collection_name: name of the collection
+        :return:
+        """
         db = self.client[db_name]
         collection = db[collection_name]
         return collection
 
     def insert_document(self, db_name, collection_name, document):
+        """
+        Insert a document in collection (collection_name) in database (db_name).
+
+        :param db_name: Database name
+        :param collection_name: Collection name
+        :param document: json document
+        :return:
+        """
         db = self.client[db_name]
         collection = db[collection_name]
         collection.insert_one(document)
 
     def get_competition_data_records(self, competition_id):
+        """
+        Fetch the datastream.
+
+        :param competition_id: Competition ID
+        :return: Datastream where each record(row) is a dictionary
+        """
         db = self.client['data']
         collection = db['data']
         results = collection.find_one({"competition_id": competition_id})
         return results
 
     def get_competition_evaluation_measures(self, competition_id):
+        """
+        Fetch the evaluation metrics for a given competition.
+        :param competition_id: Competition ID
+        :return: List of metrics
+        """
         db = self.client['evaluation_measures']
         collection = db['evaluation_measures']
 
@@ -64,6 +94,10 @@ class MongoRepository:
         return record
 
     def get_standard_evaluation_measures(self):
+        """
+        Retrieve the standard set of evaluation metrics offered on the platform.
+        :return: List of measures (by name: MSE, MAPE, ACC...)
+        """
         db = self.client['evaluation_measures']
         collection = db['standard_measures']
 
@@ -78,6 +112,14 @@ class MongoRepository:
         return data
 
     def get_results_by_user(self, competition_id, field, measure, user_id):
+        """
+        Fetch evaluation metric values for a given user and competition.
+        :param competition_id: Competition ID
+        :param field: Label column name
+        :param measure: Evaluation metric
+        :param user_id: User ID
+        :return: Dictionary with the computed evaluation metric for a given user
+        """
 
         db = self.client['evaluation_measures']
         collection = db['measures']
@@ -157,6 +199,18 @@ class MongoRepository:
         return final_stats
 
     def get_last_predictions_by_user(self, competition_id, now, field, measure, user_id, evaluation_time_interval):
+        """
+        NOT USED!
+
+        Retrieve the latest predictions sent by user.
+        :param competition_id:
+        :param now:
+        :param field:
+        :param measure:
+        :param user_id:
+        :param evaluation_time_interval:
+        :return: Dictionary with the computed evaluation metric for a given user
+        """
         db = self.client['evaluation_measures']
         collection = db['measures']
 
@@ -234,6 +288,13 @@ class MongoRepository:
         return final_stats
 
     def get_users_ranking_by_field_by_measure(self, competition_id, field, measure):
+        """
+        Retrieve rankings of users for a specific label column and evaluation metric.
+        :param competition_id: Competition ID
+        :param field: Label column name
+        :param measure: Evaluation metric
+        :return: List of dictionary with the computed evaluation metric for all users
+        """
 
         db = self.client['evaluation_measures']
         collection = db['measures']
@@ -275,6 +336,11 @@ class MongoRepository:
         return data
 
     def insert_standard_measures(self, standard_measures):
+        """
+        Store standard set of evaluation metrics.
+        :param standard_measures: list of metrics
+        :return:
+        """
         db = self.client['evaluation_measures']
         collection = db['standard_measures']
         measures = collection.find({})

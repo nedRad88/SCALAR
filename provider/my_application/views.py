@@ -42,7 +42,6 @@ from hashids import Hashids
 import eventlet
 eventlet.monkey_patch(time=True)
 logging.basicConfig(level='DEBUG')
-# time.sleep.__module__
 
 with open('config.json') as json_data_file:
     config = json.load(json_data_file)
@@ -62,7 +61,7 @@ app.config['SECURITY_PASSWORD_SALT'] = config['SECURITY_PASSWORD_SALT']
 mail = Mail(app)
 app.debug = True
 
-
+# Start scheduler
 _SCHEDULER = Scheduler()
 _SCHEDULER.start()
 

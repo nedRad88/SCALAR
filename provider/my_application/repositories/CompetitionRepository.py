@@ -70,7 +70,7 @@ class Competition(_BASE):
         :param file_path:
         :param predictions_time_interval:
         :param description:
-        :param code:
+        :param code: Competition code
         """
         self.competition_id = competition_id
         self.name = name
@@ -466,7 +466,25 @@ class DatastreamRepository(BaseRepository):
 
 
 class UserRepository(BaseRepository):
+    """
+        User repository class.
 
+        Implements the methods to query the USERS table.
+
+        ---------------------------------------------------------------------------
+
+            get_user_by_id(): Retrieve user information based on his ID
+
+            get_user_by_email(): Retrieve user information based on his email
+
+            get_all_users(): List all users
+
+            delete_many(): Delete several users at the same time
+
+            confirm_user(): Manually confirm user's registration
+
+
+        """
     def __init__(self, host, dbname):
         BaseRepository.__init__(self, host, dbname)
     def get_user_by_id(self, id):
@@ -505,7 +523,21 @@ class UserRepository(BaseRepository):
 
 
 class SubscriptionRepository(BaseRepository):
+    """
+        Subscription repository class.
 
+        Implements the methods to retrieve subscriptions by different condititons.
+
+        ---------------------------------------------------------------------------
+
+            get_competition_subscribers(): Get users that subscribed to the competition
+
+            check_subscription(): Check if a given user is subscribed to a given competition
+
+            get_subscription(): Retrieve the subscription for a user
+
+
+        """
     def __init__(self, host, dbname):
         BaseRepository.__init__(self, host, dbname)
 

@@ -32,7 +32,7 @@ except Exception:
 
 class ConsumerToMongo:
     """
-
+    Kafka Consumer class for writing to MongoDB.
     """
     consumer = None
     mongo_repository = None
