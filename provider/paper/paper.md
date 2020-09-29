@@ -82,7 +82,9 @@ We explain layer by layer:
 
 # Acknowledgements
 
-We would like to acknowledge support for this project from the EDF (Electricité de France) and OpenML.
+We would like to thank Nenad Stojanovic for his contribution to the project and to acknowledge support for this project 
+from the EDF (Electricité de France) and OpenML.
+
 
 # References
 

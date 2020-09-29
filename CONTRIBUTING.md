@@ -14,8 +14,8 @@ If you are not familiar with GitHub and how to contribute to a github project, c
 
  - [Make a clean pull request](https://github.com/MarcDiethelm/contributing/blob/master/README.md)
  
-If you have an idea what can be improved or added to the system, or you found a bug report an [issue](https://github.com/nedRad88/SCALAR/issues).
-We will respond promptly to discuss the
+If you have an idea what can be improved or added to the system, or you found a bug, report an [issue](https://github.com/nedRad88/SCALAR/issues).
+We will respond promptly to your proposal.
 
 ## Code style and documentation
 
