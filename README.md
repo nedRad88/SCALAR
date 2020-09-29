@@ -27,7 +27,7 @@ low latency bi-directional streaming communication between server and users.
 
 ![Architecture](./Architecture.png)
 
-**Freedom to choose a programming language** - SCALAR let's users to choose their preferred environment. The only 
+**Freedom to choose a programming language** - SCALAR lets users to choose their preferred environment. The only 
 requirement is to be able to communicate through `gRPC` and `Protobuf`, which is supported for many programming 
 languages: Python, Java, C++, GO... Additionally, SCALAR provides support for R. Apart from that, users can choose 
 their setup, environment and additional resources to train better models.
