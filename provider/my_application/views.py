@@ -132,6 +132,21 @@ standard_measures = [{'id': 1, 'name': 'MAPE', 'type': 'regression'}, {'id': 2, 
                      {'id': 5, 'name': 'kappa', 'type': 'classification'}]
 _MONGO_REPO.insert_standard_measures(standard_measures=standard_measures)
 
+############################
+"Create a default admin user"
+if _USER_REPO.get_user_by_email("admin") is None:
+    user = User(user_id=1, first_name='admin', last_name='admin', email='admin', password='admin', role='ADMIN',
+                confirmed=True, confirmed_on=datetime.now())
+    _USER_REPO.insert_one(user)
+    _USER_REPO.session.commit()
+############################
+"Create a default datastream"
+if _DATASTREAM_REPO.get_datastream_by_id(1) is None:
+    datastream = Datastream(1, name="Test", file_path="../example_data/competition_data/competition_stream.csv", description="Datastream for test")
+    _DATASTREAM_REPO.insert_one(datastream)
+    _DATASTREAM_REPO.session.commit()
+############################
+
 
 def authorized(*roles):
     """

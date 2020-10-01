@@ -440,10 +440,13 @@ class DatastreamRepository(BaseRepository):
     def get_datastream_by_id(self, datastream_id):
         results = None
         try:
-            results = self.session.query(Datastream).filter_by(datastream_id=datastream_id)
+            results = self.session.query(Datastream).filter_by(datastream_id=datastream_id).first()
         except Exception:
             self.session.rollback()
-        return results[0]
+        if not results:
+            return None
+        else:
+            return results
 
     def get_all_datastreams(self, page=None, step=None):
         results = None

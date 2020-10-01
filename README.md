@@ -78,23 +78,9 @@ docker-compose up
 This command will pull all necessary containers and run them.
 When all services are up, web application will be available on [localhost:80](http://localhost:80)
 
-Register to the platform and confirm your account following the link sent in the registration e-mail.
+To log in to the platform, you can use default credentials: `admin:admin`
+Default `Test` datastream, for creating the test competition is available under `Datastreams` tab.
 
-To register as an ADMIN user, to be able to create the competition, you will have to change your User type ADMIN in MySQL database.
-
-You will have to install MySQL client installed on your host machine.
-Then connect to the `sql_db` container:
-```
-docker exec -it sql_db mysql -u mysql -pmysql
-```
-Then in database `sample` and in the table `USERS`, change your role to `ADMIN` instead of `USER` (check your `user_id` before):
-```
-use sample;
-
-UPDATE USERS SET role='ADMIN' where user_id = 1;
-```
-
-After this change, restart the platform.
 
 To get to know around the platform use the the [Quick Start Guide](./SCALAR_Quick_Start_Guide.pdf). 
 To create and participate in the competition use the provided [examples](./example_data).

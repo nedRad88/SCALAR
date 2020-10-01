@@ -42,7 +42,7 @@ services:
     environment:
       TZ: "Europe/Paris"
     volumes:
-      - local_path_volume:/data/db
+      - >>local_path_volume<<:/data/db
     container_name: mongo_db
 
   sql_db:
@@ -122,7 +122,6 @@ services:
     command: 'bin/spark-class org.apache.spark.deploy.worker.Worker spark://spark-master:7077'
     hostname: worker1
     environment:
-      TZ: "Europe/Paris"
       SPARK_CONF_DIR: /conf
       SPARK_WORKER_CORES: 2
       SPARK_WORKER_MEMORY: 2g
