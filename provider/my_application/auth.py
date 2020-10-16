@@ -1,18 +1,17 @@
-"""
-Copyright 2020 Nedeljko Radulovic, Dihia Boulegane, Albert Bifet
 
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
-
-    http://www.apache.org/licenses/LICENSE-2.0
-
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License.
-"""
+# Copyright 2020 Nedeljko Radulovic, Dihia Boulegane, Albert Bifet
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#    http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
 import jwt
 import datetime
 from repositories.CompetitionRepository import UserRepository
@@ -49,13 +48,10 @@ _USER_REPO = UserRepository(_SQL_HOST, _SQL_DBNAME)
 def get_auth_token(user):
     """
     Get authentication token for a given user.
-    :param user: dictionary {'id': user email, 'password': user password}
-    :return: Responses:
-                - 404: User is not registered or password is incorrect
-                - 401: User has not confirmed the email address
-                - 500: Internal server error
-                - Log in success if the password is correct and user has confirmed his/her address.
 
+    :param user: dictionary {'id': user email, 'password': user password}
+    :return: Responses: {404: User is not registered or password is incorrect, 401: User has not confirmed the email address, 500: Internal server error}
+    :return: Log in success if the password is correct and user has confirmed his/her address.
     """
 
     data_base_user = _USER_REPO.get_user_by_email(user['id'])
@@ -77,10 +73,9 @@ def get_auth_token(user):
 def encode_auth_token(user):
     """
     Encode authentication token.
+
     :param user:
-    :return: Responses:
-                - 401: Error
-                - 200: Success
+    :return: Responses: {401: Error, 200: Success}
     """
     try:
         payload = {
@@ -105,10 +100,9 @@ def encode_auth_token(user):
 def decode_auth_token(auth_token):
     """
     Decode authentication token.
+
     :param auth_token:
-    :return: Responses:
-                - 100: Invalid or expired token
-                - 200: Success
+    :return: Responses: {100: Invalid or expired token, 200: Success}
     """
     try:
         payload = jwt.decode(auth_token, SECRET_KEY)

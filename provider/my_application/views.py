@@ -1,18 +1,17 @@
-"""
-Copyright 2020 Nedeljko Radulovic, Dihia Boulegane, Albert Bifet
 
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
-
-    http://www.apache.org/licenses/LICENSE-2.0
-
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License.
-"""
+# Copyright 2020 Nedeljko Radulovic, Dihia Boulegane, Albert Bifet
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#    http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
 
 from __future__ import print_function
 import time
@@ -245,12 +244,11 @@ def confirm_email(token):
 def register():
     """
     Registration route. Provides a form to register to the platform.
-        Parameters:
-            - First name, last name, email, password
+    Parameters:
+    - First name, last name, email, password
     Then the confirmation e-mail is sent with a token to validate the registration.
 
-    :return: Response:
-                - 200: confirm success
+    :return: Response: {200: confirm success}
     """
     data = json.loads(request.data.decode('utf-8'))
     web = config["WEB_ADDRESS"]
@@ -307,18 +305,15 @@ def competitions():
     Implements two methods:
     GET: retrieve the competitions
     POST: create new competition:
-        Parameters:
-            - Competition name
-            - Datastream
-            - Description of the competition
-            - Competition settings: size of initial batch, initial training time, size of a regular batch,
-                                    time interval between the batches, name of the label column and the evaluation
-                                    metric, start and end date, time interval to send the predictions, .proto file
+    Parameters:
+    - Competition name
+    - Datastream
+    - Description of the competition
+    - Competition settings: size of initial batch, initial training time, size of a regular batch,
+    time interval between the batches, name of the label column and the evaluation
+    metric, start and end date, time interval to send the predictions, .proto file
 
-    :return: Responses:
-            - 200: If method== "GET", return the list of the competitions;
-                   If method == "POST", confirm success
-            - 500: Error
+    :return: Responses: {200: If method== "GET", return the list of the competitions, If method == "POST", confirm success, 500: Error}
     """
     if request.method == 'GET':
         status = request.args.get('status')
@@ -429,16 +424,12 @@ def get_datastreams():
     Datastreams route. It implements 2 methods:
     - GET: retrieve already existing datasets
     - POST: add new dataset
-        Parameters:
-                - Dataset name
-                - Dataset description
-                - Dataset file
+    Parameters:
+    - Dataset name
+    - Dataset description
+    - Dataset file
 
-    :return: Responses:
-                - If method == "GET": return the list of the datasets
-                - If method == "POST":
-                    - 200: confirm success
-                    - 500: Error
+    :return: Responses: {If method == "GET": return the list of the datasets, If method == "POST": {200: confirm success, 500: Error}
     """
     if request.method == 'GET':
         status = request.args.get('status')
@@ -513,8 +504,7 @@ def subscriptions():
     """
     Subscriptions route. Registers the users' subscriptions to competitions.
 
-    :return: Responses:
-                - 200: Confirm success
+    :return: Responses: {200: Confirm success}
     """
     user_secret_key = ''
     try:
@@ -541,8 +531,7 @@ def subscriptions():
 def delete_subscription():
     """
     Removes the subscription for a competition
-    :return: Response:
-                - 200: OK
+    :return: Response: {200: OK}
     """
     try:
         data = json.loads(request.data)
@@ -577,9 +566,7 @@ def get_secret_key():
     """
     Retrieve the subscription token for a given user and competition.
 
-    :return: Responses:
-                - 200: Confirm the token
-                - 404: If user is not subscribed
+    :return: Responses:{200: Confirm the token, 404: If user is not subscribed}
     """
     user_id = request.args.get('user')
     competition_id = request.args.get('competition')
@@ -708,6 +695,7 @@ app.config['ALLOWED_EXTENSIONS'] = {'csv', 'xls', 'proto'}
 def allowed_file(filename):
     """
     Check if the file has an allowed file extension.
+
     :param filename:
     :return: True/False
     """
@@ -729,6 +717,7 @@ def get_file_extension(filename):
 def get_messages(competition_id, field, measure, user_id):
     """
     Stream live results to the chart.
+
     :param competition_id: Competition ID
     :param field: Label column
     :param measure: Evaluation metric
@@ -785,7 +774,7 @@ def get_messages(competition_id, field, measure, user_id):
 @app.route('/download/data/<competition_id>')
 def download_data(competition_id):
     """
-    Dowload the .csv file with the records from the stream that have been published until now.
+    Download the .csv file with the records from the stream that have been published until now.
 
     :param competition_id: Competition ID
     :return: .csv file
@@ -827,9 +816,7 @@ def download_proto_file(competition_id):
     """
     Download the proto file for a given competition.
     :param competition_id: Competition ID
-    :return: Responses:
-                - .proto file
-                - 404: File not found
+    :return: Responses: {.proto file, 404: File not found}
 
     """
     competition = _COMPETITION_REPO.get_competition_by_id(competition_id)

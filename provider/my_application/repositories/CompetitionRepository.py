@@ -1,18 +1,17 @@
-"""
-Copyright 2020 Nedeljko Radulovic, Dihia Boulegane, Albert Bifet
 
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
-
-    http://www.apache.org/licenses/LICENSE-2.0
-
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License.
-"""
+# Copyright 2020 Nedeljko Radulovic, Dihia Boulegane, Albert Bifet
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#    http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
 
 
 from sqlalchemy import create_engine
@@ -31,7 +30,6 @@ _BASE = declarative_base()
 
 class Competition(_BASE):
     __tablename__ = 'competition'
-
     competition_id = Column(Integer, primary_key=True, autoincrement=True)
     name = Column(String(64))
     datastream_id = Column(Integer, ForeignKey('datastream.datastream_id'))
@@ -56,7 +54,7 @@ class Competition(_BASE):
                  time_interval, start_date, end_date, target_class, file_path, predictions_time_interval, description,
                  code):
         """
-        Construct a class for Competition table
+        Construct a class for Competition table.
         :param competition_id:
         :param name:
         :param datastream_id:
@@ -216,12 +214,11 @@ class BaseRepository():
     Implements the methods to write or delete rows in the table.
 
     --------------------------------------------------------------------
-        insert_one(): inserts one row in the table
+    insert_one(): inserts one row in the table
 
-        insert_many(): insets multiple rows in the table
+    insert_many(): insets multiple rows in the table
 
-        delete_one(): deletes one row from the table
-
+    delete_one(): deletes one row from the table
     """
     instance = None
 
@@ -274,17 +271,15 @@ class CompetitionRepository(BaseRepository):
 
     ---------------------------------------------------------------------------
 
-        get_competition_by_id(): Retrieve competition by its ID
+    get_competition_by_id(): Retrieve competition by its ID
 
-        set_competition_code(): Update the competition code
+    set_competition_code(): Update the competition code
 
-        get_all_competitions(): Retrieve all competition
+    get_all_competitions(): Retrieve all competition
 
-        get_competition_by_code(): Retrieve the competition by code
+    get_competition_by_code(): Retrieve the competition by code
 
-        get_competitions_by_user(): Retrieve competition for a given user
-
-
+    get_competitions_by_user(): Retrieve competition for a given user
     """
 
     def __init__(self, host, dbname):
@@ -415,24 +410,22 @@ class CompetitionRepository(BaseRepository):
 
 class DatastreamRepository(BaseRepository):
     """
-        Competition repository class.
+    Competition repository class.
 
-        Implements the methods to retrieve competitions by different condititons.
+    Implements the methods to retrieve competitions by different condititons.
 
-        ---------------------------------------------------------------------------
+    ---------------------------------------------------------------------------
 
-            get_competition_by_id(): Retrieve competition by its ID
+    get_competition_by_id(): Retrieve competition by its ID
 
-            set_competition_code(): Update the competition code
+    set_competition_code(): Update the competition code
 
-            get_all_competitions(): Retrieve all competition
+    get_all_competitions(): Retrieve all competition
 
-            get_competition_by_code(): Retrieve the competition by code
+    get_competition_by_code(): Retrieve the competition by code
 
-            get_competitions_by_user(): Retrieve competition for a given user
-
-
-        """
+    get_competitions_by_user(): Retrieve competition for a given user
+    """
 
     def __init__(self, host, dbname):
         BaseRepository.__init__(self, host, dbname)
@@ -470,24 +463,22 @@ class DatastreamRepository(BaseRepository):
 
 class UserRepository(BaseRepository):
     """
-        User repository class.
+    User repository class.
 
-        Implements the methods to query the USERS table.
+    Implements the methods to query the USERS table.
 
-        ---------------------------------------------------------------------------
+    ---------------------------------------------------------------------------
 
-            get_user_by_id(): Retrieve user information based on his ID
+    get_user_by_id(): Retrieve user information based on his ID
 
-            get_user_by_email(): Retrieve user information based on his email
+    get_user_by_email(): Retrieve user information based on his email
 
-            get_all_users(): List all users
+    get_all_users(): List all users
 
-            delete_many(): Delete several users at the same time
+    delete_many(): Delete several users at the same time
 
-            confirm_user(): Manually confirm user's registration
-
-
-        """
+    confirm_user(): Manually confirm user's registration
+    """
     def __init__(self, host, dbname):
         BaseRepository.__init__(self, host, dbname)
     def get_user_by_id(self, id):
@@ -527,20 +518,18 @@ class UserRepository(BaseRepository):
 
 class SubscriptionRepository(BaseRepository):
     """
-        Subscription repository class.
+    Subscription repository class.
 
-        Implements the methods to retrieve subscriptions by different condititons.
+    Implements the methods to retrieve subscriptions by different condititons.
 
-        ---------------------------------------------------------------------------
+    ---------------------------------------------------------------------------
 
-            get_competition_subscribers(): Get users that subscribed to the competition
+    get_competition_subscribers(): Get users that subscribed to the competition
 
-            check_subscription(): Check if a given user is subscribed to a given competition
+    check_subscription(): Check if a given user is subscribed to a given competition
 
-            get_subscription(): Retrieve the subscription for a user
-
-
-        """
+    get_subscription(): Retrieve the subscription for a user
+    """
     def __init__(self, host, dbname):
         BaseRepository.__init__(self, host, dbname)
 
