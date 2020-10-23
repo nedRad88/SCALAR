@@ -53,12 +53,30 @@ Also, Docker compose should be installed:
 
 Running is done using Docker-compose.
 
+### Quick setup (to test the functionality of the platform)
+
 - Run ```setup.py``` and follow the instructions to setup the environment. The script will set up the 
 time zone and create the docker network for all containers.
 
- - Once the [config.json](provider/my_application/config.json) and [docker-compose.yml](./docker-compose.yml) have been set up and Docker network has been created,
-  the platform can be run by:
+ - Once the ```setup.py``` finished successfully, the platform can be run by:
+```
+docker-compose up
+```
 
+### In depth setup (If you want to use it for organizing competitions and enable the registration):
+
+ - Download the code locally and then adjust the [config.json](provider/my_application/config.json) and [docker-compose.yml](./docker-compose.yml) files. More details in [config-ReadMe.txt](provider/config-ReadMe.txt) and in [docker-compose-ReadMe.txt](./docker-compose-ReadMe.txt).
+
+ - Set up an email account which will be used to send the registration confirmation message and authentication token.
+For that, you will need to set up your email account to allow the access of less secure apps.
+For a quick start, update only email information in [config.json](provider/my_application/config.json).
+
+ - In [docker-compose.yml](./docker-compose.yml) update only the local paths to mount a persistent volumes, following the [docker-compose-ReadMe.txt](./docker-compose-ReadMe.txt).
+
+ - Run ```setup.py``` and follow the instructions to setup the environment. The script will set up the 
+time zone and create the docker network for all containers.
+
+ - Once the ```setup.py``` finished successfully, the platform can be run by:
 ```
 docker-compose up
 ```
