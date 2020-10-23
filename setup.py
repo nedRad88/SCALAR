@@ -91,7 +91,7 @@ while not correct:
 
 with open('docker-compose.yml') as file:
     compose = yaml.load(file, Loader=yaml.FullLoader)
-print(compose)
+
 compose['services']['kafka']['environment']['KAFKA_ADVERTISED_LISTENERS'] = 'INTERNAL://kafka:9092,EXTERNAL://' + user+ ':9094'
 compose['services']['kafka']['environment']['TZ'] = final_tz
 compose['services']['mongo_db']['environment']['TZ'] = final_tz
