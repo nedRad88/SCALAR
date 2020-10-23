@@ -23,7 +23,7 @@ services:
 	 EXTERNAL://:9094"
       KAFKA_ADVERTISED_LISTENERS:
         "INTERNAL://kafka:9092,\
-	 EXTERNAL://>>USER<<:9094"
+	 EXTERNAL://user:9094"
       KAFKA_LISTENER_SECURITY_PROTOCOL_MAP:
         "INTERNAL:PLAINTEXT,\
 	 EXTERNAL:PLAINTEXT"
@@ -42,7 +42,7 @@ services:
     environment:
       TZ: "Europe/Paris"
     volumes:
-      - >>local_path_volume<<:/data/db
+      - ../data/mongodir/:/data/db
     container_name: mongo_db
 
   sql_db:
@@ -58,7 +58,7 @@ services:
        MYSQL_PASSWORD: mysql
        TZ: "Europe/Paris"
     volumes:
-      - >>local_path_volume<<:/var/lib/mysql
+      - ../data/sqldir/:/var/lib/mysql
     container_name: sql_db
     command: [mysqld, --default-authentication-plugin=mysql_native_password]
     depends_on:
@@ -85,7 +85,7 @@ services:
       SQL_HOST: "mysql+pymysql://mysql:mysql@sql_db/"
       SQL_DBNAME: "sample"
     volumes:
-      - >>local_path_volume<<:/local/data
+      - ../:/local/data
     container_name: provider
     depends_on:
       - sql_db
@@ -142,7 +142,7 @@ services:
       - 8082:8082
     container_name: worker1
     volumes:
-      - >>local_path_volume<<:/tmp
+      - ../spark/:/tmp
 
 
 networks:

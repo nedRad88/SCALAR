@@ -53,20 +53,8 @@ Also, Docker compose should be installed:
 
 Running is done using Docker-compose.
 
- - Download the code locally and then adjust the [config.json](provider/my_application/config.json) and [docker-compose.yml](./docker-compose.yml) files. More details in [config-ReadMe.txt](provider/config-ReadMe.txt) and in [docker-compose-ReadMe.txt](./docker-compose-ReadMe.txt).
-
- - Set up an email account which will be used to send the registration confirmation message and authentication token.
-For that, you will need to set up your email account to allow the access of less secure apps.
-For a quick start, update only email information in [config.json](provider/my_application/config.json).
-
- - In [docker-compose.yml](./docker-compose.yml) update only the local paths to mount a persistent volumes, following the [docker-compose-ReadMe.txt](./docker-compose-ReadMe.txt).
-
- - To run the SCALAR application using Docker-compose, first create the Docker bridge network on your local machine:
-```
-docker network create --driver bridge provider_network --subnet=172.22.0.0/16 --ip-range=172.22.0.0/24 --gateway=172.22.0.1
-
-```
-You can choose the IP ranges according to your preferences.
+- Run ```setup.py``` and follow the instructions to setup the environment. The script will set up the 
+time zone and create the docker network for all containers.
 
  - Once the [config.json](provider/my_application/config.json) and [docker-compose.yml](./docker-compose.yml) have been set up and Docker network has been created,
   the platform can be run by:
