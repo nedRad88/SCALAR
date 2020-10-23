@@ -104,4 +104,4 @@ compose['services']['zookeeper']['environment']['TZ'] = final_tz
 with open('docker-compose.yml', 'w') as file1:
     documents = yaml.dump(compose, file1)
 
-ubuntu_tz = []
+print("Done!")
