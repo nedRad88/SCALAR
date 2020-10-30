@@ -67,13 +67,13 @@ To support all the aforementioned requirements for stream data mining, and to be
 
 ![Architecture of the platform\label{architecture}](Architecture.png)
 
-SCALAR’s components and layers:
+Layers and component descriptions:
 
 * Data sources: `SCALAR` enables competitions by providing data in the form of a `CSV` file which is then used to recreate a continuous stream following predefined competition settings such as the time interval between two releases and the number of instances at a time.
     
 * Data layer: represents the persistence node in the system where different kinds of information are stored. `MongoDB` is used for unstructured data (e.g. user’s predictions, records from the stream, evaluation metrics, etc.) and `MySQL` for structured data (competition information, user information).
     
-* Streaming Engine: this component is responsible for handling the streams. From the `CSV` files, `Kafka` recreates multiple streams to be sent to multiple users. `SCALAR` provides a secure and independent bi-directional streaming communication between the user and the streaming engine. This allows each user to consume training and test instances and submit the respective predictions according to competition predefined data format. The resource server is the `API` that handles all authenticated requests from the client application whereas the authorization server is is in charge of users' identification. The Online evaluation engine handles both the stream of instances and the streams of participants' predictions in order to compute and update the evaluation metrics online before storing them into the dedicated database.
+* Streaming Engine: this layer is responsible for handling the streams. From the `CSV` files, `Kafka` recreates multiple streams to be sent to multiple users. `SCALAR` provides a secure and independent bi-directional streaming communication between the user and the streaming engine. This allows each user to consume training and test instances and submit the respective predictions according to competition predefined data format. The resource server is the `API` that handles all authenticated requests from the client application whereas the authorization server is is in charge of users' identification. The Online evaluation engine handles both the stream of instances and the streams of participants' predictions in order to compute and update the evaluation metrics online before storing them into the dedicated database.
     
 * Application layer: consists of two parts the web application, and client application. The web application represents a user-friendly interface that allows participants to register, subscribe to competitions, and follow leaderboard and model performance online. The client application is provided in order to accommodate participants' code to solve the machine learning problem at hand. It delivers a secure communication channel to receive the stream of training and test instances and send their respective predictions to the server.
 
