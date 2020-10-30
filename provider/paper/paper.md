@@ -30,17 +30,13 @@ nocite: '@*'
 
 # Statement of need 
 
-`SCALAR` supports the execution of Machine Learning research experiments, helping researchers to test and improve their methodologies in a real-time machine learning scenario.
-As such, `SCALAR` has been used for organizing, a first  Real-time Machine Learning Competition on Data Streams[@boulegane2019real] as part of the [IEEE Big Data 2019 Cup Challenges](http://bigdataieee.org/BigData2019/BigDataCupChallenges.html), where several approaches of data stream mining have been designed, tested, and improved.
+Existing machine learning platforms for research and competitions, such as [`Kaggle`](https://www.kaggle.com/) and [`Alibaba Tianchi`](https://tianchi.aliyun.com/) provide static data sets that users leverage to do batch training and scoring. These popular platforms, especially `Kaggle`, enable users to propose better solutions for a wide range of machine-learning problems and applications, pushing forward the whole research community.
 
-`SCALAR` has been inspired by existing competition platforms for batch (offline) setting such as [`Kaggle`](https://www.kaggle.com/) and [`Alibaba Tianchi`](https://tianchi.aliyun.com/).
-These platforms, and especially `Kaggle`, have attracted many companies, researchers, and people working in the field of machine learning, to take part in competitions, proposing better 
-solutions, and in that way, pushing forward the whole research community. We believe that introducing `SCALAR` will have a significant impact on the AI research community, 
-especially regarding the rising interest and need for online stream data mining. Processing data streams is in high demand due to the fast development of IoT and many other 
-real-time devices. Data are generated in real-time from a great number of various sources: sensors, IoT devices, social networks, applications, bank and market transactions. 
+While these platforms enable collaborative model building they do not provide real-time settings and data streaming instead of static sets. Inspired by the great reception and adoption that these platforms have had, `SCALAR` was built for real-time settings by supporting data streaming to fill this gap, helping users test and improve their methodologies in a real-time machine learning scenario. 
 
-`SCALAR` supports this data stream machine learning scenario where data are continuously released, in batches, every time interval. 
-Predictions for each current batch, that are sent before a defined deadline, are evaluated in real-time, and the results are shown on the live leaderboard. 
+On `SCALAR` data are continuously released in batches during defined time intervals, then predictions for each current batch, sent before a defined deadline, are evaluated in real-time, and the results are shown on a live leaderboard. 
+
+`SCALAR` can be applied to provide real-time machine learning support in multiple scenarios, one of the more notable and recent ones was being the core organizing and coordination platform for the first  Real-time Machine Learning Competition on Data Streams[@boulegane2019real] as part of the [IEEE Big Data 2019 Cup Challenges](http://bigdataieee.org/BigData2019/BigDataCupChallenges.html), where several approaches of data stream mining were designed, tested, and continue to be improved.
 
 
 # Streaming learning setting
