@@ -67,7 +67,7 @@ To support all the aforementioned requirements for stream data mining, and to be
 
 ![Architecture of the platform\label{architecture}](Architecture.png)
 
-Layers and component descriptions:
+Layers and components descriptions:
 
 * Data sources: `SCALAR` enables competitions by providing data in the form of a `CSV` file which is then used to recreate a continuous stream following predefined competition settings such as the time interval between two releases and the number of instances at a time.
     
