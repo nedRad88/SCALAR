@@ -86,9 +86,13 @@ This command will pull all necessary containers and run them.
 When all services are up, web application will be available on [localhost:80](http://localhost:80)
 
 To log in to the platform, you can use default credentials: `admin:admin`
-Default `Test` datastream, for creating the test competition is available under `Datastreams` tab.
-For the test purposes, the test competition will be created automatically. It will be scheduled to start 5 minutes after starting the platform.
+
+For the test purposes, the test competition will be created automatically.
+
+It will be scheduled to start ```5 minutes``` after starting the platform.
+
 Once you log in, you will be able to see the competition under ```Competitions/Coming``` tab.
+
 In order to subscribe to the competition, click on it and then click the ```Subscribe``` button.
 ![Subscribe to competition](./subscribe_competition.png)
 
