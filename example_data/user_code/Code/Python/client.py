@@ -5,12 +5,7 @@ import file_pb2
 import file_pb2_grpc
 from threading import Thread
 import json
-from collections.abc import Iterator
-import itertools
-from json.encoder import JSONEncoder
-import ast
 from multiprocessing import Queue
-import time
 try:
     import queue
 except ImportError:
@@ -40,8 +35,8 @@ class Client:
         self.channel = grpc.insecure_channel('localhost:50051')
         self.stub = file_pb2_grpc.DataStreamerStub(self.channel)
         self.user_email = 'admin'
-        self.competition_code = 'XW'
-        self.token = 'eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ1c2VyX2lkIjoiYWRtaW4iLCJjb21wZXRpdGlvbl9pZCI6MzF9.vlzKwaGcNvc9mZUjKNayNezZSnkP2cUEuUU4cj5aT0U'
+        self.competition_code = '3M'
+        self.token = 'eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ1c2VyX2lkk4JBg35D7U'
         # self.predictions_to_send.put(file_pb2.Prediction(rowID=1000, target=333))
         self.metadata = self.create_metadata(user_id=self.user_email, code=self.competition_code, token=self.token)
 
@@ -83,6 +78,7 @@ class Client:
         try:
             for message in messages:
                 message = json.loads(json_format.MessageToJson(message))
+                print("Original data instance: ", message)
                 if message['tag'] == 'TEST':
                     # v = message['target'] + 10
                     v = 543

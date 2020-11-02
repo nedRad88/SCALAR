@@ -2,7 +2,7 @@
 library(reticulate)
 
 # provide path to python
-use_python("~/anaconda3/bin/python3.6")
+use_python("~/anaconda3/envs/python372/bin/python")
 source("wRapper2.R")
 library(jsonlite)
 #######################
@@ -10,7 +10,7 @@ library(jsonlite)
 #######################
 
 # E-mail:
-e_mail <- "john.doe1984@gmail.com"
+e_mail <- "admin"
 # Token: Obtain token when subscribing to a competition
 user_token <- "eyJhbGciOiJIUzIJ1c2VyX2lkIjoibmVkZWxqaUyFV5fkUjIfjKt4i0Vl8"
 # Competition code: Obtain competition code when subscribing to a competition
@@ -20,7 +20,7 @@ batch_Size <- 5
 # set first message to initialize communication
 first_message <- toJSON(list(rowID = as.integer(2000), Target = as.integer(3333)))
 # Set up server and port of the web application
-port <- 'app.streaming-challenge.com:50051'
+port <- 'localhost:50051'
 # Creating gRPC client using wRapper2.R
 gRPC_client <- create_client(batchSize = batch_Size, port = port, user_token = user_token, 
                              e_mail = e_mail, comp_code = comp_code, first_message = first_message)
@@ -50,7 +50,7 @@ while (TRUE){
     }
     if (tag == 'TEST') {
       # Predict here
-      value <- 54321
+      value <- 543
       result <- list(rowID=row_id, Target=value)
       mess <- toJSON(result)
       print(mess)

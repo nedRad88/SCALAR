@@ -100,8 +100,6 @@ def _create_competition(competition, competition_config):
     """
     items, predictions, initial_batch = read_csv_file(competition, competition_config)
     processes = []
-    print("finished reading csv")
-    logging.debug("finished reading csv!!!!!!!!!!!!!!!!!!")
     producer_process = Process(target=_start_competition, args=(competition, items, predictions, initial_batch))
     producer_process.start()
     processes.append(producer_process)
@@ -344,7 +342,6 @@ def _start_competition(competition, items, predictions, initial_batch):
 
 def _create_consumer(competition, competition_config):
     ''' Starts the consumer for streams of predictions sent by users.'''
-    logging.debug("Creating consumer")
     options = (('grpc.so_reuseport', 1),)
     grpc_server = StreamServer('0.0.0.0:50051', options=options)
     try:

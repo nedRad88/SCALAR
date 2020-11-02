@@ -42,7 +42,7 @@ from hashids import Hashids
 import eventlet
 from random import randint
 eventlet.monkey_patch(time=True)
-logging.basicConfig(level='DEBUG')
+logging.basicConfig(level='INFO')
 
 with open('config.json') as json_data_file:
     config = json.load(json_data_file)
@@ -155,6 +155,12 @@ if _DATASTREAM_REPO.get_datastream_by_id(1) is None:
     _DATASTREAM_REPO.session.commit()
 ############################
 "Create a test competition"
+create_test_competition = True
+competitions_to_come = _COMPETITION_REPO.session.query(Competition).filter(Competition.start_date >= datetime.now()).all()
+logging.debug("COMPETITION TO COME!!!: {}".format(competitions_to_come))
+
+if len(competitions_to_come) > 0:
+    create_test_competition = False
 
 
 def format_time(t):
@@ -162,47 +168,48 @@ def format_time(t):
     return s[:-7]
 
 
-now = datetime.now() + timedelta(seconds=60)
-end_date = datetime.now() + timedelta(minutes=30)
-name = "test" + str(randint(0, 10000))
-generated_code_directory = os.path.join(config['UPLOAD_REPO'], config['COMPETITION_GENERATED_CODE'], name)
-proto_directory = os.path.join(config['UPLOAD_REPO'], config['COMPETITION_PROTO_REPO'], name)
+if create_test_competition:
+    now = datetime.now() + timedelta(seconds=300)
+    end_date = datetime.now() + timedelta(minutes=30)
+    name = "test" + str(randint(0, 10000))
+    generated_code_directory = os.path.join(config['UPLOAD_REPO'], config['COMPETITION_GENERATED_CODE'], name)
+    proto_directory = os.path.join(config['UPLOAD_REPO'], config['COMPETITION_PROTO_REPO'], name)
 
-if not os.path.exists(proto_directory):
-    os.makedirs(proto_directory)
+    if not os.path.exists(proto_directory):
+        os.makedirs(proto_directory)
 
-copy("file.proto", proto_directory)
+    copy("file.proto", proto_directory)
 
-if not os.path.exists(generated_code_directory):
-    os.makedirs(generated_code_directory)
-try:
-    with open(generated_code_directory + '/__init__.py', "w+") as f:
-        f.write('')
-except Exception:
-    pass
+    if not os.path.exists(generated_code_directory):
+        os.makedirs(generated_code_directory)
+    try:
+        with open(generated_code_directory + '/__init__.py', "w+") as f:
+            f.write('')
+    except Exception:
+        pass
 
-try:
-    protoc.main(('', '-I' + proto_directory, '--python_out=' + generated_code_directory,
-                 '--grpc_python_out=' + generated_code_directory,
-                 os.path.join(proto_directory, 'file.proto')))
-except Exception as e:
-    print(str(e))
-competition_config = {"target": ["MAPE"]}
-code = ''
-competition = Competition(None, name=name, datastream_id=1, initial_batch_size=20,
-                                  initial_training_time=20, batch_size=5,
-                                  time_interval=5, target_class="target", start_date=format_time(now),
-                                  file_path="file.proto", predictions_time_interval=5,
-                                  end_date=format_time(end_date), description="Functionality test competition", code=code)
+    try:
+        protoc.main(('', '-I' + proto_directory, '--python_out=' + generated_code_directory,
+                    '--grpc_python_out=' + generated_code_directory,
+                    os.path.join(proto_directory, 'file.proto')))
+    except Exception as e:
+        print(str(e))
+    competition_config = {"target": ["MAPE"]}
+    code = ''
+    competition = Competition(None, name=name, datastream_id=1, initial_batch_size=20,
+                                    initial_training_time=20, batch_size=5,
+                                    time_interval=5, target_class="target", start_date=format_time(now),
+                                    file_path="file.proto", predictions_time_interval=5,
+                                    end_date=format_time(end_date), description="Functionality test competition", code=code)
 
-_COMPETITION_REPO.insert_one(competition)
-code = code_generator(competition.competition_id)
-_COMPETITION_REPO.set_competition_code(competition.competition_id, code)
-_COMPETITION_REPO.session.commit()
-evaluation_measures = {'competition_id': competition.competition_id, 'measures': competition_config}
-_MONGO_REPO.insert_document('evaluation_measures', 'evaluation_measures', evaluation_measures)
+    _COMPETITION_REPO.insert_one(competition)
+    code = code_generator(competition.competition_id)
+    _COMPETITION_REPO.set_competition_code(competition.competition_id, code)
+    _COMPETITION_REPO.session.commit()
+    evaluation_measures = {'competition_id': competition.competition_id, 'measures': competition_config}
+    _MONGO_REPO.insert_document('evaluation_measures', 'evaluation_measures', evaluation_measures)
 
-_SCHEDULER.schedule_competition(competition, competition_config)
+    _SCHEDULER.schedule_competition(competition, competition_config)
 
 ###############################
 
@@ -595,20 +602,12 @@ def delete_subscription():
     """
 
     try:
-        print("USAO: ")
-        logging.debug("USAO")
         data = json.loads(request.data.decode('utf-8'))
         competition = _COMPETITION_REPO.get_competition_by_id(int(data['competition_id']))
         user = _USER_REPO.get_user_by_email(data['user'])
-        print("COMPETITION: ", competition)
-        logging.debug("COMPETITION: {}".format(competition))
-        print("USER: ", user)
-        logging.debug("USER: {}".format(user))
         if competition is not None and user is not None:
             # insert subscriptions
             subscription = _SUBSCRIPTION_REPO.get_subscription(competition.competition_id, user.user_id)
-            print("SUBSCRIPTION: ", subscription)
-            logging.debug("SUBSCRIPTION: {}".format(subscription))
             _SUBSCRIPTION_REPO.delete_one(subscription)
     except Exception as e:
         print(str(e))
@@ -680,7 +679,7 @@ def get_competition_evaluation_measure(competition_id):
     :return: Evaluation measure, or list if there are multiple
     """
     competition_measures = _MONGO_REPO.get_competition_evaluation_measures(competition_id)
-    logging.debug("Competition measures: {}".format(competition_measures))
+    # logging.debug("Competition measures: {}".format(competition_measures))
     return jsonify(competition_measures)
 
 
@@ -817,8 +816,6 @@ def get_messages(competition_id, field, measure, user_id):
             # Ended competition
             logging.debug("Competition finished!")
             results = _MONGO_REPO.get_results_by_user(competition_id, field, measure, user_id)
-            logging.debug('Results: {}'.format(results))
-            print("Results: ", results)
             data = 'retry: 100000000\n'
             data = data + 'data: {0}\n\n'.format(json.dumps({"status": 'INIT', "results": results}))
             return data
