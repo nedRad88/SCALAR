@@ -17,7 +17,7 @@ from __future__ import print_function
 import time
 time.sleep(15)
 from producer import Scheduler
-from datetime import datetime
+from datetime import datetime, timedelta
 from flask import render_template, Response, Flask, stream_with_context, request, jsonify, send_file
 from auth import decode_auth_token, get_auth_token
 from subscription_auth import get_subscription_token
@@ -33,12 +33,14 @@ from repositories.CompetitionRepository import CompetitionRepository, Competitio
     User, UserRepository, Subscription, SubscriptionRepository
 from repository import MongoRepository
 import logging
+from shutil import copy
 from itsdangerous import URLSafeTimedSerializer
 import csv
 from io import StringIO
 from werkzeug.datastructures import Headers
 from hashids import Hashids
 import eventlet
+from random import randint
 eventlet.monkey_patch(time=True)
 logging.basicConfig(level='DEBUG')
 
@@ -140,11 +142,69 @@ if _USER_REPO.get_user_by_email("admin") is None:
     _USER_REPO.session.commit()
 ############################
 "Create a default datastream"
+data_directory = os.path.join(config['UPLOAD_REPO'], config['STREAM_DATA_FILE'])
+if not os.path.exists(data_directory):
+    os.makedirs(data_directory)
+data_file_name = "competition_stream" + ".csv"
+ds_path = os.path.join(data_directory, data_file_name)
+copy("competition_stream.csv", data_directory)
+
 if _DATASTREAM_REPO.get_datastream_by_id(1) is None:
-    datastream = Datastream(1, name="Test", file_path="../example_data/competition_data/competition_stream.csv", description="Datastream for test")
+    datastream = Datastream(1, name="Test", file_path=data_file_name, description="Datastream for test")
     _DATASTREAM_REPO.insert_one(datastream)
     _DATASTREAM_REPO.session.commit()
 ############################
+"Create a test competition"
+
+
+def format_time(t):
+    s = t.strftime('%Y-%m-%d %H:%M:%S.%f')
+    return s[:-7]
+
+
+now = datetime.now() + timedelta(seconds=60)
+end_date = datetime.now() + timedelta(minutes=30)
+name = "test" + str(randint(0, 10000))
+generated_code_directory = os.path.join(config['UPLOAD_REPO'], config['COMPETITION_GENERATED_CODE'], name)
+proto_directory = os.path.join(config['UPLOAD_REPO'], config['COMPETITION_PROTO_REPO'], name)
+
+if not os.path.exists(proto_directory):
+    os.makedirs(proto_directory)
+
+copy("file.proto", proto_directory)
+
+if not os.path.exists(generated_code_directory):
+    os.makedirs(generated_code_directory)
+try:
+    with open(generated_code_directory + '/__init__.py', "w+") as f:
+        f.write('')
+except Exception:
+    pass
+
+try:
+    protoc.main(('', '-I' + proto_directory, '--python_out=' + generated_code_directory,
+                 '--grpc_python_out=' + generated_code_directory,
+                 os.path.join(proto_directory, 'file.proto')))
+except Exception as e:
+    print(str(e))
+competition_config = {"target": ["MAPE"]}
+code = ''
+competition = Competition(None, name=name, datastream_id=1, initial_batch_size=20,
+                                  initial_training_time=20, batch_size=5,
+                                  time_interval=5, target_class="target", start_date=format_time(now),
+                                  file_path="file.proto", predictions_time_interval=5,
+                                  end_date=format_time(end_date), description="Functionality test competition", code=code)
+
+_COMPETITION_REPO.insert_one(competition)
+code = code_generator(competition.competition_id)
+_COMPETITION_REPO.set_competition_code(competition.competition_id, code)
+_COMPETITION_REPO.session.commit()
+evaluation_measures = {'competition_id': competition.competition_id, 'measures': competition_config}
+_MONGO_REPO.insert_document('evaluation_measures', 'evaluation_measures', evaluation_measures)
+
+_SCHEDULER.schedule_competition(competition, competition_config)
+
+###############################
 
 
 def authorized(*roles):
@@ -533,16 +593,23 @@ def delete_subscription():
     Removes the subscription for a competition
     :return: Response: {200: OK}
     """
-    try:
-        data = json.loads(request.data)
-        competition = _COMPETITION_REPO.get_competition_by_id(data['competition_id'])
-        user = _USER_REPO.get_user_by_email(data['user'])
 
+    try:
+        print("USAO: ")
+        logging.debug("USAO")
+        data = json.loads(request.data.decode('utf-8'))
+        competition = _COMPETITION_REPO.get_competition_by_id(int(data['competition_id']))
+        user = _USER_REPO.get_user_by_email(data['user'])
+        print("COMPETITION: ", competition)
+        logging.debug("COMPETITION: {}".format(competition))
+        print("USER: ", user)
+        logging.debug("USER: {}".format(user))
         if competition is not None and user is not None:
             # insert subscriptions
             subscription = _SUBSCRIPTION_REPO.get_subscription(competition.competition_id, user.user_id)
+            print("SUBSCRIPTION: ", subscription)
+            logging.debug("SUBSCRIPTION: {}".format(subscription))
             _SUBSCRIPTION_REPO.delete_one(subscription)
-
     except Exception as e:
         print(str(e))
 
@@ -571,15 +638,14 @@ def get_secret_key():
     user_id = request.args.get('user')
     competition_id = request.args.get('competition')
     user_secret_key = ''
-
     try:
-        competition = _COMPETITION_REPO.get_competition_by_id(competition_id)
+        competition = _COMPETITION_REPO.get_competition_by_id(int(competition_id))
         user = _USER_REPO.get_user_by_email(user_id)
         logging.debug("User, competition: {}, {}".format(user, competition))
         if competition is not None and user is not None:
             # insert subscriptions
             if _SUBSCRIPTION_REPO.check_subscription(competition.competition_id, user.user_id):
-                user_secret_key = get_subscription_token(competition_id, user_id)
+                user_secret_key = get_subscription_token(int(competition_id), user_id)
     except Exception as e:
         pass
 
@@ -751,6 +817,8 @@ def get_messages(competition_id, field, measure, user_id):
             # Ended competition
             logging.debug("Competition finished!")
             results = _MONGO_REPO.get_results_by_user(competition_id, field, measure, user_id)
+            logging.debug('Results: {}'.format(results))
+            print("Results: ", results)
             data = 'retry: 100000000\n'
             data = data + 'data: {0}\n\n'.format(json.dumps({"status": 'INIT', "results": results}))
             return data

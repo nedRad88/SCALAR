@@ -251,12 +251,8 @@ class BaseRepository():
             self.session.rollback()
 
     def delete_one(self, row):
-        try:
-            self.session.delete(row)
-            self.session.commit()
-        except Exception as e:
-            print(e)
-            self.session.rollback()
+        self.session.delete(row)
+        self.session.commit()
 
     def cleanup(self):
         self.session.close()

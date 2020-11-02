@@ -38,7 +38,7 @@ from pyspark.sql.types import *
 import logging
 logging.basicConfig(level='DEBUG')
 
-spark_master = "spark://" + 'SPARK_HOST' + ":7077"
+spark_master = "spark://" + os.environ['SPARK_HOST'] + ":7077"
 _ONE_DAY_IN_SECONDS = 60 * 60 * 24
 
 """
@@ -100,6 +100,8 @@ def _create_competition(competition, competition_config):
     """
     items, predictions, initial_batch = read_csv_file(competition, competition_config)
     processes = []
+    print("finished reading csv")
+    logging.debug("finished reading csv!!!!!!!!!!!!!!!!!!")
     producer_process = Process(target=_start_competition, args=(competition, items, predictions, initial_batch))
     producer_process.start()
     processes.append(producer_process)
@@ -118,7 +120,6 @@ def _create_competition(competition, competition_config):
     mongo_sink_process = Process(target=_create_spark2mongo_sink, args=(SERVER_HOST, competition, competition_config))
     mongo_sink_process.start()
     processes.append(mongo_sink_process)
-
     p6 = Process(target=_end_competition, args=(competition, processes))
     p6.start()
 

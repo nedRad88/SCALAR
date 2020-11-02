@@ -20,6 +20,8 @@ from confluent_kafka import Consumer
 import json
 import orjson
 import os
+import logging
+logging.basicConfig(level='DEBUG')
 
 "Read environment variables."
 with open('config.json') as json_data_file:
@@ -41,7 +43,7 @@ class SparkToMongo:
     def __init__(self, kafka_server, prediction_topic, golden_topic, measures_topic, competition, configuration):
         self.consumer = Consumer({'group.id': 'spark_measures', 'bootstrap.servers': kafka_server,
                                   'session.timeout.ms': competition.initial_training_time * 10000,
-                                  'auto.offset.reset': 'earliest'})
+                                  'auto.offset.reset': 'earliest', 'allow.auto.create.topics': True})
         self.consumer.subscribe([prediction_topic, golden_topic, measures_topic])
         self.mongo_repository = MongoRepository(_MONGO_HOST)
         self.db_evaluations = self.mongo_repository.client['evaluation_measures']
@@ -62,33 +64,36 @@ class SparkToMongo:
         """
         db = self.mongo_repository.client['evaluation_measures']
         measures_coll = db['measures']
-        message = orjson.loads(mess.value())
         try:
-            if previous_batch < message['total_number_of_messages']:
-                now = datetime.datetime.now()
-                previous_batch = message['total_number_of_messages']
+            message = orjson.loads(mess.value())
+            try:
+                if previous_batch < message['total_number_of_messages']:
+                    now = datetime.datetime.now()
+                    previous_batch = message['total_number_of_messages']
 
-            time_series_instance = {'nb_submissions': message['num_submissions'], 'user_id': int(message['user_id']),
-                                    'competition_id': message['competition_id'], 'end_date': now,
-                                    'latency': message['latency'], 'penalized': message['penalized'], 'measures': {},
-                                    'batch_measures': {},
-                                    'start_date':
-                                        now - datetime.timedelta(seconds=self.competition.predictions_time_interval),
-                                    'total_number_of_messages': message['total_number_of_messages']}
+                time_series_instance = {'nb_submissions': message['num_submissions'], 'user_id': int(message['user_id']),
+                                        'competition_id': message['competition_id'], 'end_date': now,
+                                        'latency': message['latency'], 'penalized': message['penalized'], 'measures': {},
+                                        'batch_measures': {},
+                                        'start_date':
+                                            now - datetime.timedelta(seconds=self.competition.predictions_time_interval),
+                                        'total_number_of_messages': message['total_number_of_messages']}
 
-            fields_to_skip = ['user_id', 'competition_id', 'num_submissions', 'start_date', 'latency', 'penalized',
-                              'total_number_of_messages']
+                fields_to_skip = ['user_id', 'competition_id', 'num_submissions', 'start_date', 'latency', 'penalized',
+                                'total_number_of_messages']
 
-            for key, value in message.items():
-                if key not in fields_to_skip:
-                    measures = {}
-                    batch_measures = {}
-                    new_fields = str(key).replace(" ", "").split("_")
-                    time_series_instance['measures'][new_fields[1]] = measures
-                    time_series_instance['batch_measures'][new_fields[1]] = batch_measures
-                    time_series_instance['measures'][new_fields[1]][new_fields[0]] = message[key]
-                    time_series_instance['batch_measures'][new_fields[1]][new_fields[0]] = message[key]
-            measures_coll.insert_one(time_series_instance)
+                for key, value in message.items():
+                    if key not in fields_to_skip:
+                        measures = {}
+                        batch_measures = {}
+                        new_fields = str(key).replace(" ", "").split("_")
+                        time_series_instance['measures'][new_fields[1]] = measures
+                        time_series_instance['batch_measures'][new_fields[1]] = batch_measures
+                        time_series_instance['measures'][new_fields[1]][new_fields[0]] = message[key]
+                        time_series_instance['batch_measures'][new_fields[1]][new_fields[0]] = message[key]
+                measures_coll.insert_one(time_series_instance)
+            except Exception as e:
+                print(e)
         except Exception as e:
             print(e)
         return previous_batch, now
@@ -100,8 +105,12 @@ class SparkToMongo:
         :return:
         """
         predictions = self.db_data['predictions_v2']
-        prediction = orjson.loads(mess.value())
-        predictions.insert_one(prediction)
+        # logging.debug("Message: {}".format(mess.value()))
+        try:
+            prediction = orjson.loads(mess.value())
+            predictions.insert_one(prediction)
+        except Exception as e:
+            print(e)
 
     def process_golden(self, mess):
         """
@@ -110,8 +119,12 @@ class SparkToMongo:
         :return:
         """
         golden = self.db_data['golden_standard']
-        message = orjson.loads(mess.value())
-        golden.insert_one(message)
+        # logging.debug("Message: {}".format(mess.value()))
+        try:
+            message = orjson.loads(mess.value())
+            golden.insert_one(message)
+        except Exception as e:
+            print(e)
 
     def run(self):
         """

@@ -223,12 +223,14 @@ class DataStreamerServicer:
         competition_code = metadata['competition_id']
 
         user = _USER_REPO.get_user_by_email(user_id)
+        _USER_REPO.cleanup()
         if user is None:
             context.set_code(grpc.StatusCode.PERMISSION_DENIED)
             context.set_details('You are not registered, please register on the website')
             return self.file_pb2.Message()
 
         competition = _COMPETITION_REPO.get_competition_by_code(competition_code)
+        _COMPETITION_REPO.cleanup()
         if competition is None:
             context.set_code(grpc.StatusCode.INVALID_ARGUMENT)
             context.set_details('Unknown competition, please refer to the website')
@@ -236,6 +238,7 @@ class DataStreamerServicer:
 
         # TODO : for Subscription Data
         subscription = _SUBSCRIPTION_REPO.get_subscription(competition.competition_id, user.user_id)
+        _SUBSCRIPTION_REPO.cleanup()
         if subscription is None:
             # TODO : Should close connection
             context.set_code(grpc.StatusCode.PERMISSION_DENIED)
@@ -286,10 +289,6 @@ class DataStreamerServicer:
             t.start()
         except Exception as e:
             print(str(e))
-
-        _USER_REPO.cleanup()
-        _COMPETITION_REPO.cleanup()
-        _SUBSCRIPTION_REPO.cleanup()
 
         while context.is_active():
             message = consumer.poll(timeout=0)
