@@ -36,7 +36,7 @@ While these platforms enable collaborative model building they do not provide re
 
 On `SCALAR` data are continuously released in batches during defined time intervals, then predictions for each current batch, sent before a defined deadline, are evaluated in real-time, and the results are shown on a live leaderboard. 
 
-`SCALAR` can be applied to provide real-time machine learning support in multiple scenarios, one of the more notable and recent ones was being the core organizing and coordination platform for the first  Real-time Machine Learning Competition on Data Streams[@boulegane2019real] as part of the [IEEE Big Data 2019 Cup Challenges](http://bigdataieee.org/BigData2019/BigDataCupChallenges.html), where several approaches of data stream mining were designed, tested, and continue to be improved.
+`SCALAR` can be applied to provide real-time machine learning support in multiple scenarios, one of the more notable and recent ones was being the core organizing and coordination platform for the first  Real-time Machine Learning Competition on Data Streams [@boulegane2019real] as part of the [IEEE Big Data 2019 Cup Challenges](http://bigdataieee.org/BigData2019/BigDataCupChallenges.html), where several approaches of data stream mining were designed, tested, and continue to be improved.
 
 
 # Streaming learning setting
