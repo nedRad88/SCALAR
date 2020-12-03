@@ -18,6 +18,7 @@ import datetime
 import operator
 import os
 from confluent_kafka import Consumer, Producer
+import logging
 
 """
 This module provides the Baseline classifier class for a given problem.
@@ -42,7 +43,7 @@ class BaselineToMongo:
     def __init__(self, kafka_server, topic, competition, competition_config):
         conf = {'bootstrap.servers': kafka_server, 'group.id': 'baseline',
                 'session.timeout.ms': competition.initial_training_time * 10000,
-                'auto.offset.reset': 'earliest'}
+                'auto.offset.reset': 'earliest', 'allow.auto.create.topics': True}
         self.consumer = Consumer(conf)
         self.consumer.subscribe([topic])
         self.config = competition_config
@@ -85,6 +86,7 @@ class BaselineToMongo:
                 if message['tag'] == 'TEST':
                     submitted_on = datetime.datetime.now()
                     prediction_dict['submitted_on'] = submitted_on.strftime("%Y-%m-%d %H:%M:%S")
+                    # print(prediction_dict)
                     self.producer.produce(self.output_topic, orjson.dumps(prediction_dict))
                     self.producer.poll(timeout=0)
             except Exception as e:

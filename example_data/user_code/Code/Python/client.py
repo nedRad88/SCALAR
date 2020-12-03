@@ -5,12 +5,7 @@ import file_pb2
 import file_pb2_grpc
 from threading import Thread
 import json
-from collections.abc import Iterator
-import itertools
-from json.encoder import JSONEncoder
-import ast
 from multiprocessing import Queue
-import time
 try:
     import queue
 except ImportError:
@@ -37,12 +32,12 @@ class Client:
         self.batch_size = batch_size
         self.stop_thread = False
         self.predictions_to_send = Queue()
-        self.channel = grpc.insecure_channel('app.streaming-challenge.com:50051')
+        self.channel = grpc.insecure_channel('localhost:50051')
         self.stub = file_pb2_grpc.DataStreamerStub(self.channel)
-        self.user_email = 'john.doe1984@gmail.com'
-        self.competition_code = 'oj'
-        self.token = 'eyJ0eXAiOiJKV1QiLCVmPCIZUIfk094SMnIpo5QMp1M'
-        self.predictions_to_send.put(file_pb2.Prediction(rowID=1000, Target=333))
+        self.user_email = 'admin'
+        self.competition_code = '3M'
+        self.token = 'eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ1c2VyX2lkk4JBg35D7U'
+        # self.predictions_to_send.put(file_pb2.Prediction(rowID=1000, target=333))
         self.metadata = self.create_metadata(user_id=self.user_email, code=self.competition_code, token=self.token)
 
     @staticmethod
@@ -83,10 +78,11 @@ class Client:
         try:
             for message in messages:
                 message = json.loads(json_format.MessageToJson(message))
+                print("Original data instance: ", message)
                 if message['tag'] == 'TEST':
-                    # v = message['Target'] + 10
-                    v = 54321
-                    prediction = file_pb2.Prediction(rowID=message['rowID'], Target=v)
+                    # v = message['target'] + 10
+                    v = 543
+                    prediction = file_pb2.Prediction(rowID=message['rowID'], target=v)
                     self.predictions_to_send.put(prediction)
                 if message['tag'] == 'INIT':
                     i = 1

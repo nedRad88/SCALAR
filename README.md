@@ -73,8 +73,9 @@ For a quick start, update only email information in [config.json](provider/my_ap
 
  - In [docker-compose.yml](./docker-compose.yml) update only the local paths to mount a persistent volumes, following the [docker-compose-ReadMe.txt](./docker-compose-ReadMe.txt).
 
- - Run ```setup.py``` and follow the instructions to setup the environment. The script will set up the 
+ - Run [setup.py](./setup.py) and follow the instructions to setup the environment. The script will set up the 
 time zone and create the docker network for all containers.
+```python3 setup.py```
 
  - Once the ```setup.py``` finished successfully, the platform can be run by:
 ```
@@ -85,8 +86,30 @@ This command will pull all necessary containers and run them.
 When all services are up, web application will be available on [localhost:80](http://localhost:80)
 
 To log in to the platform, you can use default credentials: `admin:admin`
-Default `Test` datastream, for creating the test competition is available under `Datastreams` tab.
 
+For the test purposes, the test competition will be created automatically.
+
+It will be scheduled to start ```5 minutes``` after starting the platform.
+
+Once you log in, you will be able to see the competition under ```Competitions/Coming``` tab.
+
+In order to subscribe to the competition, click on it and then click the ```Subscribe``` button.
+![Subscribe to competition](./subscribe_competition.png)
+
+### Setting up the client
+
+Navigate to [example_data](./example_data) directory, and run:
+
+```python3 client_setup.py```
+
+Once the necessary packages have been installed, go to [Python client directory](./example_data/user_code/Code/Python)
+and edit the [client.py](./example_data/user_code/Code/Python/client.py) file. Copy the ```Competition code``` and
+```Secret key``` from a competition page and add it in ```client.py``` as shown in the figure below:
+
+![Client setup](./client_setup.png)
+
+Once the competition has started, run ```client.py```, and you should be able to see how the messages and predictions are exchanged.
+Then you will be able to see the live chart and leaderboard on the competition page. (You will have to refresh the page to get new measures.)
 
 To get to know around the platform use the the [Quick Start Guide](./SCALAR_Quick_Start_Guide.pdf). 
 To create and participate in the competition use the provided [examples](./example_data).

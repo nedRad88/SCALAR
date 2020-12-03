@@ -38,7 +38,7 @@ from pyspark.sql.types import *
 import logging
 logging.basicConfig(level='DEBUG')
 
-spark_master = "spark://" + 'SPARK_HOST' + ":7077"
+spark_master = "spark://" + os.environ['SPARK_HOST'] + ":7077"
 _ONE_DAY_IN_SECONDS = 60 * 60 * 24
 
 """
@@ -118,7 +118,6 @@ def _create_competition(competition, competition_config):
     mongo_sink_process = Process(target=_create_spark2mongo_sink, args=(SERVER_HOST, competition, competition_config))
     mongo_sink_process.start()
     processes.append(mongo_sink_process)
-
     p6 = Process(target=_end_competition, args=(competition, processes))
     p6.start()
 
@@ -343,7 +342,6 @@ def _start_competition(competition, items, predictions, initial_batch):
 
 def _create_consumer(competition, competition_config):
     ''' Starts the consumer for streams of predictions sent by users.'''
-    logging.debug("Creating consumer")
     options = (('grpc.so_reuseport', 1),)
     grpc_server = StreamServer('0.0.0.0:50051', options=options)
     try:

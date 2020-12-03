@@ -145,7 +145,7 @@ app.controller('pageController',
                     function successCallback(response) {
                         
                         
-                        $scope.isSubscribed = (response.data == 'true')
+                        $scope.isSubscribed = (response.data === 'true')
 
                         
                     }, function errorCallback(err) {
