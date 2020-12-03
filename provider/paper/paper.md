@@ -41,14 +41,15 @@ On `SCALAR`, data are continuously released in batches during defined time inter
 
 # Streaming learning setting
 
-Most of the existing platforms for data science competitions are tailored to offline learning, where a static dataset is made available to the participants before the competition starts. This dataset is divided into training and test sets. The training set is used to build and train the model, which is then tested on the test set. 
 
-In online learning, data arrive in a stream of records (instances), and the model needs to be trained incrementally as new instances are released. Since the data arrive at high speed, predictions have to be issued within a short time. Having in mind this specific setup of the data stream mining scenario (Figure \ref{fig:stream_mining}), every model should use a limited amount of time and memory, process one instance at a time, and inspect it only once. The model must be able to predict at any time [@bifet2010moa].
+Most of the existing platforms for data science competitions are tailored to offline learning where a static dataset is made available to the participants before the competition starts. This dataset is divided into training and test sets. The training set is used to build and train the model, which is then scored on the test set. 
+
+In online learning, data arrive in a stream of records (instances) and the model needs to be trained incrementally as new instances are released. Since the data arrive at high speed, predictions have to be issued within a short time. Considering this specific setup of the data stream mining scenario (Figure \ref{fig:stream_mining}), every model should use a limited 
+amount of time and memory, process one instance at a time and inspect it only once. The model must be able to predict at any time [@bifet2010moa].
 
 ![Stream data mining scenario\label{fig:stream_mining}](stream_mining.png)
 
-The model is being evaluated on new unlabeled instances and then updated using the labeled instances. This scenario represents the prequential evaluation scenario or "test-then-train" setting.
-To make this scenario possible in `SCALAR`, we first assume that the records in the data stream arrive in batches and that each batch can be of size `1` or more. Then, we define two different kinds of batches:
+The model is continuosly updated using the labeled instances and then evaluated on new unlabeled instances. This scenario represents the prequential evaluation scenario or "test-then-train" setting, to make it possible we first assume that the records in the data stream arrive in batches and that each batch can be of size `1` or more. Then, we define two different kinds of batches:
 
 * Initial batch: This batch is used to build and train the initial model. It is aimed to avoid the cold start problem and as such, contains both features and targets. The initial batch usually has a large number of instances.
 
