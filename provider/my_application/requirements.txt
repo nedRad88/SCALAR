@@ -20,7 +20,7 @@ greenlet
 gevent
 pause
 hashids
-pyspark==2.4.0
+pyspark==3.2.2
 confluent-kafka
 orjson
 scikit-multiflow
