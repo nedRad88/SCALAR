@@ -7,7 +7,7 @@ Flask
 Flask-SQLAlchemy
 Flask-WTF
 werkzeug
-grpcio==1.13.0 --no-binary grpcio
+grpcio==1.53.0 --no-binary grpcio
 grpcio-tools==1.13.0
 pymongo
 flask-socketio
